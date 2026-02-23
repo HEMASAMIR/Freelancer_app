@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/core/utils/widgets/social_button.dart';
 import 'package:freelancer/features/auth/view/presentation/view/help_center.dart';
 import 'package:freelancer/features/auth/view/presentation/view/host_your_home.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
@@ -93,11 +94,16 @@ class CustomAppBar extends StatelessWidget {
                   ),
                   onSelected: (value) {
                     if (value == 'signup') {
-                      _showSignUpDialog(context);
-                    } else if (value == 'login') {
-                      Navigator.push(
+                      BottomAuthText(
                         context,
-                        MaterialPageRoute(builder: (_) => const LoginView()),
+                        text: "Already have an account? ",
+                        actionText: "Log In",
+                      );
+                    } else if (value == 'login') {
+                      BottomAuthText(
+                        context,
+                        text: "Don't have an account? ",
+                        actionText: 'Sign Up',
                       );
                     } else if (value == 'host') {
                       Navigator.push(
@@ -146,18 +152,6 @@ class CustomAppBar extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showSignUpDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierColor: Colors.black54,
-      builder: (_) => const Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 60),
-        child: SignUpView(),
       ),
     );
   }
