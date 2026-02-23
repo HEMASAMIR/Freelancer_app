@@ -18,6 +18,14 @@ dependencies:
   flutter_screenutil: ^5.9.3
   lottie: ^3.3.2
   flutter_launcher_icons: ^0.13.1
+  dartz: ^0.10.1
+  flutter_bloc: ^9.1.1
+  bloc: ^9.2.0
+  supabase: ^2.10.2
+  supabase_flutter: ^2.3.4
+  dio: ^5.9.1
+  pretty_dio_logger: ^1.4.0
+  get_it: ^7.7.0
 
 dev_dependencies:
   flutter_test:

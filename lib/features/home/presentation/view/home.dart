@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:freelancer/core/Costant/app_color.dart';
-import 'package:freelancer/core/utils/custom_app_bar.dart';
+import 'package:freelancer/core/color/app_color.dart';
+import 'package:freelancer/core/utils/widgets/custom_app_bar.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_card.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_fotter.dart';
