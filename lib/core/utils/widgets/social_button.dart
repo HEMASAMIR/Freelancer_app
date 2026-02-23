@@ -4,7 +4,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class SocialButton extends StatelessWidget {
   final String label;
   final IconData icon;
-  const SocialButton({required this.label, required this.icon, super.key});
+  final VoidCallback? onTap; // ✅ أضفنا onTap
+
+  const SocialButton({
+    required this.label,
+    required this.icon,
+    this.onTap, // ✅
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,12 +23,12 @@ class SocialButton extends StatelessWidget {
       ),
       icon: Icon(icon, color: Colors.black, size: 24.sp),
       label: Text(label, style: const TextStyle(color: Colors.black)),
-      onPressed: () {},
+      onPressed: onTap, // ✅
     );
   }
 }
 
-// 2. الخط الفاصل "OR"
+// ✅ OR Divider
 class OrDivider extends StatelessWidget {
   const OrDivider({super.key});
 
@@ -29,82 +36,55 @@ class OrDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Expanded(child: Divider(thickness: 1)),
+        Expanded(child: Divider(color: const Color(0xFFD4CEBC), thickness: 1)),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 10.w),
           child: Text(
-            "OR",
-            style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+            'OR',
+            style: TextStyle(fontSize: 11.sp, color: Colors.grey),
           ),
         ),
-        const Expanded(child: Divider(thickness: 1)),
+        Expanded(child: Divider(color: const Color(0xFFD4CEBC), thickness: 1)),
       ],
     );
   }
 }
 
-// 3. حقل الإدخال المخصص
-class CustomTextField extends StatelessWidget {
-  final String label;
-  final String hint;
-  final bool isPassword;
-  const CustomTextField({
-    required this.label,
-    required this.hint,
-    this.isPassword = false,
+// ✅ Bottom Auth Text مع onTap
+class BottomAuthText extends StatelessWidget {
+  final String text;
+  final String actionText;
+  final VoidCallback? onTap; // ✅
+
+  const BottomAuthText({
+    required this.text,
+    required this.actionText,
+    this.onTap,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
-        ),
-        SizedBox(height: 8.h),
-        TextField(
-          obscureText: isPassword,
-          decoration: InputDecoration(
-            hintText: hint,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 16.w,
-              vertical: 12.h,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            suffixIcon: isPassword
-                ? const Icon(Icons.visibility_off_outlined)
-                : null,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class BottomAuthText extends StatelessWidget {
-  const BottomAuthText({super.key});
-
-  @override
-  Widget build(BuildContext context) {
     return Center(
-      child: RichText(
-        text: TextSpan(
-          text: "Already have an account? ",
-          style: TextStyle(color: Colors.black, fontSize: 14.sp),
-          children: [
-            TextSpan(
-              text: "Log in",
-              style: TextStyle(
-                color: const Color(0xFF8B1A1A),
-                fontWeight: FontWeight.bold,
+      child: GestureDetector(
+        onTap: onTap, // ✅
+        child: RichText(
+          text: TextSpan(
+            text: text,
+            style: TextStyle(color: Colors.black54, fontSize: 11.sp),
+            children: [
+              TextSpan(
+                text: actionText,
+                style: TextStyle(
+                  color: const Color(0xFF8B1A1A),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11.sp,
+                  decoration: TextDecoration.underline,
+                  decorationColor: const Color(0xFF8B1A1A),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

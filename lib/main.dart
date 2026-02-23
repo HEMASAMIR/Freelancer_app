@@ -21,8 +21,8 @@ void main() async {
   ]);
 
   await Supabase.initialize(
-    url: AppConstants.supabaseUrl,
-    anonKey: AppConstants.supabaseAnonKey,
+    url: SupabaseKeys.supabaseUrl,
+    anonKey: SupabaseKeys.supabaseAnonKey,
   );
 
   setupServiceLocator();

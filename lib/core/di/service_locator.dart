@@ -1,12 +1,23 @@
-import 'package:dio/dio.dart';
+// lib/core/di/service_locator.dart
+
 import 'package:freelancer/features/auth/data/repos/auth_repo.dart';
 import 'package:get_it/get_it.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:freelancer/features/auth/data/repos/auth_repo_impl.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
 
-// تعريف الـ instance العالمي لـ GetIt
-final getIt = GetIt.instance;
+// ✅ sl اختصار ServiceLocator
+final sl = GetIt.instance;
 
-void setupServiceLocator() {
-  getIt.registerSingleton<Dio>(Dio());
+Future<void> setupServiceLocator() async {
+  // ✅ Supabase Client
+  sl.registerLazySingleton<SupabaseClient>(() => Supabase.instance.client);
 
-  getIt.registerSingleton<AuthRepo>(getIt.get<AuthRepo>());
+  // ✅ Auth Repo
+  sl.registerLazySingleton<AuthRepo>(
+    () => AuthRepoImpl(supabase: sl<SupabaseClient>()),
+  );
+
+  // ✅ Auth Cubit - registerFactory عشان كل شاشة تاخد instance جديد
+  sl.registerFactory<AuthCubit>(() => AuthCubit(authRepo: sl<AuthRepo>()));
 }

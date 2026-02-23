@@ -26,6 +26,8 @@ dependencies:
   dio: ^5.9.1
   pretty_dio_logger: ^1.4.0
   get_it: ^7.7.0
+  equatable: ^2.0.8
+  google_sign_in: ^7.2.0
 
 dev_dependencies:
   flutter_test:
