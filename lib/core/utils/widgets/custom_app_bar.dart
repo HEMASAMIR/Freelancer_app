@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:freelancer/core/utils/widgets/social_button.dart';
+import 'package:freelancer/core/utils/widgets/bottom_auth.dart';
 import 'package:freelancer/features/auth/view/presentation/view/help_center.dart';
 import 'package:freelancer/features/auth/view/presentation/view/host_your_home.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
@@ -92,18 +92,17 @@ class CustomAppBar extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15.r),
                   ),
+                  // داخل الـ PopupMenuButton في الـ CustomAppBar
                   onSelected: (value) {
                     if (value == 'signup') {
-                      BottomAuthText(
-                        context,
-                        text: "Already have an account? ",
-                        actionText: "Log In",
+                      showDialog(
+                        context: context,
+                        builder: (context) => const SignUpView(),
                       );
                     } else if (value == 'login') {
-                      BottomAuthText(
-                        context,
-                        text: "Don't have an account? ",
-                        actionText: 'Sign Up',
+                      showDialog(
+                        context: context,
+                        builder: (context) => const LoginView(),
                       );
                     } else if (value == 'host') {
                       Navigator.push(

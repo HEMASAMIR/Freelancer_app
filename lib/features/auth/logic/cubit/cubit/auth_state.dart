@@ -16,6 +16,14 @@ class AuthLoading extends AuthState {
   const AuthLoading();
 }
 
+class AuthGoogleLoading extends AuthState {
+  const AuthGoogleLoading();
+}
+
+class GoogleAuthState extends AuthState {
+  const GoogleAuthState();
+}
+
 class AuthSuccess extends AuthState {
   final User user;
   const AuthSuccess(this.user);
@@ -24,12 +32,7 @@ class AuthSuccess extends AuthState {
   List<Object?> get props => [user];
 }
 
-// ✅ تسجيل الخروج
-class AuthSignedOut extends AuthState {
-  const AuthSignedOut();
-}
-
-// ✅ فشل
+// ✅ حالة الفشل (بتاخد رسالة الخطأ)
 class AuthError extends AuthState {
   final String message;
   const AuthError(this.message);
@@ -38,6 +41,7 @@ class AuthError extends AuthState {
   List<Object?> get props => [message];
 }
 
-class AuthGoogleLoading extends AuthState {
-  const AuthGoogleLoading();
+// ✅ حالة تسجيل الخروج بنجاح
+class AuthSignedOut extends AuthState {
+  const AuthSignedOut();
 }

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/error/failures_errors.dart';
 import 'package:freelancer/features/auth/data/repos/auth_repo.dart';
@@ -62,11 +64,26 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> signInWithGoogle() async {
     emit(const AuthGoogleLoading());
 
+    log('🔄 Google Sign-In started...', name: 'AuthCubit');
+
     final result = await _authRepo.signInWithGoogle();
 
     result.fold(
-      (failure) => emit(AuthError(_mapFailureMessage(failure))),
-      (user) => emit(AuthSuccess(user)),
+      (failure) {
+        log(
+          '❌ Google Sign-In failed: ${failure.message}',
+          name: 'AuthCubit',
+          error: failure,
+        );
+        emit(AuthError(failure.message));
+      },
+      (user) {
+        log(
+          '✅ Google Sign-In success | uid: ${user.id} | email: ${user.email}',
+          name: 'AuthCubit',
+        );
+        emit(AuthSuccess(user));
+      },
     );
   }
 

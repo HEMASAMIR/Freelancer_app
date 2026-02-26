@@ -1,14 +1,24 @@
 import 'package:dartz/dartz.dart';
-import 'package:flutter/foundation.dart';
+import 'package:freelancer/core/error/auth_failure.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:freelancer/core/error/failures_errors.dart';
 import 'package:freelancer/features/auth/data/repos/auth_repo.dart';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthRepoImpl implements AuthRepo {
   final SupabaseClient _supabase;
 
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId:
+        '1027935621214-l0gp46oa1gf79dv6ja7lc2t3ttcbhme.apps.googleusercontent.com',
+    scopes: ['email', 'profile'],
+  );
+
   AuthRepoImpl({required SupabaseClient supabase}) : _supabase = supabase;
+
+  // ─────────────────────────────────────────────
+  //  Email & Password
+  // ─────────────────────────────────────────────
 
   @override
   Future<Either<AuthFailure, User>> signInWithEmail({
@@ -20,12 +30,14 @@ class AuthRepoImpl implements AuthRepo {
         email: email,
         password: password,
       );
+
       if (response.user == null) return left(const UserNotFoundFailure());
+
       return right(response.user!);
     } on AuthException catch (e) {
-      return left(_mapAuthException(e));
-    } catch (_) {
-      return left(const NetworkFailure());
+      return left(mapAuthException(e));
+    } catch (e) {
+      return left(NetworkFailure(e.toString()));
     }
   }
 
@@ -41,63 +53,82 @@ class AuthRepoImpl implements AuthRepo {
         password: password,
         data: {'full_name': name},
       );
+
       if (response.user == null) {
-        return left(const UnknownFailure("فشل إنشاء الحساب"));
+        return left(const UnknownFailure('فشل إنشاء الحساب'));
       }
+
       return right(response.user!);
     } on AuthException catch (e) {
-      return left(_mapAuthException(e));
-    } catch (_) {
-      return left(const NetworkFailure());
+      return left(mapAuthException(e));
+    } catch (e) {
+      return left(NetworkFailure(e.toString()));
     }
   }
 
   @override
   Future<Either<AuthFailure, User>> signInWithGoogle() async {
     try {
-      await _supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: kIsWeb ? null : 'io.supabase.quickin://login-callback/',
-        authScreenLaunchMode: LaunchMode.externalApplication,
+      // نتأكد إن مفيش session قديمة عالقة
+      await _googleSignIn.signOut();
+
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      // المستخدم ألغى الـ dialog
+      if (googleUser == null) {
+        return left(const UnknownFailure('تم إلغاء عملية تسجيل الدخول'));
+      }
+
+      final GoogleSignInAuthentication auth = await googleUser.authentication;
+
+      final String? idToken = auth.idToken;
+      final String? accessToken = auth.accessToken;
+
+      // idToken مطلوب إلزامياً لـ Supabase
+      if (idToken == null) {
+        return left(
+          const UnknownFailure('فشل الحصول على بيانات Google — حاول مرة أخرى'),
+        );
+      }
+
+      final AuthResponse res = await _supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
       );
 
-      await Future.delayed(const Duration(seconds: 2));
+      if (res.user == null) return left(const GoogleSignInFailure());
 
-      final user = _supabase.auth.currentUser;
-      if (user == null) return left(const GoogleSignInFailure());
-      return right(user);
+      return right(res.user!);
     } on AuthException catch (e) {
-      return left(_mapAuthException(e));
+      return left(UnknownFailure(e.message));
     } catch (e) {
-      debugPrint("❌ Google Sign In Error: $e");
-      return left(const GoogleSignInFailure());
+      return left(NetworkFailure(e.toString()));
     }
   }
 
-  @override
-  Future<Either<AuthFailure, Unit>> signOut() async {
-    try {
-      await _supabase.auth.signOut();
-      return right(unit);
-    } catch (_) {
-      return left(const UnknownFailure("فشل تسجيل الخروج"));
-    }
-  }
+  // ─────────────────────────────────────────────
+  //  Current User
+  // ─────────────────────────────────────────────
 
   @override
   User? getCurrentUser() => _supabase.auth.currentUser;
 
-  AuthFailure _mapAuthException(AuthException e) {
-    debugPrint("❌ AuthException: ${e.message}");
-    switch (e.message) {
-      case 'Invalid login credentials':
-        return const WrongPasswordFailure();
-      case 'User already registered':
-        return const EmailAlreadyInUseFailure();
-      case 'Unable to validate email address: invalid format':
-        return const InvalidEmailFailure();
-      default:
-        return UnknownFailure(e.message);
+  // ─────────────────────────────────────────────
+  //  Sign Out
+  // ─────────────────────────────────────────────
+
+  @override
+  Future<Either<AuthFailure, Unit>> signOut() async {
+    try {
+      // نسجّل خروج من Supabase و Google في نفس الوقت
+      await Future.wait([_supabase.auth.signOut(), _googleSignIn.signOut()]);
+
+      return right(unit);
+    } on AuthException catch (e) {
+      return left(UnknownFailure(e.message));
+    } catch (e) {
+      return left(NetworkFailure(e.toString()));
     }
   }
 }
