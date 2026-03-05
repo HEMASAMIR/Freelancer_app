@@ -45,18 +45,24 @@ class _LoginViewState extends State<LoginView> {
       create: (_) => sl<AuthCubit>(),
       child: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
-          if (state is AuthSuccess) {
+          if (state is AuthAdminSuccess) {
+            CustomToast.show(context, "Welcome Admin 👑", ToastState.success);
+            Navigator.pushReplacementNamed(context, '/adminDashboard');
+          } else if (state is AuthSuccess) {
             CustomToast.show(
               context,
               "Successfully logged into QuickIn! 🚀",
               ToastState.success,
             );
-            Navigator.pop(context); // إغلاق الدايلوج
+            Navigator.pushReplacementNamed(context, '/home');
           } else if (state is AuthError) {
             CustomToast.show(context, state.message, ToastState.error);
           }
         },
         builder: (context, state) {
+          // ✅ نجيب الـ cubit مرة واحدة ونستخدم getters بتاعته
+          final cubit = context.read<AuthCubit>();
+
           return Dialog(
             backgroundColor: Colors.transparent,
             insetPadding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -73,10 +79,13 @@ class _LoginViewState extends State<LoginView> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // ✅ زرار الإغلاق
                       Align(
                         alignment: Alignment.centerRight,
                         child: GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: cubit.isLoading
+                              ? null
+                              : () => Navigator.pop(context),
                           child: Icon(
                             Icons.close,
                             size: 20.sp,
@@ -102,20 +111,23 @@ class _LoginViewState extends State<LoginView> {
                       ),
                       SizedBox(height: 20.h),
 
+                      // ✅ Google button — label بييجي من الـ cubit
                       SocialButton(
                         icon: Icons.g_mobiledata,
-                        label: 'Continue with Google',
-                        onTap: () =>
-                            context.read<AuthCubit>().signInWithGoogle(),
+                        label: cubit.googleButtonLabel,
+                        onTap: cubit.isLoading
+                            ? null
+                            : () => cubit.signInWithGoogle(),
                       ),
                       SizedBox(height: 10.h),
                       SocialButton(
                         icon: Icons.apple,
                         label: 'Continue with Apple',
-                        onTap: () {},
+                        onTap: cubit.isLoading ? null : () {},
                       ),
                       SizedBox(height: 15.h),
 
+                      // ✅ Divider
                       Row(
                         children: [
                           const Expanded(
@@ -170,10 +182,11 @@ class _LoginViewState extends State<LoginView> {
                       ),
                       SizedBox(height: 20.h),
 
+                      // ✅ زرار اللوجين — isEmailLoading من الـ cubit
                       SizedBox(
                         height: 46.h,
                         child: ElevatedButton(
-                          onPressed: state is AuthLoading
+                          onPressed: cubit.isLoading
                               ? null
                               : () => _onLoginIn(context),
                           style: ElevatedButton.styleFrom(
@@ -184,7 +197,7 @@ class _LoginViewState extends State<LoginView> {
                             ),
                             elevation: 0,
                           ),
-                          child: state is AuthLoading
+                          child: cubit.isEmailLoading
                               ? Lottie.asset(
                                   'assets/lottie/loading_lottie.json',
                                   width: 40.w,
@@ -204,16 +217,21 @@ class _LoginViewState extends State<LoginView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Already have an account? ",
+                            "Don't have an account? ",
                             style: TextStyle(
                               fontSize: 11.sp,
                               color: AppColors.sub,
                             ),
                           ),
                           GestureDetector(
-                            onTap: () => Navigator.pop(context),
+                            onTap: cubit.isLoading
+                                ? null
+                                : () => Navigator.pushReplacementNamed(
+                                    context,
+                                    '/register',
+                                  ),
                             child: Text(
-                              'Log in',
+                              'Sign up',
                               style: TextStyle(
                                 fontSize: 11.sp,
                                 color: const Color(0xFF8B2323),

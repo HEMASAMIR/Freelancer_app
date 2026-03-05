@@ -1,9 +1,11 @@
 import 'dart:developer';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:freelancer/core/error/failures_errors.dart';
 import 'package:freelancer/features/auth/data/repos/auth_repo.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+
+const List<String> _adminEmails = ['admin.aclone@atomicmail.io'];
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepo _authRepo;
@@ -14,15 +16,31 @@ class AuthCubit extends Cubit<AuthState> {
     _checkCurrentUser();
   }
 
-  // ✅ تحقق لو في يوزر مسجل دخول
+  // ─────────────────────────────────────────────
+  //  Getters — استخدمهم في الـ View مباشرة
+  // ─────────────────────────────────────────────
+
+  bool get isLoading => state is AuthLoading || state is AuthGoogleLoading;
+  bool get isGoogleLoading => state is AuthGoogleLoading;
+  bool get isEmailLoading => state is AuthLoading;
+  bool get isAuthenticated => state is AuthSuccess || state is AuthAdminSuccess;
+  bool get isAdmin => state is AuthAdminSuccess;
+  String get googleButtonLabel =>
+      isGoogleLoading ? 'Signing in...' : 'Continue with Google';
+
+  // ─────────────────────────────────────────────
+  //  Init
+  // ─────────────────────────────────────────────
+
   void _checkCurrentUser() {
     final user = _authRepo.getCurrentUser();
-    if (user != null) {
-      emit(AuthSuccess(user));
-    }
+    if (user != null) emit(_resolveSuccess(user));
   }
 
-  // ✅ تسجيل الدخول بالإيميل
+  // ─────────────────────────────────────────────
+  //  Email & Password
+  // ─────────────────────────────────────────────
+
   Future<void> signInWithEmail({
     required String email,
     required String password,
@@ -35,12 +53,11 @@ class AuthCubit extends Cubit<AuthState> {
     );
 
     result.fold(
-      (failure) => emit(AuthError(_mapFailureMessage(failure))),
-      (user) => emit(AuthSuccess(user)),
+      (failure) => emit(AuthError(failure.message)),
+      (user) => emit(_resolveSuccess(user)),
     );
   }
 
-  // ✅ إنشاء حساب
   Future<void> signUpWithEmail({
     required String email,
     required String password,
@@ -55,15 +72,17 @@ class AuthCubit extends Cubit<AuthState> {
     );
 
     result.fold(
-      (failure) => emit(AuthError(_mapFailureMessage(failure))),
-      (user) => emit(AuthSuccess(user)),
+      (failure) => emit(AuthError(failure.message)),
+      (user) => emit(_resolveSuccess(user)),
     );
   }
 
-  // ✅ تسجيل الدخول بـ Google
+  // ─────────────────────────────────────────────
+  //  Google
+  // ─────────────────────────────────────────────
+
   Future<void> signInWithGoogle() async {
     emit(const AuthGoogleLoading());
-
     log('🔄 Google Sign-In started...', name: 'AuthCubit');
 
     final result = await _authRepo.signInWithGoogle();
@@ -82,23 +101,46 @@ class AuthCubit extends Cubit<AuthState> {
           '✅ Google Sign-In success | uid: ${user.id} | email: ${user.email}',
           name: 'AuthCubit',
         );
-        emit(AuthSuccess(user));
+        emit(_resolveSuccess(user));
       },
     );
   }
 
-  // ✅ تسجيل الخروج
+  // ─────────────────────────────────────────────
+  //  Sign Out
+  // ─────────────────────────────────────────────
+
   Future<void> signOut() async {
     emit(const AuthLoading());
 
     final result = await _authRepo.signOut();
 
     result.fold(
-      (failure) => emit(AuthError(_mapFailureMessage(failure))),
+      (failure) => emit(AuthError(failure.message)),
       (_) => emit(const AuthSignedOut()),
     );
   }
 
-  // ✅ تحويل الـ failure لرسالة عربية
-  String _mapFailureMessage(AuthFailure failure) => failure.message;
+  // ─────────────────────────────────────────────
+  //  Helpers
+  // ─────────────────────────────────────────────
+
+  AuthState _resolveSuccess(User user) {
+    final email = user.email?.toLowerCase().trim() ?? '';
+    final isAdminUser = _adminEmails.contains(email);
+
+    log(
+      isAdminUser
+          ? '👑 Admin detected | email: $email'
+          : '👤 User detected | email: $email',
+      name: 'AuthCubit',
+    );
+
+    return isAdminUser ? AuthAdminSuccess(user) : AuthSuccess(user);
+  }
+
+  @override
+  void emit(AuthState state) {
+    if (!isClosed) super.emit(state);
+  }
 }

@@ -45,3 +45,12 @@ class AuthError extends AuthState {
 class AuthSignedOut extends AuthState {
   const AuthSignedOut();
 }
+
+// ✅ زود الـ state ده
+class AuthAdminSuccess extends AuthState {
+  final User user;
+  const AuthAdminSuccess(this.user);
+
+  @override
+  List<Object?> get props => [user];
+}

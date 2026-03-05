@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/di/service_locator.dart';
+import 'package:freelancer/features/admin/admin/presentaion/view/admin_dashboard.dart';
+import 'package:freelancer/features/admin/admin/presentaion/view/admin_staff.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
 import 'package:freelancer/features/auth/view/presentation/view/sign_up_view.dart';
@@ -28,7 +30,10 @@ class AppRouter {
             child: const SignUpView(),
           ),
         );
-
+      case AppRoutes.admin:
+        return MaterialPageRoute(builder: (_) => const StaffManagementScreen());
+      case AppRoutes.adminDashboard:
+        return MaterialPageRoute(builder: (_) => const AdminOverviewScreen());
       default:
         return _errorRoute();
     }

@@ -17,7 +17,7 @@ class Homescreen extends StatelessWidget {
     return Scaffold(
       key: scaffoldKey,
       backgroundColor: AppColors.bgColor,
-      drawer: const CustomDrawer(),
+
       body: SafeArea(
         // استخدمنا ListView واحدة فقط عشان تشيل كل الكروت والـ Hero مع بعض
         child: ListView(
