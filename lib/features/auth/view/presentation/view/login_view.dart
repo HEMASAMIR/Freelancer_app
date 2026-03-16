@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/utils/widgets/show_toast.dart';
 import 'package:lottie/lottie.dart';
 
@@ -54,7 +55,7 @@ class _LoginViewState extends State<LoginView> {
               "Successfully logged into QuickIn! 🚀",
               ToastState.success,
             );
-            Navigator.pushReplacementNamed(context, '/home');
+            Navigator.pushReplacementNamed(context, AppRoutes.home);
           } else if (state is AuthError) {
             CustomToast.show(context, state.message, ToastState.error);
           }

@@ -14,12 +14,10 @@ class WhereSection extends StatelessWidget {
   });
 
   static const List<Map<String, dynamic>> destinations = [
-    {'name': 'Malibu', 'icon': Icons.beach_access},
-    {'name': 'New York', 'icon': Icons.location_city},
-    {'name': 'Italy', 'icon': Icons.place},
-    {'name': 'Thailand', 'icon': Icons.temple_buddhist},
-    {'name': 'Paris', 'icon': Icons.tour},
-    {'name': 'Dubai', 'icon': Icons.apartment},
+    {'name': 'Best Offers', 'icon': Icons.beach_access},
+    {'name': 'Main Office', 'icon': Icons.location_city},
+    {'name': 'Merakia', 'icon': Icons.place},
+    {'name': 'Cairo', 'icon': Icons.place},
   ];
 
   @override

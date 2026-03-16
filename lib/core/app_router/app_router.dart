@@ -7,6 +7,7 @@ import 'package:freelancer/features/admin/admin/presentaion/view/admin_staff.dar
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
 import 'package:freelancer/features/auth/view/presentation/view/sign_up_view.dart';
+import 'package:freelancer/features/home/presentation/view/home.dart';
 import 'package:freelancer/features/splash/presentation/view/splash.dart';
 
 class AppRouter {
@@ -30,6 +31,8 @@ class AppRouter {
             child: const SignUpView(),
           ),
         );
+      case AppRoutes.home:
+        return MaterialPageRoute(builder: (_) => const Homescreen());
       case AppRoutes.admin:
         return MaterialPageRoute(builder: (_) => const StaffManagementScreen());
       case AppRoutes.adminDashboard:

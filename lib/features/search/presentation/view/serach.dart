@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/di/service_locator.dart';
@@ -6,17 +7,14 @@ import 'package:freelancer/features/search/data/search_model/search_params_model
 import 'package:freelancer/features/search/data/search_model/search_result_model.dart';
 import 'package:freelancer/features/search/logic/search_cubit/cubit/search_cubit.dart';
 import 'package:freelancer/features/search/logic/search_cubit/cubit/search_state.dart';
+
 import 'package:freelancer/features/search/presentation/widget/best_offers.dart';
-import 'package:freelancer/features/search/presentation/widget/filter_selection.dart';
 import 'package:freelancer/features/search/presentation/widget/top_selection_cards.dart';
 import 'package:freelancer/features/search/presentation/widget/when_selection.dart';
 import 'package:freelancer/features/search/presentation/widget/where_selection.dart';
 import 'package:freelancer/features/search/presentation/widget/who_selection.dart';
 
-// ═══════════════════════════════════════════════════════════════
-// Search Results Screen
-// ═══════════════════════════════════════════════════════════════
-
+// ── Search Results Screen ───────────────────────────────────────
 class SearchResultsScreen extends StatelessWidget {
   final SearchParamsModel params;
   const SearchResultsScreen({super.key, required this.params});
@@ -24,12 +22,11 @@ class SearchResultsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<SearchCubit>()..getListings(params),
+      create: (_) => sl<SearchCubit>()..getListings(params: params),
       child: Scaffold(
         backgroundColor: const Color(0xFFF7F6F2),
         appBar: _buildAppBar(context),
         body: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _FiltersChipsBar(params: params),
             Expanded(
@@ -70,13 +67,9 @@ class SearchResultsScreen extends StatelessWidget {
               color: Colors.black,
             ),
           ),
-          if (params.checkIn != null || params.guests != null)
+          if (params.checkIn != null)
             Text(
-              [
-                if (params.checkIn != null && params.checkOut != null)
-                  '${params.checkIn} → ${params.checkOut}',
-                '${params.guests ?? 1} guest${(params.guests ?? 1) > 1 ? 's' : ''}',
-              ].join('  ·  '),
+              '${params.checkIn} → ${params.checkOut}  ·  ${params.guests} guests',
               style: TextStyle(fontSize: 11.sp, color: Colors.grey[600]),
             ),
         ],
@@ -84,70 +77,25 @@ class SearchResultsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLoading() {
-    return ListView.separated(
-      padding: EdgeInsets.all(16.w),
-      itemCount: 5,
-      separatorBuilder: (_, __) => SizedBox(height: 12.h),
-      itemBuilder: (_, __) => _SkeletonCard(),
-    );
-  }
+  Widget _buildLoading() => ListView.separated(
+    padding: EdgeInsets.all(16.w),
+    itemCount: 5,
+    separatorBuilder: (_, __) => SizedBox(height: 12.h),
+    itemBuilder: (_, __) => const _SkeletonCard(),
+  );
 
-  Widget _buildError(String message) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(24.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.wifi_off_rounded, size: 48.r, color: Colors.grey[400]),
-            SizedBox(height: 12.h),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildResults(List<SearchResultModel> listings) => ListView.separated(
+    padding: EdgeInsets.all(16.w),
+    itemCount: listings.length,
+    separatorBuilder: (_, __) => SizedBox(height: 12.h),
+    itemBuilder: (_, i) => _ListingCard(listing: listings[i]),
+  );
 
-  Widget _buildEmpty() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'No listings found',
-            style: TextStyle(
-              fontSize: 22.sp,
-              fontWeight: FontWeight.w700,
-              color: Colors.black,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'Try adjusting your search or filters.',
-            style: TextStyle(fontSize: 15.sp, color: Colors.black54),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResults(List<SearchResultModel> listings) {
-    return ListView.separated(
-      padding: EdgeInsets.all(16.w),
-      itemCount: listings.length,
-      separatorBuilder: (_, __) => SizedBox(height: 12.h),
-      itemBuilder: (_, i) => _ListingCard(listing: listings[i]),
-    );
-  }
+  Widget _buildError(String msg) => Center(child: Text(msg));
+  Widget _buildEmpty() => const Center(child: Text("No listings found."));
 }
 
-// ── Filters Chips Bar ─────────────────────────────────────────
-
+// ── Filters Chips Bar ───────────────────────────────────────────
 class _FiltersChipsBar extends StatefulWidget {
   final SearchParamsModel params;
   const _FiltersChipsBar({required this.params});
@@ -158,156 +106,43 @@ class _FiltersChipsBar extends StatefulWidget {
 
 class _FiltersChipsBarState extends State<_FiltersChipsBar> {
   late String _selectedTab;
-
   final List<String> _tabs = ['Best Offers', 'Main Office', 'Merakia', 'Cairo'];
 
   @override
   void initState() {
     super.initState();
-    // أول tab مختار هو الـ location اللي جه من الـ params لو موجود
     _selectedTab = widget.params.location ?? _tabs.first;
   }
 
   void _onTabTap(String tab) {
     setState(() => _selectedTab = tab);
-
-    final newParams = SearchParamsModel(
+    final newParams = widget.params.copyWith(
       location: tab == 'Best Offers' ? null : tab,
-      checkIn: widget.params.checkIn,
-      checkOut: widget.params.checkOut,
-      guests: widget.params.guests,
-      priceMin: widget.params.priceMin,
-      priceMax: widget.params.priceMax,
       bestOffer: tab == 'Best Offers' ? true : null,
-      limit: 20,
-      offset: 0,
     );
-
-    context.read<SearchCubit>().getListings(newParams);
+    context.read<SearchCubit>().getListings(params: newParams);
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF7F6F2),
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Tabs ──────────────────────────────────────────
-          BestOffersRow(selectedTab: _selectedTab, onTabTap: _onTabTap),
-
-          // ── Count + Chips + Clear ──────────────────────────
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                BlocBuilder<SearchCubit, SearchState>(
-                  builder: (context, state) {
-                    final count = state is SearchSuccess
-                        ? state.listings.length
-                        : 0;
-                    return Text(
-                      'Showing $count listings',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: Colors.black.withOpacity(0.6),
-                      ),
-                    );
-                  },
-                ),
-                SizedBox(height: 12.h),
-                Wrap(
-                  spacing: 8.w,
-                  runSpacing: 8.h,
-                  children: [
-                    if (widget.params.location != null)
-                      _chip(Icons.location_on, widget.params.location!),
-                    if (widget.params.checkIn != null)
-                      _chip(
-                        Icons.calendar_month,
-                        '${widget.params.checkIn} - ${widget.params.checkOut}',
-                      ),
-                    if (widget.params.guests != null)
-                      _chip(Icons.people, '${widget.params.guests}+ guests'),
-                    if (widget.params.priceMin != null ||
-                        widget.params.priceMax != null)
-                      _chip(
-                        Icons.attach_money,
-                        '${widget.params.priceMin?.round() ?? 0} - ${widget.params.priceMax?.round() ?? '∞'} EGP',
-                      ),
-                    if (widget.params.bestOffer == true)
-                      _chip(Icons.sell, 'Best Offers', isRed: true),
-                  ],
-                ),
-                SizedBox(height: 12.h),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Text(
-                    'Clear all',
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: const Color(0xFF8B1A1A),
-                      decoration: TextDecoration.underline,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _chip(IconData icon, String label, {bool isRed = false}) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-      decoration: BoxDecoration(
-        color: isRed ? const Color(0xFF8B1A1A).withOpacity(0.1) : Colors.white,
-        borderRadius: BorderRadius.circular(15.r),
-        border: Border.all(
-          color: isRed ? const Color(0xFF8B1A1A) : Colors.grey.shade300,
-          width: 0.8,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 14.r,
-            color: isRed ? const Color(0xFF8B1A1A) : Colors.blueGrey,
-          ),
-          SizedBox(width: 5.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.sp,
-              color: isRed ? const Color(0xFF8B1A1A) : Colors.black,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
+      color: Colors.white,
+      padding: EdgeInsets.only(bottom: 12.h),
+      child: BestOffersRow(selectedTab: _selectedTab, onTabTap: _onTabTap),
     );
   }
 }
 
-// ── Listing Card ──────────────────────────────────────────────
-
+// ── Listing Card ────────────────────────────────────────────────
 class _ListingCard extends StatelessWidget {
   final SearchResultModel listing;
   const _ListingCard({required this.listing});
 
   @override
   Widget build(BuildContext context) {
-    final firstImage = listing.images.isNotEmpty
+    final String? firstImageUrl = listing.images.isNotEmpty
         ? listing.images.first.url
         : null;
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -327,9 +162,9 @@ class _ListingCard extends StatelessWidget {
             borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
             child: AspectRatio(
               aspectRatio: 16 / 9,
-              child: firstImage != null
+              child: firstImageUrl != null
                   ? Image.network(
-                      firstImage,
+                      firstImageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => _placeholder(),
                     )
@@ -341,32 +176,14 @@ class _ListingCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        listing.title,
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (listing.avgRating > 0) ...[
-                      SizedBox(width: 8.w),
-                      Icon(Icons.star_rounded, size: 14.r, color: Colors.amber),
-                      Text(
-                        listing.avgRating.toStringAsFixed(1),
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ],
+                Text(
+                  listing.title,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 SizedBox(height: 4.h),
                 Row(
@@ -386,56 +203,23 @@ class _ListingCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 6.h),
-                Row(
-                  children: [
-                    _infoChip(
-                      Icons.bed_outlined,
-                      '${listing.beds} bed${listing.beds > 1 ? 's' : ''}',
-                    ),
-                    SizedBox(width: 8.w),
-                    _infoChip(
-                      Icons.bathroom_outlined,
-                      '${listing.bathrooms} bath${listing.bathrooms > 1 ? 's' : ''}',
-                    ),
-                    SizedBox(width: 8.w),
-                    _infoChip(
-                      Icons.people_outline,
-                      '${listing.maxGuests} guests',
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10.h),
+                SizedBox(height: 8.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    if (listing.bestOfferPrice != null)
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 3.h,
+                    if (listing.propertyTypeName != null)
+                      Text(
+                        listing.propertyTypeName!,
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: Colors.blueGrey,
                         ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF8B1A1A).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                        child: Text(
-                          'Best Offer',
-                          style: TextStyle(
-                            fontSize: 10.sp,
-                            color: const Color(0xFF8B1A1A),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      )
-                    else
-                      const SizedBox(),
+                      ),
                     RichText(
                       text: TextSpan(
                         children: [
                           TextSpan(
-                            text:
-                                '${listing.displayPrice.toStringAsFixed(0)} ${listing.currency}',
+                            text: '${listing.pricePerNight.round()} EGP',
                             style: TextStyle(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.bold,
@@ -464,76 +248,32 @@ class _ListingCard extends StatelessWidget {
 
   Widget _placeholder() => Container(
     color: Colors.grey[100],
-    child: Center(
-      child: Icon(Icons.image_outlined, size: 32, color: Colors.grey[400]),
-    ),
+    child: const Center(child: Icon(Icons.image_outlined, color: Colors.grey)),
   );
-
-  Widget _infoChip(IconData icon, String label) {
-    return Row(
-      children: [
-        Icon(icon, size: 13.r, color: Colors.grey[500]),
-        SizedBox(width: 3.w),
-        Text(
-          label,
-          style: TextStyle(fontSize: 11.sp, color: Colors.grey[600]),
-        ),
-      ],
-    );
-  }
 }
 
-// ── Skeleton Card ─────────────────────────────────────────────
-
 class _SkeletonCard extends StatelessWidget {
+  const _SkeletonCard();
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 250.h,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-            child: Container(height: 180.h, color: Colors.grey[200]),
-          ),
-          Padding(
-            padding: EdgeInsets.all(12.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _shimmer(width: 160.w, height: 14.h),
-                SizedBox(height: 8.h),
-                _shimmer(width: 100.w, height: 11.h),
-                SizedBox(height: 8.h),
-                _shimmer(width: 200.w, height: 11.h),
-                SizedBox(height: 10.h),
-                _shimmer(width: 80.w, height: 14.h),
-              ],
-            ),
-          ),
+          Container(height: 150.h, color: Colors.grey[200]),
+          Expanded(child: Container(color: Colors.white)),
         ],
-      ),
-    );
-  }
-
-  Widget _shimmer({required double width, required double height}) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(4.r),
       ),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Airbnb Search Modal
+// Airbnb Search Modal (Main Entry)
 // ═══════════════════════════════════════════════════════════════
 
 class AirbnbSearchModal extends StatefulWidget {
@@ -548,97 +288,27 @@ class _AirbnbSearchModalState extends State<AirbnbSearchModal> {
   String? _selectedDestination;
   DateTime? _checkInDate;
   DateTime? _checkOutDate;
-  DateTime _focusedMonth = DateTime(2026, 3);
   int _guestCount = 1;
-  double _minPrice = 0;
-  double _maxPrice = 5000;
+
+  // Filter States
+  Set<String> _selectedAmenities = {};
   bool _bestOffer = false;
-  final Set<String> _selectedAmenities = {};
-
-  String get _dateRange {
-    if (_checkInDate == null && _checkOutDate == null) return "Any dates";
-    const months = [
-      '',
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final start = _checkInDate != null
-        ? "${_checkInDate!.day} ${months[_checkInDate!.month]}"
-        : "Add date";
-    final end = _checkOutDate != null
-        ? "${_checkOutDate!.day} ${months[_checkOutDate!.month]}"
-        : "Add date";
-    return "$start → $end";
-  }
-
-  void _onDateTap(DateTime date) {
-    setState(() {
-      if (_checkInDate == null ||
-          (_checkInDate != null && _checkOutDate != null)) {
-        _checkInDate = date;
-        _checkOutDate = null;
-      } else {
-        if (date.isBefore(_checkInDate!)) {
-          _checkInDate = date;
-        } else {
-          _checkOutDate = date;
-          Future.delayed(const Duration(milliseconds: 300), () {
-            setState(() => _activeSection = 'who');
-          });
-        }
-      }
-    });
-  }
-
-  void _setThisWeekend() {
-    final now = DateTime.now();
-    final daysUntilSat = (6 - now.weekday) % 7;
-    final sat = now.add(Duration(days: daysUntilSat == 0 ? 7 : daysUntilSat));
-    setState(() {
-      _checkInDate = sat;
-      _checkOutDate = sat.add(const Duration(days: 1));
-    });
-  }
-
-  void _setNextWeek() {
-    final now = DateTime.now();
-    final nextMon = now.add(Duration(days: (8 - now.weekday) % 7 + 1));
-    setState(() {
-      _checkInDate = nextMon;
-      _checkOutDate = nextMon.add(const Duration(days: 6));
-    });
-  }
-
-  void _clearDates() => setState(() => _checkInDate = _checkOutDate = null);
-
-  String? _formatDate(DateTime? date) {
-    if (date == null) return null;
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
+  double? _minPrice;
+  double? _maxPrice;
 
   void _onSearch() {
     final params = SearchParamsModel(
       location: _selectedDestination,
-      checkIn: _formatDate(_checkInDate),
-      checkOut: _formatDate(_checkOutDate),
+      checkIn: _checkInDate?.toIso8601String().split('T').first,
+      checkOut: _checkOutDate?.toIso8601String().split('T').first,
       guests: _guestCount,
-      // ✅ الصح
-      priceMin: _minPrice > 0 ? _minPrice : null,
-      priceMax: _maxPrice > 0 ? _maxPrice : null,
+      priceMin: _minPrice,
+      priceMax: _maxPrice,
       bestOffer: _bestOffer ? true : null,
       limit: 20,
       offset: 0,
     );
+
     Navigator.pop(context);
     Navigator.push(
       context,
@@ -649,134 +319,68 @@ class _AirbnbSearchModalState extends State<AirbnbSearchModal> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.9,
+      height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
         color: const Color(0xFFF7F6F2),
         borderRadius: BorderRadius.vertical(top: Radius.circular(25.r)),
       ),
       child: Column(
         children: [
-          Container(
-            margin: EdgeInsets.symmetric(vertical: 12.h),
-            height: 4.h,
-            width: 40.w,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+          const SizedBox(height: 20),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 20.w),
               child: Column(
                 children: [
-                  GestureDetector(
-                    onTap: () => setState(() => _bestOffer = !_bestOffer),
-                    child: Container(
-                      margin: EdgeInsets.only(bottom: 12.h),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16.w,
-                        vertical: 12.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _bestOffer
-                            ? const Color(0xFF8B1A1A).withOpacity(0.08)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(14.r),
-                        border: Border.all(
-                          color: _bestOffer
-                              ? const Color(0xFF8B1A1A)
-                              : Colors.grey.shade300,
-                          width: _bestOffer ? 1.5 : 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.local_offer_outlined,
-                            size: 18.r,
-                            color: _bestOffer
-                                ? const Color(0xFF8B1A1A)
-                                : Colors.grey,
-                          ),
-                          SizedBox(width: 10.w),
-                          Text(
-                            'Best Offers only',
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w600,
-                              color: _bestOffer
-                                  ? const Color(0xFF8B1A1A)
-                                  : Colors.black87,
-                            ),
-                          ),
-                          const Spacer(),
-                          if (_bestOffer)
-                            Icon(
-                              Icons.check_circle,
-                              size: 18.r,
-                              color: const Color(0xFF8B1A1A),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
                   TopSelectionCards(
                     activeSection: _activeSection,
                     selectedDestination: _selectedDestination,
-                    dateRange: _dateRange,
                     guestCount: _guestCount,
+                    dateRange: _checkInDate != null ? "Selected" : "Any dates",
                     onSectionTap: (id) => setState(() => _activeSection = id),
                   ),
-                  SizedBox(height: 16.h),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: _buildActiveSection(),
-                  ),
+                  const SizedBox(height: 20),
+                  _buildCurrentSection(),
                 ],
               ),
             ),
           ),
-          _buildSearchBtn(),
+          _buildSearchBottomBar(),
         ],
       ),
     );
   }
 
-  Widget _buildActiveSection() {
+  Widget _buildCurrentSection() {
     switch (_activeSection) {
       case 'where':
         return WhereSection(
           selectedDestination: _selectedDestination,
-          onSelect: (dest) {
-            setState(() => _selectedDestination = dest);
-            Future.delayed(const Duration(milliseconds: 200), () {
-              setState(() => _activeSection = 'when');
-            });
-          },
+          onSelect: (dest) => setState(() {
+            _selectedDestination = dest;
+            _activeSection = 'when';
+          }),
           onClear: () => setState(() => _selectedDestination = null),
         );
       case 'when':
         return WhenSection(
           checkInDate: _checkInDate,
           checkOutDate: _checkOutDate,
-          focusedMonth: _focusedMonth,
-          onDateTap: _onDateTap,
-          onPrevMonth: () => setState(
-            () => _focusedMonth = DateTime(
-              _focusedMonth.year,
-              _focusedMonth.month - 1,
-            ),
-          ),
-          onNextMonth: () => setState(
-            () => _focusedMonth = DateTime(
-              _focusedMonth.year,
-              _focusedMonth.month + 1,
-            ),
-          ),
-          onThisWeekend: _setThisWeekend,
-          onNextWeek: _setNextWeek,
-          onClearDates: _clearDates,
+          focusedMonth: DateTime.now(),
+          onDateTap: (date) => setState(() {
+            if (_checkInDate == null) {
+              _checkInDate = date;
+            } else {
+              _checkOutDate = date;
+              _activeSection = 'who';
+            }
+          }),
+          onClearDates: () =>
+              setState(() => _checkInDate = _checkOutDate = null),
+          onNextMonth: () {},
+          onPrevMonth: () {},
+          onNextWeek: () {},
+          onThisWeekend: () {},
         );
       case 'who':
         return WhoSection(
@@ -788,19 +392,21 @@ class _AirbnbSearchModalState extends State<AirbnbSearchModal> {
           minPrice: _minPrice,
           maxPrice: _maxPrice,
           selectedAmenities: _selectedAmenities,
-          onPriceChanged: (vals) => setState(() {
-            _minPrice = vals.start;
-            _maxPrice = vals.end;
+          onPriceChanged: (min, max) => setState(() {
+            _minPrice = min;
+            _maxPrice = max;
           }),
-          onAmenityToggle: (label) => setState(() {
-            _selectedAmenities.contains(label)
-                ? _selectedAmenities.remove(label)
-                : _selectedAmenities.add(label);
+          onAmenityToggle: (amenity) => setState(() {
+            if (_selectedAmenities.contains(amenity)) {
+              _selectedAmenities.remove(amenity);
+            } else {
+              _selectedAmenities.add(amenity);
+            }
           }),
           onReset: () => setState(() {
+            _minPrice = null;
+            _maxPrice = null;
             _selectedAmenities.clear();
-            _minPrice = 0;
-            _maxPrice = 0;
           }),
         );
       default:
@@ -808,34 +414,262 @@ class _AirbnbSearchModalState extends State<AirbnbSearchModal> {
     }
   }
 
-  Widget _buildSearchBtn() {
+  Widget _buildSearchBottomBar() {
     return Container(
       padding: EdgeInsets.all(20.w),
       color: Colors.white,
-      child: ElevatedButton(
-        onPressed: _onSearch,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF8B1A1A),
-          minimumSize: Size(double.infinity, 50.h),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.r),
+      child: Row(
+        children: [
+          IconButton(
+            icon: Icon(
+              Icons.tune,
+              color: _activeSection == 'filters'
+                  ? const Color(0xFF8B1A1A)
+                  : Colors.grey,
+            ),
+            onPressed: () => setState(() => _activeSection = 'filters'),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search, color: Colors.white, size: 18.r),
-            SizedBox(width: 8.w),
-            const Text(
-              "Search",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+          SizedBox(width: 10.w),
+          Expanded(
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8B1A1A),
+                minimumSize: Size(double.infinity, 50.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+              onPressed: _onSearch,
+              child: const Text(
+                "Search",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+// ── FiltersSection Widget (Dynamic Inputs) ──────────────────────
+class FiltersSection extends StatefulWidget {
+  final double? minPrice;
+  final double? maxPrice;
+  final Set<String> selectedAmenities;
+  final Function(double? min, double? max) onPriceChanged;
+  final ValueChanged<String> onAmenityToggle;
+  final VoidCallback onReset;
+
+  const FiltersSection({
+    super.key,
+    this.minPrice,
+    this.maxPrice,
+    required this.selectedAmenities,
+    required this.onPriceChanged,
+    required this.onAmenityToggle,
+    required this.onReset,
+  });
+
+  @override
+  State<FiltersSection> createState() => _FiltersSectionState();
+}
+
+class _FiltersSectionState extends State<FiltersSection> {
+  late TextEditingController _minController;
+  late TextEditingController _maxController;
+
+  static const _amenities = [
+    {'label': 'Air Conditioning', 'icon': Icons.ac_unit},
+    {'label': 'Beach Access', 'icon': Icons.beach_access},
+    {'label': 'Full Kitchen', 'icon': Icons.kitchen},
+    {'label': 'Wifi', 'icon': Icons.wifi},
+    {'label': 'Pool', 'icon': Icons.pool},
+    {'label': 'Parking', 'icon': Icons.local_parking},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _minController = TextEditingController(
+      text: widget.minPrice != null ? widget.minPrice!.round().toString() : '',
+    );
+    _maxController = TextEditingController(
+      text: widget.maxPrice != null ? widget.maxPrice!.round().toString() : '',
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant FiltersSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // لو تم عمل Reset من بره نحدث الـ Controllers
+    if (widget.minPrice == null && _minController.text.isNotEmpty) {
+      _minController.clear();
+    }
+    if (widget.maxPrice == null && _maxController.text.isNotEmpty) {
+      _maxController.clear();
+    }
+  }
+
+  @override
+  void dispose() {
+    _minController.dispose();
+    _maxController.dispose();
+    super.dispose();
+  }
+
+  void _onPriceChange() {
+    final min = double.tryParse(_minController.text);
+    final max = double.tryParse(_maxController.text);
+    widget.onPriceChanged(min, max);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(18.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Price per night",
+            style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              Expanded(child: _priceInput("Minimum", _minController, "0")),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _priceInput("Maximum", _maxController, "Any price"),
+              ),
+            ],
+          ),
+          SizedBox(height: 24.h),
+          Text(
+            "Amenities",
+            style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 12.h),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _amenities.map((a) {
+              final label = a['label'] as String;
+              final isSelected = widget.selectedAmenities.contains(label);
+              return GestureDetector(
+                onTap: () => widget.onAmenityToggle(label),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 8.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFF8B1A1A).withOpacity(0.08)
+                        : Colors.white,
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFF8B1A1A)
+                          : Colors.grey.shade300,
+                      width: isSelected ? 1.5 : 1,
+                    ),
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        a['icon'] as IconData,
+                        size: 14.r,
+                        color: isSelected
+                            ? const Color(0xFF8B1A1A)
+                            : Colors.grey[600],
+                      ),
+                      SizedBox(width: 6.w),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: isSelected
+                              ? const Color(0xFF8B1A1A)
+                              : Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          SizedBox(height: 10.h),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () {
+                _minController.clear();
+                _maxController.clear();
+                widget.onReset();
+              },
+              child: const Text(
+                "Reset filters",
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _priceInput(
+    String label,
+    TextEditingController controller,
+    String hint,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 11.sp, color: Colors.grey[600]),
+        ),
+        SizedBox(height: 6.h),
+        TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          onChanged: (_) => _onPriceChange(),
+          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+          decoration: InputDecoration(
+            hintText: hint,
+            prefixText: 'EGP ',
+            prefixStyle: TextStyle(color: Colors.grey, fontSize: 12.sp),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 12.w,
+              vertical: 12.h,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.r),
+              borderSide: const BorderSide(
+                color: Color(0xFF8B1A1A),
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

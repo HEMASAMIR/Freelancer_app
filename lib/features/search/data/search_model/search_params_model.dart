@@ -1,65 +1,61 @@
 class SearchParamsModel {
-  final List<String>? attributeCodes;
-  final bool? bestOffer;
-  final String? categorySlug;
+  final int limit;
+  final int offset;
+  final String? location;
   final String? checkIn;
   final String? checkOut;
-  final String? country;
-  final double? geoLat;
-  final double? geoLng;
-  final double? geoRadiusKm;
   final int? guests;
-  final bool? includeSurrounding;
-  final int limit;
-  final String? locale;
-  final String? location;
-  final int offset;
-  final double? priceMax;
   final double? priceMin;
-  final List<String>? propertyTypeSlugs;
-  final List<String>? specificIds;
+  final double? priceMax;
+  final bool? bestOffer;
 
-  const SearchParamsModel({
-    this.attributeCodes,
-    this.bestOffer,
-    this.categorySlug,
+  SearchParamsModel({
+    this.limit = 20,
+    this.offset = 0,
+    this.location,
     this.checkIn,
     this.checkOut,
-    this.country,
-    this.geoLat,
-    this.geoLng,
-    this.geoRadiusKm,
     this.guests,
-    this.includeSurrounding,
-    this.limit = 10,
-    this.locale,
-    this.location,
-    this.offset = 0,
-    this.priceMax,
     this.priceMin,
-    this.propertyTypeSlugs,
-    this.specificIds,
+    this.priceMax,
+    this.bestOffer,
   });
 
-  Map<String, dynamic> toJson() => {
-    'p_attribute_codes': attributeCodes,
-    'p_best_offer': bestOffer,
-    'p_category_slug': categorySlug,
-    'p_check_in': checkIn,
-    'p_check_out': checkOut,
-    'p_country': country,
-    'p_geo_lat': geoLat,
-    'p_geo_lng': geoLng,
-    'p_geo_radius_km': geoRadiusKm,
-    'p_guests': guests,
-    'p_include_surrounding': includeSurrounding,
-    'p_limit': limit,
-    'p_locale': locale,
-    'p_location': location,
-    'p_offset': offset,
-    'p_price_max': priceMax,
-    'p_price_min': priceMin,
-    'p_property_type_slugs': propertyTypeSlugs,
-    'p_specific_ids': specificIds,
-  };
+  SearchParamsModel copyWith({
+    int? limit,
+    int? offset,
+    String? location,
+    String? checkIn,
+    String? checkOut,
+    int? guests,
+    double? priceMin,
+    double? priceMax,
+    bool? bestOffer,
+  }) {
+    return SearchParamsModel(
+      limit: limit ?? this.limit,
+      offset: offset ?? this.offset,
+      location: location ?? this.location,
+      checkIn: checkIn ?? this.checkIn,
+      checkOut: checkOut ?? this.checkOut,
+      guests: guests ?? this.guests,
+      priceMin: priceMin ?? this.priceMin,
+      priceMax: priceMax ?? this.priceMax,
+      bestOffer: bestOffer ?? this.bestOffer,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'limit': limit,
+      'offset': offset,
+      if (location != null) 'location': location,
+      if (checkIn != null) 'check_in': checkIn,
+      if (checkOut != null) 'check_out': checkOut,
+      if (guests != null) 'guests': guests,
+      if (priceMin != null) 'price_min': priceMin,
+      if (priceMax != null) 'price_max': priceMax,
+      if (bestOffer != null) 'best_offer': bestOffer,
+    };
+  }
 }

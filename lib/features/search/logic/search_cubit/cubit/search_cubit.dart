@@ -1,36 +1,30 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/features/search/data/repos/search_repo.dart';
 import 'package:freelancer/features/search/data/search_model/search_params_model.dart';
 import 'package:freelancer/features/search/logic/search_cubit/cubit/search_state.dart';
 
 class SearchCubit extends Cubit<SearchState> {
-  final SearchRepository searchRepository;
+  final SearchRepository _searchRepository;
 
-  SearchCubit(this.searchRepository) : super(SearchInitial());
+  SearchCubit(this._searchRepository) : super(SearchInitial());
 
-  Future<void> getListings(SearchParamsModel params) async {
-    debugPrint('🔍 [SearchCubit] getListings called');
-    debugPrint('📦 [SearchCubit] params: ${params.toJson()}');
-
+  // التعديل هنا: بنستقبل الـ Model كـ Named Parameter
+  Future<void> getListings({required SearchParamsModel params}) async {
     emit(SearchLoading());
-    debugPrint('⏳ [SearchCubit] Loading...');
 
-    final result = await searchRepository.searchListings(params);
+    print('🔍 [SearchCubit] جاري البحث بـ Params: ${params.toJson()}');
+
+    // نداء الـ Repository بالـ params اللي مبعوتة جاهزة
+    final result = await _searchRepository.searchListings(params);
 
     result.fold(
       (failure) {
-        debugPrint('❌ [SearchCubit] Error: ${failure.message}');
+        print('❌ [SearchCubit] فشل البحث: ${failure.message}');
         emit(SearchError(failure.message));
       },
       (listings) {
-        debugPrint(
-          '✅ [SearchCubit] Success: ${listings.length} listings found',
-        );
-        if (listings.isNotEmpty) {
-          debugPrint('📋 [SearchCubit] First listing: ${listings.first.title}');
-        }
-        emit(SearchSuccess(listings));
+        print('✅ [SearchCubit] نجاح: تم إيجاد ${listings.length} عنصر');
+        emit(SearchSuccess(listings: listings));
       },
     );
   }

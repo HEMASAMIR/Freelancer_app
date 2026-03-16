@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/features/auth/view/presentation/view/help_center.dart';
+import 'package:freelancer/features/auth/view/presentation/view/host_your_home.dart';
+import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
+import 'package:freelancer/features/auth/view/presentation/view/sign_up_view.dart';
 import 'package:freelancer/features/search/presentation/view/serach.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -106,7 +110,37 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     borderRadius: BorderRadius.circular(15.r),
                   ),
                   onSelected: (value) {
-                    /* المنطق بتاعك هنا */
+                    if (value == 'signup') {
+                      // واديه صفحة الـ Signup
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SignUpView(),
+                        ),
+                      );
+                    } else if (value == 'login') {
+                      // واديه صفحة الـ Login
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginView(),
+                        ),
+                      );
+                    } else if (value == 'host') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const HostYourHome(),
+                        ),
+                      );
+                    } else if (value == 'help') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const HelpCenter(),
+                        ),
+                      );
+                    }
                   },
                   itemBuilder: (_) => [
                     const PopupMenuItem(
