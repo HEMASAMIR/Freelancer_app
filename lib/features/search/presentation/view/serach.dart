@@ -632,8 +632,9 @@ class _AirbnbSearchModalState extends State<AirbnbSearchModal> {
       checkIn: _formatDate(_checkInDate),
       checkOut: _formatDate(_checkOutDate),
       guests: _guestCount,
+      // ✅ الصح
       priceMin: _minPrice > 0 ? _minPrice : null,
-      priceMax: _maxPrice < 5000 ? _maxPrice : null,
+      priceMax: _maxPrice > 0 ? _maxPrice : null,
       bestOffer: _bestOffer ? true : null,
       limit: 20,
       offset: 0,
@@ -799,7 +800,7 @@ class _AirbnbSearchModalState extends State<AirbnbSearchModal> {
           onReset: () => setState(() {
             _selectedAmenities.clear();
             _minPrice = 0;
-            _maxPrice = 5000;
+            _maxPrice = 0;
           }),
         );
       default:
