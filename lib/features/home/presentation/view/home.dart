@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/color/app_color.dart';
 import 'package:freelancer/core/utils/widgets/custom_app_bar.dart';
+import 'package:freelancer/features/home/presentation/widget/best_offers_banner.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_card.dart';
-import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_fotter.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_her_widget.dart';
+import 'package:freelancer/features/search/presentation/widget/best_offers.dart';
 
 class Homescreen extends StatelessWidget {
   const Homescreen({super.key});
@@ -19,13 +20,13 @@ class Homescreen extends StatelessWidget {
       backgroundColor: AppColors.bgColor,
 
       body: SafeArea(
-        // استخدمنا ListView واحدة فقط عشان تشيل كل الكروت والـ Hero مع بعض
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             const CustomAppBar(),
-            const HeroWidget(), // الـ Hero بتاعك في الأول
-            // هنا بنحط باقي المحتوى وبنديله Padding جانبي
+            BestOffersBanner(),
+            HeroWidget(),
+            BestOffersRow(),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.w),
               child: Column(

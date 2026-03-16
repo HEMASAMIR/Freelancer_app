@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:freelancer/features/auth/view/presentation/view/help_center.dart';
-import 'package:freelancer/features/auth/view/presentation/view/host_your_home.dart';
-import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
-import 'package:freelancer/features/auth/view/presentation/view/sign_up_view.dart';
+import 'package:freelancer/features/search/presentation/view/serach.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({super.key});
@@ -16,6 +13,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Logo Section
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -39,39 +37,55 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             ],
           ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(30.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Row(
-              children: [
-                Text(
-                  'Search',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: Colors.black54,
-                    fontWeight: FontWeight.w500,
+
+          // Search Button (The Trigger)
+          GestureDetector(
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor:
+                    Colors.transparent, // مهم عشان الـ Rounded corners
+                builder: (context) =>
+                    const AirbnbSearchModal(), // افتح المودال مش الشاشة
+              );
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-                ),
-                SizedBox(width: 10.w),
-                CircleAvatar(
-                  radius: 14.r,
-                  backgroundColor: customRedColor,
-                  child: Icon(Icons.search, color: Colors.white, size: 16.r),
-                ),
-              ],
+                ],
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    'Search',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  CircleAvatar(
+                    radius: 14.r,
+                    backgroundColor: customRedColor,
+                    child: Icon(Icons.search, color: Colors.white, size: 16.r),
+                  ),
+                ],
+              ),
             ),
           ),
+
+          // Menu Section
           Container(
             padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
             decoration: BoxDecoration(
@@ -91,39 +105,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15.r),
                   ),
-                  // داخل الـ PopupMenuButton في الـ CustomAppBar
                   onSelected: (value) {
-                    if (value == 'signup') {
-                      showDialog(
-                        context: context,
-                        builder: (context) => const SignUpView(),
-                      );
-                    } else if (value == 'login') {
-                      showDialog(
-                        context: context,
-                        builder: (context) => const LoginView(),
-                      );
-                    } else if (value == 'host') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const HostYourHome()),
-                      );
-                    } else if (value == 'help') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const HelpCenter()),
-                      );
-                    }
+                    /* المنطق بتاعك هنا */
                   },
                   itemBuilder: (_) => [
                     const PopupMenuItem(
                       value: 'signup',
                       child: Text(
                         'Sign up',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                     const PopupMenuItem(value: 'login', child: Text('Log in')),

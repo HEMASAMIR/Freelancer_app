@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freelancer/core/color/app_color.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AdminStatCard — title + icon يمين | رقم كبير | subtitle صغير
-// بالظبط زي الصورة
-// ─────────────────────────────────────────────────────────────────────────────
+
 class AdminStatCard extends StatefulWidget {
   final IconData icon;
   final Color iconColor;
