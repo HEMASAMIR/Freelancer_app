@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:freelancer/core/color/app_color.dart';
+import 'package:freelancer/core/shared_helper/app_color.dart';
 
 class HaveAccountWidget extends StatelessWidget {
   final String text1;

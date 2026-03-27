@@ -57,7 +57,8 @@ class HeroWidget extends StatelessWidget {
                 ),
               ),
             ],
-          ),        ),
+          ),
+        ),
       ],
     );
   }

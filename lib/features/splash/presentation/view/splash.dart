@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:freelancer/core/color/app_color.dart';
+import 'package:freelancer/core/shared_helper/app_color.dart';
 import 'package:freelancer/features/home/presentation/view/home.dart';
 import 'package:lottie/lottie.dart';
 
@@ -20,7 +20,7 @@ class _SplashScreenState extends State<SplashScreen> {
     Timer(const Duration(seconds: 5), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const Homescreen()),
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     });
   }

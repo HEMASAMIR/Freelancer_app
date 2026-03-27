@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/app_router/app_router.dart';
 import 'package:freelancer/core/app_router/routes.dart';
+import 'package:freelancer/core/chche_helper/shared_pref.dart';
 import 'package:freelancer/core/costant/constant.dart';
 import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/core/netwrok/bloc_observer.dart';
@@ -24,7 +25,7 @@ void main() async {
     url: SupabaseKeys.supabaseUrl,
     anonKey: SupabaseKeys.supabaseAnonKey,
   );
-
+  await CacheHelper.init();
   setupServiceLocator();
 
   Bloc.observer = AppBlocObserver();
