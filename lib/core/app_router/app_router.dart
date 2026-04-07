@@ -36,7 +36,7 @@ class AppRouter {
             child: const SignUpView(),
           ),
         );
-
+//
       case AppRoutes.home:
         return MaterialPageRoute(
           builder: (_) => BlocProvider.value(
