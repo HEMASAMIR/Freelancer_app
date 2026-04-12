@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/core/constant/constant.dart';
 
 class BestOffersBanner extends StatelessWidget {
   const BestOffersBanner({super.key});
@@ -11,9 +12,9 @@ class BestOffersBanner extends StatelessWidget {
       width: double.infinity,
       // الطول متناسب مع الشاشة
       padding: EdgeInsets.symmetric(vertical: 12.h),
-      decoration: const BoxDecoration(
+      decoration:  BoxDecoration(
         // نفس درجة اللون العنابي الغامق الموجودة في الصورة
-        color: Color(0xFF4A0E0E),
+        color: AppColors.primaryBurgundy,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,

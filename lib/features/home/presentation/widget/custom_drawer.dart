@@ -1,366 +1,392 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/shared_helper/app_color.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
+
+enum DrawerMode { home, user, admin }
 
 class SideDrawer extends StatefulWidget {
-  const SideDrawer({super.key});
+  final Function(String)? onItemSelected;
+  const SideDrawer({super.key, this.onItemSelected});
 
   @override
   State<SideDrawer> createState() => _SideDrawerState();
 }
 
 class _SideDrawerState extends State<SideDrawer> {
-  String _selected = 'Dashboard';
+  String _selected = '';
+  bool _isListingsExpanded = false;
 
-  void _select(String item) {
+  void _select(String item, BuildContext context, DrawerMode mode) {
     setState(() => _selected = item);
+
+    // 1. اقفل الدرور الأول
     Navigator.of(context).pop();
+
+    // 2. معالجة خاصة لـ Host Your Home
+    if (item == 'Host Your Home') {
+      final state = context.read<AuthCubit>().state;
+      if (state is AuthSuccess || state is AuthAdminSuccess) {
+        Navigator.of(context).pushNamed(AppRoutes.hostDashboard);
+      } else {
+        // ... SnackBar code
+      }
+      return;
+    }
+
+    // 3. معالجة الـ Overview وبقية العناصر
+    // بنستخدم Future.delayed بسيط عشان نضمن إن الـ pop خلص والـ context جاهز للـ push
+    Future.delayed(Duration.zero, () {
+      if (item == 'Log out' || item == 'Logout') {
+        context.read<AuthCubit>().signOut();
+      } else if (item == 'Log in') {
+        _showLoginDialog(context);
+      } else if (widget.onItemSelected != null) {
+        widget.onItemSelected!(item);
+      } else {
+        final route = _getRouteForItem(item, mode);
+        if (route != null) {
+          // تأكد إن AppRoutes.adminDashboard هو المسار لـ AdminOverviewScreen
+          Navigator.of(context).pushNamed(route);
+        }
+      }
+    });
+  }
+
+  // ميثود إظهار شاشة تسجيل الدخول كـ Dialog
+  void _showLoginDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => BlocProvider.value(
+        value: context.read<AuthCubit>(),
+        child: const LoginView(),
+      ),
+    );
+  }
+
+  String? _getRouteForItem(String item, DrawerMode mode) {
+    if (item == 'Overview') {
+      return AppRoutes.adminOverview;
+    }
+    switch (item) {
+      case 'Personal Info':
+      case 'Account':
+        return AppRoutes.account;
+      case 'Trips':
+      case 'Bookings':
+        return AppRoutes.trips;
+      case 'Wishlists':
+        return AppRoutes.wishlists;
+      default:
+        return null;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Drawer(
-      backgroundColor: AppColors.white,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      child: SafeArea(
-        child: Column(
-          children: [
-            // ── Header ────────────────────────────────────────────────────
-            _DrawerHeader(),
-            Container(height: 1, color: AppColors.dividerGrey),
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, state) {
+        DrawerMode mode = DrawerMode.home;
+        dynamic currentUser;
 
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
+        if (state is AuthAdminSuccess) {
+          mode = DrawerMode.admin;
+          currentUser = state.user;
+        } else if (state is AuthSuccess) {
+          mode = DrawerMode.user;
+          currentUser = state.user;
+        }
+
+        return Drawer(
+          backgroundColor: AppColors.bgColor,
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 8.h,
+                    ),
+                    children: _buildMenuItems(mode, context),
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // بدون section label
-                    _NavTile(
-                      icon: Icons.grid_view_rounded,
-                      title: 'Dashboard',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-
-                    const SizedBox(height: 8),
-                    // Content
-                    _SectionLabel('Content'),
-                    _NavTile(
-                      icon: Icons.home_outlined,
-                      title: 'Listings',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-                    const SizedBox(height: 4),
-                    _NavTile(
-                      icon: Icons.explore_outlined,
-                      title: 'Destinations',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-                    const SizedBox(height: 4),
-                    _NavTile(
-                      icon: Icons.location_on_outlined,
-                      title: 'Locations',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-                    const SizedBox(height: 4),
-                    _NavTile(
-                      icon: Icons.person_outline_rounded,
-                      title: 'Hosts',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-                    const SizedBox(height: 4),
-                    _NavTile(
-                      icon: Icons.people_outline_rounded,
-                      title: 'Users',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-
-                    const SizedBox(height: 8),
-                    // Finance
-                    _SectionLabel('Finance'),
-                    _NavTile(
-                      icon: Icons.attach_money_rounded,
-                      title: 'Financials',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-                    const SizedBox(height: 4),
-                    _NavTile(
-                      icon: Icons.payment_outlined,
-                      title: 'Payouts',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-                    const SizedBox(height: 4),
-                    _NavTile(
-                      icon: Icons.credit_card_outlined,
-                      title: 'Payments',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-
-                    const SizedBox(height: 8),
-                    // Support
-                    _SectionLabel('Support'),
-                    _NavTile(
-                      icon: Icons.pending_actions_outlined,
-                      title: 'Approvals',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-                    const SizedBox(height: 4),
-                    _NavTile(
-                      icon: Icons.verified_outlined,
-                      title: 'Verifications',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-                    const SizedBox(height: 4),
-                    _NavTile(
-                      icon: Icons.warning_amber_outlined,
-                      title: 'Disputes',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-
-                    const SizedBox(height: 8),
-                    // System
-                    _SectionLabel('System'),
-                    _NavTile(
-                      icon: Icons.receipt_long_outlined,
-                      title: 'Audit Logs',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-                    const SizedBox(height: 4),
-                    _NavTile(
-                      icon: Icons.support_agent_outlined,
-                      title: 'Staff',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-
-                    const SizedBox(height: 8),
-                    // User View
-                    _SectionLabel('User View'),
-                    _NavTile(
-                      icon: Icons.swap_horiz_rounded,
-                      title: 'Switch to User Dashboard',
-                      selected: _selected,
-                      onTap: _select,
-                    ),
-                  ],
-                ),
-              ),
+                _buildFooter(currentUser),
+              ],
             ),
-
-            // ── Footer ────────────────────────────────────────────────────
-            _DrawerFooter(),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Nav Tile ──────────────────────────────────────────────────────────────────
-class _NavTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String selected;
-  final void Function(String) onTap;
-
-  const _NavTile({
-    required this.icon,
-    required this.title,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isSelected = selected == title;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => onTap(title),
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.selectedBg : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
           ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: isSelected ? AppColors.primaryRed : AppColors.sub,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: isSelected ? AppColors.primaryRed : AppColors.ink,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
-}
 
-// ─── Section Label ─────────────────────────────────────────────────────────────
-class _SectionLabel extends StatelessWidget {
-  final String label;
-  const _SectionLabel(this.label);
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.only(left: 12, top: 14, bottom: 2),
-      child: Text(
-        label.toUpperCase(),
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: AppColors.greyText,
-          letterSpacing: 1.1,
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Drawer Header ─────────────────────────────────────────────────────────────
-class _DrawerHeader extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: EdgeInsets.fromLTRB(20.w, 32.h, 20.w, 24.h),
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: 32.w,
+            height: 32.w,
             decoration: BoxDecoration(
               color: AppColors.primaryRed,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(8.r),
             ),
-            child: const Center(
-              child: Text(
-                'Q',
+            child: const Icon(Icons.home, color: Colors.white, size: 20),
+          ),
+          SizedBox(width: 12.w),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'QuickIn',
                 style: TextStyle(
-                  color: AppColors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                  height: 1.1,
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          const Text(
-            'Admin Dashboard',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.ink,
-              letterSpacing: -0.2,
-            ),
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: AppColors.bgColor,
-                borderRadius: BorderRadius.circular(7),
+              Text(
+                'Your Dashboard',
+                style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
               ),
-              child: const Icon(
-                Icons.close_rounded,
-                size: 14,
-                color: AppColors.sub,
-              ),
-            ),
+            ],
           ),
         ],
       ),
     );
   }
-}
 
-// ─── Drawer Footer ─────────────────────────────────────────────────────────────
-class _DrawerFooter extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.dividerGrey, width: 1)),
+  List<Widget> _buildMenuItems(DrawerMode mode, BuildContext context) {
+    if (mode == DrawerMode.home) {
+      return [
+        _buildSectionHeader('Welcome', context, mode),
+        _buildNavigationItem('Log in', Icons.login, context, mode),
+        _buildNavigationItem('Sign up', Icons.app_registration, context, mode),
+        SizedBox(height: 16.h),
+        _buildSectionHeader('Be a Host', context, mode),
+        _buildNavigationItem(
+          'Host Your Home',
+          Icons.home_work_outlined,
+          context,
+          mode,
+        ),
+      ];
+    }
+
+    return [
+      _buildSectionHeader('Dashboard', context, mode),
+      _buildNavigationItem('Overview', Icons.pie_chart_outline, context, mode),
+      SizedBox(height: 16.h),
+      _buildSectionHeader('Account', context, mode),
+      _buildNavigationItem(
+        'Personal Info',
+        Icons.person_outline,
+        context,
+        mode,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      SizedBox(height: 16.h),
+      _buildSectionHeader('Guest', context, mode),
+      _buildNavigationItem('Trips', Icons.flight_takeoff, context, mode),
+      _buildNavigationItem('Wishlists', Icons.favorite_border, context, mode),
+      SizedBox(height: 16.h),
+      _buildSectionHeader('Hosting', context, mode),
+      _buildNavigationItem(
+        'Host Your Home',
+        Icons.dashboard_customize_outlined,
+        context,
+        mode,
+      ),
+      if (mode == DrawerMode.admin) ...[
+        SizedBox(height: 16.h),
+        _buildSectionHeader('Admin Tools', context, mode),
+        _buildExpandableNavigationItem(
+          'My Listings',
+          Icons.maps_home_work_outlined,
+          context,
+          mode,
+          [
+            _buildSubNavigationItem('All Listings', context, mode),
+            _buildSubNavigationItem('Create New', context, mode),
+          ],
+        ),
+        _buildNavigationItem(
+          'Bookings',
+          Icons.calendar_today_outlined,
+          context,
+          mode,
+        ),
+        _buildNavigationItem(
+          'Earnings & Balance',
+          Icons.account_balance_wallet_outlined,
+          context,
+          mode,
+        ),
+      ],
+    ];
+  }
+
+  Widget _buildSectionHeader(
+    String title,
+    BuildContext context,
+    DrawerMode mode,
+  ) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 12.sp,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey.shade600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavigationItem(
+    String title,
+    IconData icon,
+    BuildContext context,
+    DrawerMode mode,
+  ) {
+    final isSelected = _selected == title;
+    return InkWell(
+      onTap: () => _select(title, context, mode),
+      customBorder: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.grey.shade200 : Colors.transparent,
+          borderRadius: BorderRadius.circular(8.r),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20.sp, color: Colors.black87),
+            SizedBox(width: 16.w),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: Colors.black87,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpandableNavigationItem(
+    String title,
+    IconData icon,
+    BuildContext context,
+    DrawerMode mode,
+    List<Widget> children,
+  ) {
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.symmetric(horizontal: 16.w),
+        leading: Icon(icon, size: 20.sp, color: Colors.black87),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: Colors.black87,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        initiallyExpanded: _isListingsExpanded,
+        onExpansionChanged: (val) => setState(() => _isListingsExpanded = val),
+        childrenPadding: EdgeInsets.only(left: 48.w, bottom: 8.h),
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildSubNavigationItem(
+    String title,
+    BuildContext context,
+    DrawerMode mode,
+  ) {
+    final isSelected = _selected == title;
+    return InkWell(
+      onTap: () => _select(title, context, mode),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 10.h),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 13.sp,
+            color: isSelected ? Colors.black : Colors.grey.shade700,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooter(dynamic user) {
+    if (user == null) return const SizedBox.shrink();
+    final String name =
+        user.userMetadata?['full_name'] ?? user.email?.split('@')[0] ?? 'User';
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+      color: Colors.black.withOpacity(0.02),
       child: Row(
         children: [
           CircleAvatar(
-            radius: 16,
-            backgroundColor: AppColors.primaryRed.withOpacity(0.12),
-            child: const Text(
-              'P',
+            radius: 20.r,
+            backgroundColor: Colors.white,
+            child: Text(
+              name[0].toUpperCase(),
               style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
                 color: AppColors.primaryRed,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          const Expanded(
+          SizedBox(width: 12.w),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Platform Owner',
+                  name,
                   style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.ink,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
-                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  'admin.aclone@atomicmail.io',
-                  style: TextStyle(fontSize: 10, color: AppColors.sub),
-                  maxLines: 1,
+                  user.email ?? '',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: Colors.grey.shade600,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
           IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.logout_rounded,
-              size: 16,
-              color: AppColors.sub,
-            ),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            onPressed: () => context.read<AuthCubit>().signOut(),
+            icon: Icon(Icons.logout, size: 20.sp, color: Colors.grey.shade600),
           ),
         ],
       ),

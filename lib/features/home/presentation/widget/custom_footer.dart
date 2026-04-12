@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class CustomFotter extends StatelessWidget {
-  const CustomFotter({super.key});
+class CustomFooter extends StatelessWidget {
+  const CustomFooter({super.key});
 
   @override
   Widget build(BuildContext context) {

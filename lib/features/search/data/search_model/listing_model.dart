@@ -30,6 +30,7 @@ class ListingModel {
   final PropertyTypeModel? propertyType;
   final List<ListingImage>? images;
   final List<LifestyleModel>? lifestyles;
+  final String? hostId;
   final Map<String, dynamic>? translations;
 
   ListingModel({
@@ -62,6 +63,7 @@ class ListingModel {
     this.propertyType,
     this.images,
     this.lifestyles,
+    this.hostId,
     this.translations,
   });
 
@@ -128,8 +130,38 @@ class ListingModel {
       propertyType: propertyType ?? this.propertyType,
       images: images ?? this.images,
       lifestyles: lifestyles ?? this.lifestyles,
+      hostId: hostId ?? this.hostId,
       translations: translations ?? this.translations,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId ?? hostId,
+      'host_id': hostId ?? userId,
+      'title': title,
+      'description': description,
+      'price_per_night': pricePerNight,
+      'location': location,
+      'city': city,
+      'state': state,
+      'country': country,
+      'max_guests': maxGuests,
+      'bedrooms': bedrooms,
+      'beds': beds,
+      'bathrooms': bathrooms,
+      'property_type_id': propertyTypeId,
+      'is_guest_favorite': isGuestFavorite,
+      'is_published': isPublished,
+      'cleaning_fee': cleaningFee,
+      'currency': currency,
+      'cancellation_policy': cancellationPolicy,
+      'listing_code': listingCode,
+      'google_maps_link': googleMapsLink,
+      'lat': lat,
+      'lng': lng,
+    };
   }
 
   // الـ Logic بتاع استخراج الإحداثيات من اللينك
@@ -215,6 +247,7 @@ class ListingModel {
           ?.map((i) => LifestyleModel.fromJson(i))
           .toList(),
       translations: json['translations'],
+      hostId: json['host_id'] ?? json['user_id'],
     );
   }
 }

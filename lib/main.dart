@@ -4,10 +4,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/app_router/app_router.dart';
 import 'package:freelancer/core/app_router/routes.dart';
-import 'package:freelancer/core/chche_helper/shared_pref.dart';
-import 'package:freelancer/core/costant/constant.dart';
+import 'package:freelancer/core/cache_helper/shared_pref.dart';
+import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/core/di/service_locator.dart';
-import 'package:freelancer/core/netwrok/bloc_observer.dart';
+import 'package:freelancer/core/bloc_observer.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -38,22 +40,36 @@ class FreelancerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: const Size(360, 690),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) {
-        return MaterialApp(
-          navigatorKey: navigatorKey,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthCubit>(create: (_) => sl<AuthCubit>()),
+        BlocProvider<FavCubit>(create: (_) => sl<FavCubit>()..loadFavorites()),
+      ],
+      child: ScreenUtilInit(
+        designSize: const Size(360, 690),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (context, child) {
+          return MaterialApp(
+            navigatorKey: navigatorKey,
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
             fontFamily: 'Cairo',
-            scaffoldBackgroundColor: Colors.white,
+            scaffoldBackgroundColor: AppColors.backgroundCream,
+            primaryColor: AppColors.primaryBurgundy,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: AppColors.primaryBurgundy,
+              primary: AppColors.primaryBurgundy,
+            ),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: AppColors.cardWhite,
+              elevation: 0,
+            ),
           ),
           onGenerateRoute: AppRouter.generateRoute,
           initialRoute: AppRoutes.splash,
         );
       },
-    );
+    ));
   }
 }

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/core/app_router/routes.dart';
+import 'package:freelancer/core/utils/widgets/show_toast.dart';
+import 'package:lottie/lottie.dart';
 import 'package:freelancer/core/shared_helper/app_color.dart';
 import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/core/utils/widgets/input_box.dart';
-import 'package:freelancer/core/utils/widgets/show_toast.dart';
 import 'package:freelancer/core/utils/widgets/social_button.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
-import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
-import 'package:lottie/lottie.dart';
 
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
@@ -44,254 +44,236 @@ class _SignUpViewState extends State<SignUpView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: BlocProvider(
-            create: (_) => sl<AuthCubit>(),
-            child: BlocConsumer<AuthCubit, AuthState>(
-              listener: (context, state) {
-                if (state is AuthSuccess) {
-                  // رسالة نجاح مخصصة لجوجل
-                  if (state is GoogleAuthState) {
-                    CustomToast.show(
-                      context,
-                      "Welcome! Signed in with Google successfully 🌐✨",
-                      ToastState.success,
-                    );
-                  } else {
-                    // رسالة نجاح التسجيل العادي
-                    CustomToast.show(
-                      context,
-                      "Account created! Welcome to Quick In 🚀",
-                      ToastState.success,
-                    );
-                  }
-                  // العودة للخلف أو الانتقال للـ Home
-                  Navigator.pop(context);
-                } else if (state is AuthError) {
-                  CustomToast.show(context, state.message, ToastState.error);
-                }
-              },
-              builder: (context, state) {
-                return Material(
-                  borderRadius: BorderRadius.circular(14.r),
-                  color: const Color(0xFFF5F0E8),
-                  child: Container(
-                    padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 20.h),
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: GestureDetector(
-                                onTap: () => Navigator.pop(context),
-                                child: Icon(
-                                  Icons.close,
-                                  size: 18.sp,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 2.h),
-                            Text(
-                              'Sign up',
-                              textAlign: TextAlign.center,
+    return BlocProvider(
+      create: (_) => sl<AuthCubit>(),
+      child: BlocConsumer<AuthCubit, AuthState>(
+        listener: (context, state) {
+          if (state is AuthSuccess) {
+            CustomToast.show(
+              context,
+              "Account created! 🚀",
+              ToastState.success,
+            );
+            Navigator.pushReplacementNamed(context, AppRoutes.home);
+          } else if (state is AuthError) {
+            CustomToast.show(context, state.message, ToastState.error);
+          }
+        },
+        builder: (context, state) {
+          final cubit = context.read<AuthCubit>();
+
+          // استخدمنا Dialog مباشرة عشان نضمن التوسيط فوق أي شاشة
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Container(
+              padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 20.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F0E8),
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize:
+                        MainAxisSize.min, // عشان مياخدش طول الشاشة كلها
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // زرار الإغلاق
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: cubit.isLoading
+                              ? null
+                              : () => Navigator.pop(context),
+                          child: Icon(
+                            Icons.close,
+                            size: 20.sp,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ),
+
+                      Text(
+                        'Sign up',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.label,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        'Create an account to start booking',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12.sp, color: AppColors.sub),
+                      ),
+                      SizedBox(height: 20.h),
+
+                      SocialButton(
+                        icon: Icons.g_mobiledata,
+                        label: 'Continue with Google',
+                        onTap: cubit.isLoading
+                            ? null
+                            : () => cubit.signInWithGoogle(),
+                      ),
+                      SizedBox(height: 10.h),
+                      SocialButton(
+                        icon: Icons.apple,
+                        label: 'Continue with Apple',
+                        onTap: cubit.isLoading ? null : () {},
+                      ),
+
+                      SizedBox(height: 15.h),
+                      // Divider
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Divider(color: Color(0xFFD4CEBC)),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10.w),
+                            child: Text(
+                              'OR',
                               style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.label,
-                              ),
-                            ),
-                            SizedBox(height: 3.h),
-                            Text(
-                              'Create an account to start booking',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 11.sp,
+                                fontSize: 10.sp,
                                 color: AppColors.sub,
                               ),
                             ),
-                            SizedBox(height: 16.h),
+                          ),
+                          const Expanded(
+                            child: Divider(color: Color(0xFFD4CEBC)),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 15.h),
 
-                            // زر جوجل مع حماية أثناء التحميل
-                            SocialButton(
-                              icon: Icons.g_mobiledata,
-                              label: 'Continue with Google',
-                              onTap: state is AuthLoading
-                                  ? null
-                                  : () => context
-                                        .read<AuthCubit>()
-                                        .signInWithGoogle(),
-                            ),
-                            SizedBox(height: 10.h),
-                            SocialButton(
-                              icon: Icons.apple,
-                              label: 'Continue with Apple',
-                              onTap: state is AuthLoading ? null : () {},
-                            ),
-                            SizedBox(height: 12.h),
+                      _buildLabel('Full name'),
+                      SizedBox(height: 4.h),
+                      InputBox(
+                        hint: 'John Doe',
+                        controller: _nameController,
+                        validator: (v) => v!.isEmpty ? 'Enter your name' : null,
+                      ),
+                      SizedBox(height: 12.h),
 
-                            Row(
-                              children: [
-                                const Expanded(
-                                  child: Divider(
-                                    color: Color(0xFFD4CEBC),
-                                    thickness: 1,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 10.w,
-                                  ),
-                                  child: Text(
-                                    'OR',
-                                    style: TextStyle(
-                                      fontSize: 11.sp,
-                                      color: AppColors.sub,
-                                    ),
-                                  ),
-                                ),
-                                const Expanded(
-                                  child: Divider(
-                                    color: Color(0xFFD4CEBC),
-                                    thickness: 1,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 12.h),
+                      _buildLabel('Email'),
+                      SizedBox(height: 4.h),
+                      InputBox(
+                        hint: 'you@example.com',
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (v) =>
+                            v!.isEmpty ? 'Enter your email' : null,
+                      ),
+                      SizedBox(height: 12.h),
 
-                            Text('Full name', style: _labelStyle()),
-                            SizedBox(height: 5.h),
-                            InputBox(
-                              hint: 'John Doe',
-                              controller: _nameController,
-                              validator: (v) =>
-                                  v!.isEmpty ? 'Enter your name' : null,
-                            ),
-                            SizedBox(height: 10.h),
-
-                            Text('Email', style: _labelStyle()),
-                            SizedBox(height: 5.h),
-                            InputBox(
-                              hint: 'you@example.com',
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (v) =>
-                                  v!.isEmpty ? 'Enter your email' : null,
-                            ),
-                            SizedBox(height: 10.h),
-
-                            Text('Password', style: _labelStyle()),
-                            SizedBox(height: 5.h),
-                            InputBox(
-                              hint: '••••••••',
-                              controller: _passwordController,
-                              obscure: _obscure,
-                              validator: (v) =>
-                                  v!.length < 6 ? 'Min 6 characters' : null,
-                              suffix: GestureDetector(
-                                onTap: () =>
-                                    setState(() => _obscure = !_obscure),
-                                child: Icon(
-                                  _obscure
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                  size: 17.sp,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 16.h),
-
-                            SizedBox(
-                              height: 44.h,
-                              child: ElevatedButton(
-                                onPressed: state is AuthLoading
-                                    ? null
-                                    : () => _onSignUp(context),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.ed,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8.r),
-                                  ),
-                                ),
-                                child: state is AuthLoading
-                                    ? LottieBuilder.asset(
-                                        'assets/lottie/loading_lottie.json',
-                                        width: 40.w,
-                                        height: 40.h,
-                                        fit: BoxFit.contain,
-                                      )
-                                    : Text(
-                                        'Sign up',
-                                        style: TextStyle(
-                                          fontSize: 14.sp,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                            SizedBox(height: 12.h),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Already have an account? ',
-                                  style: TextStyle(
-                                    fontSize: 11.sp,
-                                    color: AppColors.sub,
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.pop(context);
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => const LoginView(),
-                                    );
-                                  },
-                                  child: Text(
-                                    'Log in',
-                                    style: TextStyle(
-                                      fontSize: 11.sp,
-                                      color: AppColors.ed,
-                                      fontWeight: FontWeight.w600,
-                                      decoration: TextDecoration.underline,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                      _buildLabel('Password'),
+                      SizedBox(height: 4.h),
+                      InputBox(
+                        hint: '••••••••',
+                        controller: _passwordController,
+                        obscure: _obscure,
+                        validator: (v) =>
+                            v!.length < 6 ? 'Min 6 characters' : null,
+                        suffix: GestureDetector(
+                          onTap: () => setState(() => _obscure = !_obscure),
+                          child: Icon(
+                            _obscure
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            size: 18.sp,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
-                    ),
+                      SizedBox(height: 20.h),
+
+                      // زرار التسجيل
+                      SizedBox(
+                        height: 46.h,
+                        child: ElevatedButton(
+                          onPressed: cubit.isLoading
+                              ? null
+                              : () => _onSignUp(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8B2323),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: cubit.isLoading
+                              ? Lottie.asset(
+                                  'assets/lottie/loading_lottie.json',
+                                  width: 40.w,
+                                )
+                              : Text(
+                                  'Sign up',
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      SizedBox(height: 14.h),
+
+                      // الرجوع للوجين
+                      // الرجوع للوجين
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Already have an account? ",
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: AppColors.sub,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: cubit.isLoading
+                                ? null
+                                : () {
+                                    // بنقفل الـ Sign up وبنفتح الـ Login كـ Route
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      AppRoutes.login,
+                                    );
+                                  },
+                            child: Text(
+                              'Log in',
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                color: const Color(0xFF8B2323),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                );
-              },
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
-  TextStyle _labelStyle() {
-    return TextStyle(
-      fontSize: 12.sp,
-      fontWeight: FontWeight.w500,
-      color: AppColors.label,
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 12.sp,
+        fontWeight: FontWeight.w600,
+        color: AppColors.label,
+      ),
     );
   }
 }

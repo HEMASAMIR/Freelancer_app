@@ -1,6 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:dartz/dartz.dart';
-import 'package:freelancer/core/costant/constant.dart'; // تأكد أن SupabaseKeys داخل هذا الملف
+import 'package:freelancer/core/constant/constant.dart';
 import '../search_model/listing_model.dart';
 import '../search_model/search_params_model.dart';
 import 'search_repo.dart';
@@ -14,12 +15,14 @@ class SearchRepositoryImpl implements SearchRepository {
   Future<Either<String, List<ListingModel>>> searchListings(
     SearchParamsModel params,
   ) async {
-    final result = await _fetchListings({});
+    final Map<String, dynamic> body = params.toRequestBody();
+
+    final result = await _fetchListings(body);
 
     return result.fold((error) => Left(error), (listings) {
-      print("Total items received from RPC: ${listings.length}");
+      debugPrint("🔍 Total items received: ${listings.length}");
       final filteredList = _filterLocally(listings, params);
-      print("Items after local filter: ${filteredList.length}");
+      debugPrint("✅ Items after local filter: ${filteredList.length}");
       return Right(filteredList);
     });
   }
@@ -27,18 +30,15 @@ class SearchRepositoryImpl implements SearchRepository {
   @override
   Future<Either<String, ListingModel>> getListingDetails(String id) async {
     try {
+      debugPrint("ℹ️ Fetching details for ID: $id");
       final response = await dio.get(
         SupabaseKeys.listingsRest,
-        queryParameters: {
-          'select': '*,listing_images(*)', // Join لجلب الصور مع بيانات العقار
-          'id': 'eq.$id',
-        },
+        queryParameters: {'select': '*,listing_images(*)', 'id': 'eq.$id'},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final List data = response.data;
         if (data.isNotEmpty) {
-          // استخدام ListingModel.fromJson اللي عملناه عشان يحول الـ Nested JSON (Images)
           return Right(ListingModel.fromJson(data.first));
         } else {
           return const Left("عذراً، لم يتم العثور على هذا العقار.");
@@ -46,16 +46,16 @@ class SearchRepositoryImpl implements SearchRepository {
       }
       return const Left("فشل الاتصال بالسيرفر، حاول مرة أخرى.");
     } on DioException catch (e) {
-      // التعامل مع أخطاء Dio بشكل احترافي
+      debugPrint("❌ Dio Error: ${e.message}");
       return Left(
         e.response?.data?['message'] ?? e.message ?? "حدث خطأ في الشبكة",
       );
     } catch (e) {
+      debugPrint("❌ Unexpected Error: $e");
       return Left("خطأ غير متوقع: ${e.toString()}");
     }
   }
 
-  // --- دالة داخلية للتعامل مع الـ RPC الخاص بـ Supabase ---
   Future<Either<String, List<ListingModel>>> _fetchListings(
     Map<String, dynamic> body,
   ) async {
@@ -82,10 +82,9 @@ class SearchRepositoryImpl implements SearchRepository {
   ) {
     return listings.where((l) {
       final searchKey = (params.location ?? '').trim().toLowerCase();
-
       bool matches = true;
 
-      if (searchKey.isNotEmpty) {
+      if (searchKey.isNotEmpty && searchKey != "best offers") {
         final title = (l.title ?? '').toLowerCase();
         final city = (l.city ?? '').toLowerCase();
         final country = (l.country ?? '').toLowerCase();
@@ -96,7 +95,6 @@ class SearchRepositoryImpl implements SearchRepository {
         matches = fullData.contains(searchKey);
       }
 
-      // 2. فلترة بناءً على عدد الضيوف (Max Guests)
       if (params.guests != null && params.guests! > 0) {
         if ((l.maxGuests ?? 0) < params.guests!) {
           matches = false;

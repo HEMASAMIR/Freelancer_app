@@ -2,7 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/shared_helper/app_color.dart';
-import 'package:freelancer/features/home/presentation/view/home.dart';
+import 'package:freelancer/core/app_router/routes.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
 import 'package:lottie/lottie.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -17,11 +20,15 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
-    Timer(const Duration(seconds: 5), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
+    Timer(const Duration(seconds: 4), () {
+      if (!mounted) return;
+      
+      final authState = context.read<AuthCubit>().state;
+      if (authState is AuthAdminSuccess) {
+        Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
+      } else {
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+      }
     });
   }
 

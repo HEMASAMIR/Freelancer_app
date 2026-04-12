@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/di/service_locator.dart';
+import 'package:freelancer/core/shared_helper/app_color.dart'; // تأكد من المسار الصحيح للالوان
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
 import 'package:freelancer/features/auth/view/presentation/view/help_center.dart';
-import 'package:freelancer/features/auth/view/presentation/view/host_your_home.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
 import 'package:freelancer/features/auth/view/presentation/view/sign_up_view.dart';
 import 'package:freelancer/features/search/data/search_model/search_params_model.dart';
@@ -15,17 +18,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color customRedColor = Color(0xFF8B1A1A);
+    Color customRedColor = AppColors.maroon;
 
     return Container(
-      color: Colors.white, // خلفية الـ AppBar
+      color: Colors.white,
       child: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // ── Logo Section ──────────────────────────────────────
+              // Logo Section
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -51,7 +54,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ],
               ),
 
-              // ── Search Button (The Trigger) ───────────────────────
+              // Search Bar Section
               GestureDetector(
                 onTap: () {
                   showModalBottomSheet(
@@ -60,8 +63,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     backgroundColor: Colors.transparent,
                     builder: (context) => BlocProvider(
                       create: (_) => sl<SearchCubit>(),
-                      // بنبعت null للـ listing لأننا لسه في مرحلة البحث العام
-                      // وبنبعت كائن params فاضي بدل null
                       child: AirbnbSearchModal(
                         initialParams: SearchParamsModel(),
                       ),
@@ -110,41 +111,114 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
 
-              // ── Menu Section ──────────────────────────────────────
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30.r),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    PopupMenuButton<String>(
+              // Menu & Profile Section
+              BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) {
+                  return Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 4.w,
+                      vertical: 2.h,
+                    ),
+                    decoration: BoxDecoration(
                       color: Colors.white,
-                      surfaceTintColor: Colors.white,
-                      elevation: 4,
-                      constraints: BoxConstraints(minWidth: 200.w),
-                      icon: Icon(Icons.menu, color: Colors.black87, size: 20.r),
-                      offset: const Offset(-150, 45),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      onSelected: (value) =>
-                          _handleMenuSelection(context, value),
-                      itemBuilder: (_) => _buildMenuItems(),
+                      borderRadius: BorderRadius.circular(30.r),
+                      border: Border.all(color: Colors.grey.shade300),
                     ),
-                    Padding(
-                      padding: EdgeInsets.only(right: 6.w),
-                      child: Icon(
-                        Icons.account_circle,
-                        size: 26.r,
-                        color: Colors.grey.shade400,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        PopupMenuButton<String>(
+                          offset: Offset(40.w, 45.h),
+                          icon: Icon(
+                            Icons.menu,
+                            color: Colors.black87,
+                            size: 20.r,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          constraints: BoxConstraints(minWidth: 200.w),
+                          menuPadding: EdgeInsets.zero,
+                          onSelected: (value) =>
+                              _handleMenuSelection(context, value),
+                          itemBuilder: (_) {
+                            if (state is AuthSuccess ||
+                                state is AuthAdminSuccess) {
+                              final user = state is AuthSuccess
+                                  ? state.user
+                                  : (state as AuthAdminSuccess).user;
+                              final String name =
+                                  user.userMetadata?['full_name'] ??
+                                  user.email?.split('@')[0] ??
+                                  'User';
+                              return [
+                                PopupMenuItem(
+                                  enabled: false,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black,
+                                          fontSize: 13.sp,
+                                        ),
+                                      ),
+                                      Text(
+                                        user.email ?? '',
+                                        style: TextStyle(
+                                          fontSize: 11.sp,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuDivider(height: 1),
+                                _buildPopupItem('dashboard', 'Dashboard'),
+                                _buildPopupItem('trips', 'Trips'),
+                                _buildPopupItem('wishlists', 'Wishlists'),
+                                const PopupMenuDivider(height: 1),
+                                _buildPopupItem(
+                                  'manage_listings',
+                                  'Manage listings',
+                                ),
+                                _buildPopupItem('bookings', 'Bookings'),
+                                const PopupMenuDivider(height: 1),
+                                _buildPopupItem('account', 'Account'),
+                                _buildPopupItem('help', 'Help Center'),
+                                const PopupMenuDivider(height: 1),
+                                _buildPopupItem('logout', 'Log out'),
+                              ];
+                            }
+
+                            return [
+                              _buildPopupItem(
+                                'signup',
+                                'Sign up',
+                                isBold: true,
+                              ),
+                              _buildPopupItem('login', 'Log in'),
+                              const PopupMenuDivider(height: 1),
+                              _buildPopupItem('host', 'Host your home'),
+                              _buildPopupItem('help', 'Help Center'),
+                            ];
+                          },
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(right: 6.w),
+                          child: Icon(
+                            Icons.account_circle,
+                            size: 26.r,
+                            color: Colors.grey.shade400,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
             ],
           ),
@@ -153,59 +227,118 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  // ميثود مساعدة لبناء المنيو عشان الكود ميبقاش زحمة
-  List<PopupMenuEntry<String>> _buildMenuItems() {
-    return [
-      const PopupMenuItem(
-        value: 'signup',
-        child: Text('Sign up', style: TextStyle(fontWeight: FontWeight.bold)),
+  PopupMenuItem<String> _buildPopupItem(
+    String value,
+    String text, {
+    bool isBold = false,
+  }) {
+    return PopupMenuItem<String>(
+      value: value,
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      height: 38.h,
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13.sp,
+          fontWeight: isBold ? FontWeight.w500 : FontWeight.w400,
+          color: Colors.black87,
+        ),
       ),
-      const PopupMenuItem(value: 'login', child: Text('Log in')),
-      const PopupMenuDivider(height: 1),
-      const PopupMenuItem(value: 'host', child: Text('Host your home')),
-      const PopupMenuItem(value: 'help', child: Text('Help Center')),
-    ];
+    );
   }
 
-  // ميثود للـ Navigation
   void _handleMenuSelection(BuildContext context, String value) {
-    Widget? targetView;
     switch (value) {
-      case 'signup':
-        targetView = const SignUpView();
-        break;
       case 'login':
-        targetView = const LoginView();
+        showDialog(context: context, builder: (_) => const LoginView());
         break;
-      case 'host':
-        targetView = const HostYourHome();
-        break;
-      case 'help':
-        targetView = const HelpCenter();
-        break;
-    }
 
-    if (targetView != null) {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true, // عشان ياخد مساحة الشاشة كاملة لو محتاج
-        backgroundColor: Colors.white, // نفس لون الـ AppBar والهوم
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-        ),
-        builder: (context) => ClipRRect(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-          child: SizedBox(
-            height:
-                MediaQuery.of(context).size.height * 0.9, // يغطي 90% من الهوم
-            child: targetView!,
-          ),
-        ),
-      );
+      case 'signup':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SignUpView()),
+        );
+        break;
+
+      case 'host':
+        final state = context.read<AuthCubit>().state;
+        if (state is AuthSuccess || state is AuthAdminSuccess) {
+          Navigator.pushNamed(context, AppRoutes.home);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors
+                  .maroon, // استخدمنا اللون المارون بتاعك عشان يبقى شيك
+              behavior: SnackBarBehavior
+                  .floating, // خليناه عايم مش لزق في الشاشة من تحت
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  12.r,
+                ), // زوايا مستديرة تليق بالديزاين
+              ),
+              margin: EdgeInsets.all(
+                16.w,
+              ), // مسافة من الجوانب عشان الـ floating يبان
+              content: Text(
+                'من فضلك سجل دخولك أولاً',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              action: SnackBarAction(
+                label: 'Login',
+                textColor:
+                    Colors.white, // لون الزرار أبيض عشان يظهر على المارون
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) => const LoginView(),
+                ),
+              ),
+            ),
+          );
+        }
+        break;
+
+      case 'help':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const HelpCenter()),
+        );
+        break;
+
+      case 'dashboard':
+        final state = context.read<AuthCubit>().state;
+        Navigator.pushNamed(
+          context,
+          state is AuthAdminSuccess ? AppRoutes.adminDashboard : AppRoutes.home,
+        );
+        break;
+
+      case 'trips':
+      case 'bookings':
+        Navigator.pushNamed(context, AppRoutes.trips);
+        break;
+
+      case 'wishlists':
+        Navigator.pushNamed(context, AppRoutes.wishlists);
+        break;
+
+      case 'account':
+        Navigator.pushNamed(context, AppRoutes.account);
+        break;
+
+      case 'manage_listings':
+        Navigator.pushNamed(context, AppRoutes.adminDashboard);
+        break;
+
+      case 'logout':
+        context.read<AuthCubit>().signOut();
+        break;
     }
   }
 
-  // زودنا الـ Height شوية لـ 80 عشان الـ Padding والـ SafeArea
   @override
   Size get preferredSize => Size.fromHeight(80.h);
 }

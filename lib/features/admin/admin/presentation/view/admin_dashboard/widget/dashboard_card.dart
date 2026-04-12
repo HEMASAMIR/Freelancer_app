@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:freelancer/core/shared_helper/app_color.dart';
+import 'package:freelancer/core/constant/constant.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 
-class AdminStatCard extends StatefulWidget {
+class DashboardCard extends StatefulWidget {
   final IconData icon;
   final Color iconColor;
   final String title;
@@ -10,7 +11,7 @@ class AdminStatCard extends StatefulWidget {
   final String subtitle;
   final VoidCallback onTap;
 
-  const AdminStatCard({
+  const DashboardCard({
     super.key,
     required this.icon,
     required this.iconColor,
@@ -21,10 +22,10 @@ class AdminStatCard extends StatefulWidget {
   });
 
   @override
-  State<AdminStatCard> createState() => _AdminStatCardState();
+  State<DashboardCard> createState() => _DashboardCardState();
 }
 
-class _AdminStatCardState extends State<AdminStatCard> {
+class _DashboardCardState extends State<DashboardCard> {
   bool _pressed = false;
 
   @override
@@ -40,9 +41,9 @@ class _AdminStatCardState extends State<AdminStatCard> {
         duration: const Duration(milliseconds: 80),
         width: double.infinity,
         decoration: BoxDecoration(
-          color: _pressed ? AppColors.bg : AppColors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.dividerGrey, width: 1),
+          color: _pressed ? AppColors.backgroundCream : AppColors.cardWhite,
+          borderRadius: BorderRadius.circular(24.r),
+          border: Border.all(color: Colors.grey.shade200, width: 1.5),
           boxShadow: _pressed
               ? []
               : [
@@ -64,10 +65,10 @@ class _AdminStatCardState extends State<AdminStatCard> {
               children: [
                 Text(
                   widget.title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.sub,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink.withOpacity(0.7),
                   ),
                 ),
                 Icon(widget.icon, size: 18, color: widget.iconColor),
@@ -78,11 +79,11 @@ class _AdminStatCardState extends State<AdminStatCard> {
             // ── Value (رقم كبير) ──────────────────────────────────────────
             Text(
               widget.value,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                color: AppColors.ink,
-                letterSpacing: -0.5,
+              style: TextStyle(
+                fontSize: 28.sp,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryBurgundy,
+                letterSpacing: -1.0,
               ),
             ),
             const SizedBox(height: 6),
@@ -90,8 +91,8 @@ class _AdminStatCardState extends State<AdminStatCard> {
             // ── Subtitle ──────────────────────────────────────────────────
             Text(
               widget.subtitle,
-              style: const TextStyle(
-                fontSize: 12,
+              style: TextStyle(
+                fontSize: 12.sp,
                 color: AppColors.sub,
                 height: 1.3,
               ),

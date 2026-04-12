@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/core/constant/constant.dart';
 
 class PropertyCard extends StatelessWidget {
   final String title;
@@ -29,7 +30,7 @@ class PropertyCard extends StatelessWidget {
       margin: EdgeInsets.only(bottom: 28.h),
       decoration: BoxDecoration(
         color: const Color(0xFFF4EFE8),
-        borderRadius: BorderRadius.circular(22.r),
+        borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
@@ -43,7 +44,7 @@ class PropertyCard extends StatelessWidget {
         children: [
           /// 🔹 الصورة
           ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(22.r)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
             child: Stack(
               children: [
                 Image.network(
@@ -91,7 +92,7 @@ class PropertyCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 17.sp,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF222222),
+                          color: AppColors.primaryBurgundy,
                         ),
                       ),
                     ),
@@ -155,7 +156,7 @@ class PropertyCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(22.r),
+                bottom: Radius.circular(24.r),
               ),
             ),
             child: RichText(
