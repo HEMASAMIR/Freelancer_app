@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/repos/listing_wizard_repo.dart';
-import '../../data/models/wizard_models.dart';
 import 'listing_wizard_state.dart';
 
 class ListingWizardCubit extends Cubit<ListingWizardState> {
@@ -52,7 +51,11 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
     final result = await _repository.getStates(countryId: countryId);
     result.fold(
       (error) => emit(ListingWizardError(error)),
-      (states) => emit(ListingWizardLocationsLoaded(states: states)),
+      (states) {
+        if (state is ListingWizardLookupsLoaded) {
+           emit((state as ListingWizardLookupsLoaded).copyWith(states: states, cities: [])); // clear cities on new state
+        }
+      },
     );
   }
 
@@ -61,7 +64,11 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
     final result = await _repository.getCities(stateId: stateId);
     result.fold(
       (error) => emit(ListingWizardError(error)),
-      (cities) => emit(ListingWizardLocationsLoaded(cities: cities)),
+      (cities) {
+        if (state is ListingWizardLookupsLoaded) {
+           emit((state as ListingWizardLookupsLoaded).copyWith(cities: cities));
+        }
+      },
     );
   }
 

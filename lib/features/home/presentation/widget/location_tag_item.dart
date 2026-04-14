@@ -39,8 +39,8 @@ class _LocationTagItemState extends State<LocationTagItem> {
           boxShadow: [
             BoxShadow(
               color: widget.isSelected
-                  ? primaryRed.withOpacity(0.3)
-                  : Colors.black.withOpacity(0.05),
+                  ? primaryRed.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.05),
               blurRadius: widget.isSelected ? 12 : 8,
               offset: const Offset(0, 4),
             ),

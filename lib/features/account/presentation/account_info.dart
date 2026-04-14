@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:freelancer/core/app_router/routes.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/core/constant/constant.dart';
 
-// ─────────────────────────────────────────────
-//  AccountScreen
-// ─────────────────────────────────────────────
 class AccountScreen extends StatefulWidget {
   final int initialTabIndex;
+  final Function(String)? onViewChanged;
 
-  const AccountScreen({super.key, this.initialTabIndex = 0});
+  const AccountScreen({super.key, this.initialTabIndex = 0, this.onViewChanged});
 
   @override
   State<AccountScreen> createState() => _AccountScreenState();
@@ -16,10 +19,6 @@ class AccountScreen extends StatefulWidget {
 class _AccountScreenState extends State<AccountScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
-  // TODO: استبدل دول ببيانات من AccountCubit لما تكون جاهز
-  final String _userName = 'joeeeeeeeee';
-  final String _userEmail = 'joe@gmail.com';
 
   @override
   void initState() {
@@ -40,62 +39,88 @@ class _AccountScreenState extends State<AccountScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF9F6),
+      backgroundColor: AppColors.backgroundCream,
       body: SafeArea(
-        child: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) => [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min, // ✅ FIX
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Account',
-                      style: TextStyle(
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
+        child: BlocBuilder<AuthCubit, AuthState>(
+          builder: (context, state) {
+            String userName = 'Guest User';
+            String userEmail = 'guest@example.com';
+            bool isAdmin = false;
+            
+            if (state is AuthSuccess) {
+              userName = state.user.userMetadata['full_name'] ??
+                  state.user.email.split('@')[0];
+              userEmail = state.user.email;
+            } else if (state is AuthAdminSuccess) {
+              userName = state.user.userMetadata['full_name'] ??
+                  state.user.email.split('@')[0];
+              userEmail = state.user.email;
+              isAdmin = true;
+            }
+
+            return NestedScrollView(
+              headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Account',
+                          style: TextStyle(
+                            fontSize: 28.sp,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          'Manage your profile, verification, and account\nsettings',
+                          style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade700, height: 1.4),
+                        ),
+                        SizedBox(height: 24.h),
+                        _UserCard(userName: userName, userEmail: userEmail),
+                        SizedBox(height: 24.h),
+                      ],
                     ),
-                    SizedBox(height: 6.h),
-                    Text(
-                      'Manage your profile and settings.',
-                      style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+                  ),
+                ),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _TabBarDelegate(
+                    TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      labelColor: Colors.black,
+                      unselectedLabelColor: Colors.grey.shade600,
+                      labelStyle: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+                      unselectedLabelStyle: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.normal),
+                      indicatorColor: Colors.black,
+                      dividerColor: Colors.transparent,
+                      indicatorSize: TabBarIndicatorSize.label,
+                      tabs: const [
+                        Tab(text: 'Personal Info'),
+                        Tab(text: 'Verification'),
+                        Tab(text: 'Settings'),
+                      ],
                     ),
-                    SizedBox(height: 24.h),
-                    _UserCard(userName: _userName, userEmail: _userEmail),
-                    SizedBox(height: 24.h),
-                  ],
+                  ),
                 ),
+              ],
+              body: TabBarView(
+                controller: _tabController,
+                children: [
+                  PersonalInfoTab(userName: userName, userEmail: userEmail),
+                  VerificationTab(isAdmin: isAdmin),
+                  SettingsTab(onViewChanged: widget.onViewChanged),
+                ],
               ),
-            ),
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _TabBarDelegate(
-                TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  labelColor: Colors.black,
-                  unselectedLabelColor: Colors.grey,
-                  indicatorColor: Colors.black,
-                  tabs: const [
-                    Tab(text: 'Personal Info'),
-                    Tab(text: 'Verification'),
-                    Tab(text: 'Settings'),
-                  ],
-                ),
-              ),
-            ),
-          ],
-          body: TabBarView(
-            controller: _tabController,
-            children: const [
-              PersonalInfoTab(),
-              VerificationTab(),
-              SettingsTab(),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -103,7 +128,7 @@ class _AccountScreenState extends State<AccountScreen>
 }
 
 // ─────────────────────────────────────────────
-//  _UserCard  (widget مستقل بدل function)
+//  _UserCard
 // ─────────────────────────────────────────────
 class _UserCard extends StatelessWidget {
   final String userName;
@@ -120,23 +145,53 @@ class _UserCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16.r),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          CircleAvatar(radius: 30.r, child: Text(userName[0].toUpperCase())),
+          CircleAvatar(
+            radius: 28.r,
+            backgroundColor: AppColors.backgroundCream,
+            child: Text(
+              userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+              style: TextStyle(color: Colors.grey.shade700, fontSize: 18.sp),
+            ),
+          ),
           SizedBox(width: 16.w),
-          Column(
-            mainAxisSize: MainAxisSize.min, // ✅ FIX — كانت هنا المشكلة
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                userName,
-                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
-              ),
-              SizedBox(height: 4.h),
-              Text(
-                userEmail,
-                style: TextStyle(fontSize: 13.sp, color: Colors.grey),
-              ),
-            ],
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  userEmail,
+                  style:
+                      TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold, color: Colors.black87),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 8.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFE6FF),
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.shield_outlined, size: 14.sp, color: const Color(0xFF7A00F0)),
+                      SizedBox(width: 4.w),
+                      Text(
+                        'Identity not verified (Action)',
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: const Color(0xFF7A00F0),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -147,56 +202,198 @@ class _UserCard extends StatelessWidget {
 // ─────────────────────────────────────────────
 //  PersonalInfoTab
 // ─────────────────────────────────────────────
-class PersonalInfoTab extends StatefulWidget {
-  const PersonalInfoTab({super.key});
+class PersonalInfoTab extends StatelessWidget {
+  final String userName;
+  final String userEmail;
 
-  @override
-  State<PersonalInfoTab> createState() => _PersonalInfoTabState();
-}
-
-class _PersonalInfoTabState extends State<PersonalInfoTab> {
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _bioController = TextEditingController();
-
-  // TODO: استبدل ببيانات من AccountCubit
-  final String _userEmail = 'joe@gmail.com';
-
-  @override
-  void dispose() {
-    _phoneController.dispose();
-    _addressController.dispose();
-    _bioController.dispose();
-    super.dispose();
-  }
+  const PersonalInfoTab({super.key, required this.userName, required this.userEmail});
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
       children: [
-        _InfoSection(
-          title: 'Contact Info',
-          subtitle: 'Update your data',
+        // Contact Information Card
+        _buildSectionCard(
+          title: 'Contact Information',
+          subtitle: 'Update your phone number and address',
           child: Column(
-            mainAxisSize: MainAxisSize.min, // ✅ FIX
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _InputField(controller: _phoneController, hint: 'Phone'),
-              SizedBox(height: 16.h),
-              _InputField(controller: _addressController, hint: 'Address'),
-              SizedBox(height: 16.h),
-              _InputField(controller: _bioController, hint: 'Bio'),
+              Text('Phone Number', style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600)),
+              SizedBox(height: 8.h),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8.r),
+                  color: const Color(0xFFFCFAF8),
+                ),
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w),
+                      child: Row(
+                        children: [
+                          Text('🇪🇬', style: TextStyle(fontSize: 20.sp)),
+                          SizedBox(width: 8.w),
+                          Text('+20', style: TextStyle(fontSize: 14.sp)),
+                          SizedBox(width: 4.w),
+                          Icon(Icons.keyboard_arrow_down, size: 16.sp, color: Colors.grey.shade600),
+                        ],
+                      ),
+                    ),
+                    Container(height: 24.h, width: 1, color: Colors.grey.shade300),
+                    Expanded(
+                      child: TextField(
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12.w),
+                          hintText: 'Enter phone',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 6.h),
+              Text(
+                'Select your country flag from the dropdown',
+                style: TextStyle(fontSize: 11.sp, color: Colors.grey.shade500),
+              ),
+              SizedBox(height: 20.h),
+              Text('Address', style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600)),
+              SizedBox(height: 8.h),
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Your address',
+                  prefixIcon: const Icon(Icons.location_on_outlined, color: Colors.grey),
+                  filled: true,
+                  fillColor: const Color(0xFFFCFAF8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20.h),
+              Text('Bio', style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600)),
+              SizedBox(height: 8.h),
+              TextField(
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Experienced with a passion for hospitality. Managing premium properties worldwide.',
+                  filled: true,
+                  fillColor: const Color(0xFFFCFAF8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
         SizedBox(height: 16.h),
-        _InfoSection(
-          title: 'Email',
-          subtitle: 'Your email',
-          child: Text(_userEmail, style: TextStyle(fontSize: 14.sp)),
+        // Legal Name Card
+        _buildSectionCard(
+          title: 'Legal Name',
+          subtitle: 'Contact support to change your name',
+          child: Container(
+             width: double.infinity,
+             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+             decoration: BoxDecoration(
+               color: Colors.grey.shade50,
+               border: Border.all(color: Colors.grey.shade200),
+               borderRadius: BorderRadius.circular(8.r),
+             ),
+             child: Text(
+               userName,
+               style: TextStyle(fontSize: 14.sp, color: Colors.black87),
+             ),
+          ),
+        ),
+        SizedBox(height: 16.h),
+        // Email Address Card
+        _buildSectionCard(
+          title: 'Email Address',
+          subtitle: 'Contact support to change your email',
+          child: Container(
+             width: double.infinity,
+             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+             decoration: BoxDecoration(
+               color: Colors.grey.shade50,
+               border: Border.all(color: Colors.grey.shade200),
+               borderRadius: BorderRadius.circular(8.r),
+             ),
+             child: Row(
+               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+               children: [
+                 Text(
+                   userEmail,
+                   style: TextStyle(fontSize: 14.sp, color: Colors.black87),
+                 ),
+                 Container(
+                   padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                   decoration: BoxDecoration(
+                     color: Colors.green.shade50,
+                     borderRadius: BorderRadius.circular(16.r),
+                   ),
+                   child: Row(
+                     mainAxisSize: MainAxisSize.min,
+                     children: [
+                       Icon(Icons.check_circle, size: 14.sp, color: Colors.green.shade600),
+                       SizedBox(width: 4.w),
+                       Text('Verified', style: TextStyle(fontSize: 11.sp, color: Colors.green.shade700, fontWeight: FontWeight.w600)),
+                     ],
+                   ),
+                 )
+               ],
+             ),
+          ),
         ),
         SizedBox(height: 40.h),
       ],
+    );
+  }
+
+  Widget _buildSectionCard({required String title, required String subtitle, required Widget child}) {
+    return Container(
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.person_outline, size: 18.sp, color: Colors.grey.shade700),
+              SizedBox(width: 8.w),
+              Text(
+                title,
+                style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          SizedBox(height: 6.h),
+          Text(
+             subtitle,
+             style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade500),
+          ),
+          SizedBox(height: 20.h),
+          child,
+        ],
+      ),
     );
   }
 }
@@ -205,17 +402,103 @@ class _PersonalInfoTabState extends State<PersonalInfoTab> {
 //  VerificationTab
 // ─────────────────────────────────────────────
 class VerificationTab extends StatelessWidget {
-  const VerificationTab({super.key});
+  final bool isAdmin;
+  const VerificationTab({super.key, required this.isAdmin});
 
   @override
   Widget build(BuildContext context) {
+    if (!isAdmin) {
+      return ListView(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+        children: [
+          Container(
+            padding: EdgeInsets.all(24.w),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16.r)),
+            child: Column(
+              children: [
+                Icon(Icons.security, size: 48.sp, color: Colors.grey.shade400),
+                SizedBox(height: 16.h),
+                Text("Identity Verification", style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+                SizedBox(height: 8.h),
+                Text("Please verify your identity to access full features.", textAlign: TextAlign.center, style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600)),
+              ],
+            ),
+          )
+        ],
+      );
+    }
+
     return ListView(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
       children: [
-        SizedBox(height: 200.h),
-        Center(
-          child: Text(
-            'Verification',
-            style: TextStyle(fontSize: 16.sp, color: Colors.grey),
+        Container(
+          padding: EdgeInsets.all(20.w),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16.r)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Container(
+                     padding: EdgeInsets.all(10.w),
+                     decoration: BoxDecoration(color: const Color(0xFFF9F5FF), shape: BoxShape.circle),
+                     child: Icon(Icons.shield_outlined, color: const Color(0xFF7A00F0), size: 24.sp),
+                   ),
+                   SizedBox(width: 16.w),
+                   Expanded(
+                     child: Column(
+                       crossAxisAlignment: CrossAxisAlignment.start,
+                       children: [
+                         Wrap(
+                           crossAxisAlignment: WrapCrossAlignment.center,
+                           spacing: 8.w,
+                           runSpacing: 4.h,
+                           children: [
+                             Text('Internal Account', style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600, color: Colors.black87)),
+                             Container(
+                               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                               decoration: BoxDecoration(color: const Color(0xFF7A00F0), borderRadius: BorderRadius.circular(12.r)),
+                               child: Text('Current Verification Method', style: TextStyle(fontSize: 10.sp, color: Colors.white, fontWeight: FontWeight.w600)),
+                             )
+                           ],
+                         ),
+                         SizedBox(height: 8.h),
+                         Text(
+                           'As a staff member, your account is automatically verified for all actions.',
+                           style: TextStyle(fontSize: 13.sp, color: const Color(0xFF7A00F0), height: 1.4),
+                         ),
+                       ],
+                     ),
+                   )
+                ],
+              ),
+              SizedBox(height: 24.h),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Container(
+                     padding: EdgeInsets.all(10.w),
+                     decoration: BoxDecoration(color: const Color(0xFFF9F5FF), shape: BoxShape.circle),
+                     child: Icon(Icons.check_circle_outline, color: const Color(0xFF7A00F0), size: 24.sp),
+                   ),
+                   SizedBox(width: 16.w),
+                   Expanded(
+                     child: Column(
+                       crossAxisAlignment: CrossAxisAlignment.start,
+                       children: [
+                         Text('Verification Bypassed', style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600, color: Colors.black87)),
+                         SizedBox(height: 8.h),
+                         Text(
+                           'You can list properties and make bookings without identity verification.',
+                           style: TextStyle(fontSize: 13.sp, color: const Color(0xFF7A00F0), height: 1.4),
+                         ),
+                       ],
+                     ),
+                   )
+                ],
+              )
+            ],
           ),
         ),
       ],
@@ -227,85 +510,55 @@ class VerificationTab extends StatelessWidget {
 //  SettingsTab
 // ─────────────────────────────────────────────
 class SettingsTab extends StatelessWidget {
-  const SettingsTab({super.key});
+  final Function(String)? onViewChanged;
+  const SettingsTab({super.key, this.onViewChanged});
 
   @override
   Widget build(BuildContext context) {
     return ListView(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
       children: [
-        SizedBox(height: 200.h),
-        Center(
-          child: Text(
-            'Settings',
-            style: TextStyle(fontSize: 16.sp, color: Colors.grey),
-          ),
-        ),
+        _buildSettingCard(Icons.lock_outline, 'Login & Security', 'Update your password and secure your account', onTap: () {
+          Navigator.pushNamed(context, AppRoutes.security);
+        }),
+        SizedBox(height: 16.h),
+        _buildSettingCard(Icons.payment_outlined, 'Payments & Payouts', 'Review payments, payouts, and taxes', onTap: () {
+          if (onViewChanged != null) {
+            onViewChanged!('Earnings & Balance');
+          }
+        }),
+        SizedBox(height: 16.h),
+        _buildSettingCard(Icons.notifications_none_outlined, 'Notifications', 'Choose notification preferences'),
       ],
     );
   }
-}
 
-// ─────────────────────────────────────────────
-//  _InfoSection  (reusable card section)
-// ─────────────────────────────────────────────
-class _InfoSection extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final Widget child;
-
-  const _InfoSection({
-    required this.title,
-    required this.subtitle,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
+  Widget _buildSettingCard(IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(20.w),
+        decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min, // ✅ FIX
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            title,
-            style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600),
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            subtitle,
-            style: TextStyle(fontSize: 13.sp, color: Colors.grey),
-          ),
-          SizedBox(height: 16.h),
-          child,
+          Icon(icon, size: 24.sp, color: Colors.grey.shade700),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600, color: Colors.black87)),
+                SizedBox(height: 4.h),
+                Text(subtitle, style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade500)),
+              ],
+            ),
+          )
         ],
       ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-//  _InputField  (reusable)
-// ─────────────────────────────────────────────
-class _InputField extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-
-  const _InputField({required this.controller, required this.hint});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        hintText: hint,
-        border: const OutlineInputBorder(),
-      ),
-    );
+    ));
   }
 }
 
@@ -318,22 +571,28 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   _TabBarDelegate(this.tabBar);
 
   @override
-  double get minExtent => tabBar.preferredSize.height;
+  double get minExtent => tabBar.preferredSize.height + 8.h;
 
   @override
-  double get maxExtent => tabBar.preferredSize.height;
+  double get maxExtent => tabBar.preferredSize.height + 8.h;
 
   @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Container(color: const Color(0xFFFAF9F6), child: tabBar);
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: AppColors.backgroundCream, 
+      padding: EdgeInsets.symmetric(horizontal: 4.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          tabBar,
+          Container(height: 1, color: Colors.grey.shade300), // Subtle base line for tabbar like airbnb
+        ],
+      ),
+    );
   }
 
   @override
   bool shouldRebuild(_TabBarDelegate oldDelegate) {
-    return oldDelegate.tabBar != tabBar; // ✅ FIX — كان دايماً false
+    return oldDelegate.tabBar != tabBar;
   }
 }

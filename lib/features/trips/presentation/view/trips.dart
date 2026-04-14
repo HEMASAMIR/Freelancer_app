@@ -7,6 +7,7 @@ import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
 import 'package:freelancer/features/bookings/data/models/booking_model.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_cubit.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_state.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 import 'package:intl/intl.dart';
 
 class TripsScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _TripsScreenState extends State<TripsScreen> {
   String _selectedFilter = 'Upcoming';
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -74,14 +76,33 @@ class _TripsScreenState extends State<TripsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF5F0EA),
+      drawer: const SideDrawer(),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ──────────────────────────────────────────────
+            // ── Header (Fixed Drawer Icon) ──────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              padding: const EdgeInsets.only(left: 16, top: 16),
+              child: InkWell(
+                onTap: () => _scaffoldKey.currentState?.openDrawer(),
+                borderRadius: BorderRadius.circular(30),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.menu, color: AppColors.ink, size: 24),
+                ),
+              ),
+            ),
+            
+            // ── Main Content ──────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -98,7 +119,7 @@ class _TripsScreenState extends State<TripsScreen> {
                     'Your booking requests and reservations.',
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.sub.withOpacity(0.7),
+                      color: AppColors.sub.withValues(alpha: 0.7),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -115,12 +136,12 @@ class _TripsScreenState extends State<TripsScreen> {
                       decoration: InputDecoration(
                         hintText: 'Find by reservation code...',
                         hintStyle: TextStyle(
-                          color: AppColors.sub.withOpacity(0.5),
+                          color: AppColors.sub.withValues(alpha: 0.5),
                           fontSize: 14,
                         ),
                         prefixIcon: Icon(
                           Icons.search,
-                          color: AppColors.sub.withOpacity(0.5),
+                          color: AppColors.sub.withValues(alpha: 0.5),
                         ),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
@@ -132,52 +153,55 @@ class _TripsScreenState extends State<TripsScreen> {
                   const SizedBox(height: 16),
 
                   // ── Filter Chips ───────────────────────────────────
-                  Row(
-                    children: ['Pending', 'Upcoming', 'History'].map((filter) {
-                      final isSelected = _selectedFilter == filter;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedFilter = filter),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected ? AppColors.ink : Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  filter == 'Pending'
-                                      ? Icons.access_time_rounded
-                                      : filter == 'Upcoming'
-                                      ? Icons.check_circle_outline_rounded
-                                      : Icons.history_rounded,
-                                  size: 14,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : AppColors.sub,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  filter,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: ['Pending', 'Upcoming', 'History'].map((filter) {
+                        final isSelected = _selectedFilter == filter;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: GestureDetector(
+                            onTap: () => setState(() => _selectedFilter = filter),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppColors.ink : Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    filter == 'Pending'
+                                        ? Icons.access_time_rounded
+                                        : filter == 'Upcoming'
+                                        ? Icons.check_circle_outline_rounded
+                                        : Icons.history_rounded,
+                                    size: 14,
                                     color: isSelected
                                         ? Colors.white
                                         : AppColors.sub,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    filter,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : AppColors.sub,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ],
               ),
@@ -239,69 +263,72 @@ class _EmptyTrips extends StatelessWidget {
     // ✅ كل تاب له محتوى مختلف
     final config = _emptyConfig(filter);
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(40),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                config['icon'] as IconData,
-                size: 56,
-                color: AppColors.sub.withOpacity(0.4),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                config['title'] as String,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.ink,
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(40),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  config['icon'] as IconData,
+                  size: 56,
+                  color: AppColors.sub.withValues(alpha: 0.4),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                config['subtitle'] as String,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.sub.withOpacity(0.6),
+                const SizedBox(height: 16),
+                Text(
+                  config['title'] as String,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  config['subtitle'] as String,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.sub.withValues(alpha: 0.6),
+                  ),
+                ),
 
-              // ✅ الزرار بيظهر بس لو مش History
-              if (config['buttonLabel'] != null) ...[
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () =>
-                        Navigator.of(context).pushNamed(AppRoutes.searchResult),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryRed,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                // ✅ الزرار بيظهر بس لو مش History
+                if (config['buttonLabel'] != null) ...[
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.searchResult),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryRed,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      config['buttonLabel'] as String,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                      child: Text(
+                        config['buttonLabel'] as String,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -391,7 +418,7 @@ class _TripCard extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: _statusColor(booking.status).withOpacity(0.1),
+                  color: _statusColor(booking.status).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(

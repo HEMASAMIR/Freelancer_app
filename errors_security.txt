@@ -1,0 +1,29 @@
+Analyzing freelancer...                                         
+
+  error - Target of URI doesn't exist: 'package:freelancer/features/account/presentation/personal_info.dart' - lib\core\app_router\app_router.dart:16:8 - uri_does_not_exist
+warning - Duplicate import - lib\core\app_router\app_router.dart:30:8 - duplicate_import
+  error - The name 'SecurityCubit' isn't a type, so it can't be used as a type argument - lib\core\app_router\app_router.dart:97:37 - non_type_as_type_argument
+warning - Dead code - lib\core\utils\widgets\custom_app_bar.dart:169:52 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\core\utils\widgets\custom_app_bar.dart:169:55 - dead_null_aware_expression
+  error - Undefined name 'AppRoutes' - lib\features\account\presentation\account_info.dart:519:40 - undefined_identifier
+  error - Expected to find ')' - lib\features\account\presentation\account_info.dart:554:6 - expected_token
+  error - Target of URI doesn't exist: 'package:freelancer/core/utils/widgets/custom_snackbar.dart' - lib\features\account\presentation\security_screen.dart:6:8 - uri_does_not_exist
+  error - Undefined name 'CustomSnackBar' - lib\features\account\presentation\security_screen.dart:26:7 - undefined_identifier
+  error - Undefined name 'CustomSnackBar' - lib\features\account\presentation\security_screen.dart:30:7 - undefined_identifier
+  error - Undefined name 'CustomSnackBar' - lib\features\account\presentation\security_screen.dart:34:7 - undefined_identifier
+  error - Undefined name 'CustomSnackBar' - lib\features\account\presentation\security_screen.dart:54:11 - undefined_identifier
+  error - Undefined name 'CustomSnackBar' - lib\features\account\presentation\security_screen.dart:58:11 - undefined_identifier
+  error - Undefined name 'CustomSnackBar' - lib\features\account\presentation\security_screen.dart:60:11 - undefined_identifier
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:187:57 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:190:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:236:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:238:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:296:63 - deprecated_member_use
+  error - Undefined name 'CustomSnackBar' - lib\features\account\presentation\security_screen.dart:323:19 - undefined_identifier
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:561:54 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:567:53 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:570:54 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:584:52 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:596:50 - use_build_context_synchronously
+
+25 issues found. (ran in 8.5s)

@@ -12,7 +12,6 @@ import 'package:freelancer/features/home/presentation/widget/custom_footer.dart'
 import 'package:freelancer/features/search/logic/search_cubit/cubit/search_cubit.dart';
 import 'package:freelancer/features/search/logic/search_cubit/cubit/search_state.dart';
 import 'package:freelancer/features/search/data/search_model/search_params_model.dart';
-import 'package:freelancer/features/search/presentation/view/search_details.dart';
 import 'package:freelancer/features/search/presentation/widget/property_listing_card.dart';
 // استدعاء البانر بتاعك
 import 'package:freelancer/features/home/presentation/widget/best_offers_banner.dart';

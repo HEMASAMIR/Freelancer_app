@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/features/account/presentation/account_info.dart';
 import 'package:freelancer/features/admin/admin/presentation/view/admin_dashboard/widget/over_view_footer.dart';
+import 'package:freelancer/features/admin/admin/presentation/view/admin_dashboard/dashboard_overview.dart';
 import 'package:freelancer/features/admin/admin/presentation/view/earrnings_balance.dart';
 import 'package:freelancer/features/bookings/presentation/view/booking_request.dart';
 
 import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 import 'package:freelancer/features/host/presentation/host_listing.dart';
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
-import 'package:freelancer/features/search/presentation/view/search_details.dart';
+import 'package:freelancer/features/listing_wizard/presentation/view/listing_wizard_screen.dart';
+import 'package:freelancer/features/listing_wizard/logic/cubit/listing_wizard_cubit.dart';
+import 'package:freelancer/features/listing_wizard/logic/cubit/listing_form_cubit.dart';
+import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/features/trips/presentation/view/trips.dart';
 import 'package:freelancer/features/wishlists/presentation/view/wishlist_screen.dart';
 
@@ -51,32 +56,45 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
       key: _scaffoldKey,
       drawer: SideDrawer(onItemSelected: _onViewChanged),
       backgroundColor: AppColors.backgroundCream,
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              floating: true,
-              pinned: false,
-              backgroundColor: Colors.transparent,
-              surfaceTintColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                icon: const Icon(Icons.menu_rounded, color: AppColors.ink),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildContent(_currentView),
-                    const SizedBox(height: 48),
-                    const OverviewFooter(),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (context) {
+            return UnconstrainedBox(
+              child: Container(
+                width: 40,
+                height: 40,
+                margin: const EdgeInsets.only(left: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  icon: const Icon(Icons.menu_rounded, color: AppColors.ink),
+                ),
               ),
+            );
+          }
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(child: _buildContent(_currentView)),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.0),
+              child: OverviewFooter(),
             ),
           ],
         ),
@@ -89,9 +107,10 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
       case 'Trips':
         return const TripsScreen();
       case 'Overview':
+        return DashboardOverviewContent(onViewChanged: _onViewChanged);
       case 'Personal Info':
       case 'Account':
-        return const AccountScreen();
+        return AccountScreen(onViewChanged: _onViewChanged);
       case 'Earnings & Balance':
         return const EarningsBalanceView();
       case 'Bookings':
@@ -109,7 +128,13 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
               )
             : const TripsScreen();
       case 'Create New':
-        return const _PlaceholderView(title: 'Create New Listing');
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (context) => sl<ListingWizardCubit>()),
+            BlocProvider(create: (context) => sl<ListingFormCubit>()),
+          ],
+          child: const ListingWizardScreen(),
+        );
       default:
         return const AccountScreen();
     }
@@ -142,7 +167,7 @@ class _PlaceholderView extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.dividerGrey.withOpacity(0.5)),
+            border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.5)),
           ),
           child: Column(
             children: [
@@ -158,7 +183,7 @@ class _PlaceholderView extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.sub.withOpacity(0.8),
+                  color: AppColors.sub.withValues(alpha: 0.8),
                 ),
               ),
             ],
@@ -197,12 +222,17 @@ class _InternalListingDetailsView extends StatelessWidget {
         if (listing.images?.isNotEmpty ?? false)
           ClipRRect(
             borderRadius: BorderRadius.circular(24),
-            child: Image.network(
-              listing.images!.first.url!,
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+              child: Image.network(
+                listing.images!.first.url!,
+                height: 200,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  height: 200,
+                  color: Colors.grey[300],
+                  child: const Center(child: Icon(Icons.broken_image)),
+                ),
+              ),
           ),
         const SizedBox(height: 24),
         Text(

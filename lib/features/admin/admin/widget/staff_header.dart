@@ -57,7 +57,7 @@ class StaffPageHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(8.r),
               boxShadow: [
                 BoxShadow(
-                  color: maroonColor.withOpacity(0.2),
+                  color: maroonColor.withValues(alpha: 0.2),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),

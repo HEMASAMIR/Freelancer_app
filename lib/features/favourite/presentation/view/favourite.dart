@@ -4,8 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/favourite/data/models/wishlist_model.dart';
 import 'package:freelancer/features/favourite/presentation/view/wishlist_details_screen.dart';
-import 'package:freelancer/features/search/presentation/view/search_details.dart';
-import 'package:freelancer/features/search/presentation/widget/property_listing_card.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 
 class FavoritesScreen extends StatefulWidget {

@@ -1,0 +1,23 @@
+Analyzing freelancer...                                         
+
+warning - Duplicate import - lib\core\di\service_locator.dart:25:8 - duplicate_import
+warning - Duplicate import - lib\core\di\service_locator.dart:77:8 - duplicate_import
+warning - Dead code - lib\core\utils\widgets\custom_app_bar.dart:169:52 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\core\utils\widgets\custom_app_bar.dart:169:55 - dead_null_aware_expression
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:187:57 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:190:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:236:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:238:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:296:63 - deprecated_member_use
+warning - The declaration '_PlaceholderView' isn't referenced - lib\features\admin\admin\presentation\view\admin_dashboard.dart:142:7 - unused_element
+warning - Unused import: 'package:freelancer/features/listing_wizard/data/models/wizard_models.dart' - lib\features\listing_wizard\logic\cubit\listing_form_cubit.dart:3:8 - unused_import
+warning - Unused import: 'package:freelancer/core/app_router/app_router.dart' - lib\features\listing_wizard\presentation\view\listing_success_screen.dart:5:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\listing_wizard\presentation\widgets\wizard_step_1_property_type.dart:74:77 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\listing_wizard\presentation\widgets\wizard_step_1_property_type.dart:77:94 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:561:54 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:567:53 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:570:54 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:584:52 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:596:50 - use_build_context_synchronously
+
+19 issues found. (ran in 6.5s)

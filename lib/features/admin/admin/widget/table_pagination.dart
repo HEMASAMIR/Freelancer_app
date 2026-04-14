@@ -4,7 +4,7 @@ import 'package:freelancer/features/admin/admin/widget/page_action.dart';
 
 class TablePagination extends StatelessWidget {
   final Color greyColor;
-  const TablePagination({required this.greyColor});
+  const TablePagination({super.key, required this.greyColor});
 
   @override
   Widget build(BuildContext context) {

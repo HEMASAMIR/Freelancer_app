@@ -20,7 +20,7 @@ class IdentityVerificationScreen extends StatelessWidget {
                 color: const Color(0xFFFFFDE7),
                 borderRadius: BorderRadius.circular(20.r),
                 border: Border.all(
-                  color: const Color(0xFFFFCC02).withOpacity(0.6),
+                  color: const Color(0xFFFFCC02).withValues(alpha: 0.6),
                   width: 1.5,
                 ),
               ),

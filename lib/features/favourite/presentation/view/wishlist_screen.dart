@@ -100,7 +100,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
                             '$count list${count == 1 ? '' : 's'} available',
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppColors.sub.withOpacity(0.7),
+                              color: AppColors.sub.withValues(alpha: 0.7),
                             ),
                           );
                         },
@@ -183,7 +183,7 @@ class _EmptyWishlists extends StatelessWidget {
               Icon(
                 Icons.favorite_border_rounded,
                 size: 56,
-                color: AppColors.sub.withOpacity(0.4),
+                color: AppColors.sub.withValues(alpha: 0.4),
               ),
               const SizedBox(height: 16),
               const Text(
@@ -199,7 +199,7 @@ class _EmptyWishlists extends StatelessWidget {
                 'Save your favorite places to visit later',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.sub.withOpacity(0.6),
+                  color: AppColors.sub.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(height: 24),
@@ -250,12 +250,12 @@ class _WishlistCard extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.6),
+                color: Colors.white.withValues(alpha: 0.6),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.favorite_border_rounded,
-                color: AppColors.sub.withOpacity(0.5),
+                color: AppColors.sub.withValues(alpha: 0.5),
                 size: 24,
               ),
             ),

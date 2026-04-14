@@ -24,16 +24,18 @@ class _HostListingsViewState extends State<HostListingsView> {
     final authState = context.read<AuthCubit>().state;
     if (authState is AuthAdminSuccess) {
       context.read<HostListingsCubit>().getHostListings(
-        authState.user.email ?? '',
+        authState.user.id,
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         const Text(
           'Your listings',
           style: TextStyle(
@@ -48,7 +50,7 @@ class _HostListingsViewState extends State<HostListingsView> {
           'Manage your properties and keep track of reservations.',
           style: TextStyle(
             fontSize: 16,
-            color: AppColors.sub.withOpacity(0.8),
+            color: AppColors.sub.withValues(alpha: 0.8),
             height: 1.2,
           ),
         ),
@@ -90,7 +92,7 @@ class _HostListingsViewState extends State<HostListingsView> {
           },
         ),
       ],
-    );
+    ));
   }
 
   Widget _buildFilterDropdown() {
@@ -99,7 +101,7 @@ class _HostListingsViewState extends State<HostListingsView> {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.dividerGrey.withOpacity(0.5)),
+        border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.5)),
       ),
       child: const Row(
         mainAxisSize: MainAxisSize.min,
@@ -132,7 +134,7 @@ class _HostListingsViewState extends State<HostListingsView> {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.dividerGrey.withOpacity(0.3)),
+        border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -159,7 +161,7 @@ class _HostListingsViewState extends State<HostListingsView> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
-              color: AppColors.sub.withOpacity(0.8),
+              color: AppColors.sub.withValues(alpha: 0.8),
               height: 1.4,
             ),
           ),

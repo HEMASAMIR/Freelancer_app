@@ -4,7 +4,7 @@ import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/features/admin/admin/presentation/view/admin_dashboard.dart';
 import 'package:freelancer/features/admin/admin/presentation/view/identify_screen.dart';
-import 'package:freelancer/features/admin/admin/presentation/view/admin_staff.dart';
+import 'package:freelancer/features/host/logic/cubit/host_cubit.dart';
 import 'package:freelancer/features/admin/logic/host_listings_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
@@ -12,6 +12,8 @@ import 'package:freelancer/features/auth/view/presentation/view/sign_up_view.dar
 import 'package:freelancer/features/bookings/logic/cubit/bookings_cubit.dart';
 import 'package:freelancer/features/favourite/presentation/view/favourite.dart';
 import 'package:freelancer/features/favourite/presentation/view/wishlist_screen.dart';
+import 'package:freelancer/features/account/presentation/account_info.dart';
+import 'package:freelancer/features/account/presentation/security_screen.dart';
 import 'package:freelancer/features/home/presentation/view/home.dart';
 import 'package:freelancer/features/host/presentation/host_listing.dart';
 import 'package:freelancer/features/search/data/search_model/search_params_model.dart';
@@ -23,8 +25,7 @@ import 'package:freelancer/features/search/data/search_model/listing_model.dart'
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/trips/presentation/view/trips.dart';
 import 'package:freelancer/features/admin/logic/wallet_cubit.dart';
-
-import '../../features/account/presentation/account_info.dart';
+import 'package:freelancer/features/account/logic/security_cubit.dart';
 
 // ✅ الشاشتين الجديدتين
 // import 'package:freelancer/features/account/presentation/view/personal_info_screen.dart'; // ← عدّل المسار حسب مشروعك
@@ -88,6 +89,14 @@ class AppRouter {
           ),
         );
 
+      case AppRoutes.security:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (context) => sl<SecurityCubit>(),
+            child: const SecurityScreen(),
+          ),
+        );
+
       case AppRoutes.adminDashboard:
         final view = settings.arguments as String? ?? 'Overview';
         return MaterialPageRoute(
@@ -97,6 +106,7 @@ class AppRouter {
               BlocProvider.value(value: sl<BookingsCubit>()),
               BlocProvider.value(value: sl<FavCubit>()),
               BlocProvider.value(value: sl<HostListingsCubit>()),
+              BlocProvider.value(value: sl<HostCubit>()),
               BlocProvider.value(value: sl<WalletCubit>()),
             ],
             child: AdminOverviewScreen(initialView: view),
@@ -112,6 +122,7 @@ class AppRouter {
               BlocProvider.value(value: sl<BookingsCubit>()),
               BlocProvider.value(value: sl<FavCubit>()),
               BlocProvider.value(value: sl<HostListingsCubit>()),
+              BlocProvider.value(value: sl<HostCubit>()),
               BlocProvider.value(value: sl<WalletCubit>()),
             ],
             child: AdminOverviewScreen(initialView: view),
@@ -161,7 +172,7 @@ class AppRouter {
         );
 
       case AppRoutes.account:
-        final tabIndex = settings.arguments as int? ?? 0;
+        final _ = settings.arguments as int? ?? 0;
         return MaterialPageRoute(
           builder: (_) => BlocProvider.value(
             value: sl<AuthCubit>(),

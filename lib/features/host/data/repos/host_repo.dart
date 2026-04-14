@@ -19,7 +19,7 @@ abstract class HostRepository {
   Future<Either<String, ListingModel>> getListingForHost(String listingId, String userId);
 
   // 6. Get user balance
-  Future<Either<String, double>> getUserBalance();
+  Future<Either<String, double>> getUserBalance(String userId);
 
   // 7. Get unavailable dates
   Future<Either<String, List<AvailabilityModel>>> getUnavailableDates(String listingId);

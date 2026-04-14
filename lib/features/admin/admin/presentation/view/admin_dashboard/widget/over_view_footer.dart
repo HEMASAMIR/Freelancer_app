@@ -8,7 +8,7 @@ class OverviewFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(height: 0.5, color: AppColors.dividerGrey.withOpacity(0.5)),
+        Container(height: 0.5, color: AppColors.dividerGrey.withValues(alpha: 0.5)),
         const SizedBox(height: 24),
         const Wrap(
           spacing: 8,

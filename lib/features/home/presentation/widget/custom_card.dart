@@ -52,6 +52,13 @@ class PropertyCard extends StatelessWidget {
                   height: 260.h,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 260.h,
+                    color: Colors.grey[300],
+                    child: const Center(
+                      child: Icon(Icons.broken_image, color: Colors.grey),
+                    ),
+                  ),
                 ),
 
                 /// ❤️ زرار الفيفوريت

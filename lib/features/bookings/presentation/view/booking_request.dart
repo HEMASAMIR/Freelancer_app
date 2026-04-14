@@ -53,7 +53,7 @@ class _BookingRequestsViewState extends State<BookingRequestsView>
           'Manage booking requests for your properties',
           style: TextStyle(
             fontSize: 16,
-            color: AppColors.sub.withOpacity(0.8),
+            color: AppColors.sub.withValues(alpha: 0.8),
             height: 1.2,
           ),
         ),
@@ -74,7 +74,7 @@ class _BookingRequestsViewState extends State<BookingRequestsView>
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -135,7 +135,7 @@ class _BookingRequestsViewState extends State<BookingRequestsView>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.dividerGrey.withOpacity(0.5)),
+        border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.5)),
       ),
       child: TextField(
         decoration: InputDecoration(
@@ -187,8 +187,8 @@ class _BookingRequestsViewState extends State<BookingRequestsView>
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: (isConfirmed ? Colors.green : Colors.orange).withOpacity(
-                  0.1,
+                color: (isConfirmed ? Colors.green : Colors.orange).withValues(
+                  alpha: 0.1,
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),

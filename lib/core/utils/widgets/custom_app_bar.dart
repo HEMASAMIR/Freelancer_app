@@ -79,7 +79,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     borderRadius: BorderRadius.circular(30.r),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -148,9 +148,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                                   ? state.user
                                   : (state as AuthAdminSuccess).user;
                               final String name =
-                                  user.userMetadata?['full_name'] ??
-                                  user.email?.split('@')[0] ??
-                                  'User';
+                                  user.userMetadata['full_name'] ??
+                                  user.email.split('@')[0];
                               return [
                                 PopupMenuItem(
                                   enabled: false,

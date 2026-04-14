@@ -10,6 +10,7 @@ class StaffRow extends StatelessWidget {
   final int index;
 
   const StaffRow({
+    super.key,
     required this.name,
     required this.email,
     required this.role,

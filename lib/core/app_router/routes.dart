@@ -17,4 +17,5 @@ class AppRoutes {
   static const String identityVerification = '/identity-verification';
   static const String personalInfo = '/personal-info';
   static const String myListings = '/my-listings';
+  static const String security = '/security';
 }

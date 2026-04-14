@@ -18,7 +18,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
       final fileName = '$bookingId-receipt.jpg';
       
       // Upload using Supabase Storage API which maps directly to the /storage/v1/object/receipts/... endpoint
-      final String path = await supabase.storage.from('receipts').upload(
+      await supabase.storage.from('receipts').upload(
         fileName,
         receiptFile,
         fileOptions: const FileOptions(cacheControl: '3600', upsert: true),

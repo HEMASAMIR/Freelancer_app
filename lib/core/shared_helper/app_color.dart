@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:flutter/material.dart';
-
 class AppColors {
   // ─── الألوان الأساسية ──────────────────────────────────────────────────────
   static const Color bgColor = Color(0xFFF7F4EB);

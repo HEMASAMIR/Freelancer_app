@@ -6,6 +6,7 @@ import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
+import 'package:freelancer/features/auth/view/presentation/view/help_center.dart';
 
 enum DrawerMode { home, user, admin }
 
@@ -41,10 +42,20 @@ class _SideDrawerState extends State<SideDrawer> {
     // 3. معالجة الـ Overview وبقية العناصر
     // بنستخدم Future.delayed بسيط عشان نضمن إن الـ pop خلص والـ context جاهز للـ push
     Future.delayed(Duration.zero, () {
+      if (!context.mounted) return;
       if (item == 'Log out' || item == 'Logout') {
         context.read<AuthCubit>().signOut();
       } else if (item == 'Log in') {
         _showLoginDialog(context);
+      } else if (item == 'Help Center') {
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const HelpCenter()));
+      } else if (item == 'Settings' || item == 'Notifications') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("$item coming soon!"),
+            backgroundColor: Colors.blueGrey,
+          ),
+        );
       } else if (widget.onItemSelected != null) {
         widget.onItemSelected!(item);
       } else {
@@ -466,7 +477,7 @@ class _SideDrawerState extends State<SideDrawer> {
       },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-        color: Colors.black.withOpacity(0.02),
+        color: Colors.black.withValues(alpha: 0.02),
         child: Row(
           children: [
             CircleAvatar(

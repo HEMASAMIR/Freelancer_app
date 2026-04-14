@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../data/models/trip_model.dart';
 import '../../data/repos/trips_repo.dart';
 import 'trips_state.dart';
 

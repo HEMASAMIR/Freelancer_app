@@ -1,0 +1,31 @@
+Analyzing freelancer...                                         
+
+  error - The named parameter 'dio' is required, but there's no corresponding argument - lib\core\di\service_locator.dart:135:11 - missing_required_argument
+  error - The named parameter 'prefs' is required, but there's no corresponding argument - lib\core\di\service_locator.dart:135:11 - missing_required_argument
+  error - The named parameter 'supabase' isn't defined - lib\core\di\service_locator.dart:135:24 - undefined_named_parameter
+warning - The receiver can't be null, so the null-aware operator '?[' is unnecessary - lib\core\utils\widgets\custom_app_bar.dart:151:52 - invalid_null_aware_operator
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\core\utils\widgets\custom_app_bar.dart:152:45 - invalid_null_aware_operator
+warning - Dead code - lib\core\utils\widgets\custom_app_bar.dart:170:52 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\core\utils\widgets\custom_app_bar.dart:170:55 - dead_null_aware_expression
+warning - The receiver can't be null, so the null-aware operator '?[' is unnecessary - lib\features\account\presentation\account_info.dart:49:49 - invalid_null_aware_operator
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\features\account\presentation\account_info.dart:50:35 - invalid_null_aware_operator
+warning - Dead code - lib\features\account\presentation\account_info.dart:52:44 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\features\account\presentation\account_info.dart:52:47 - dead_null_aware_expression
+warning - The receiver can't be null, so the null-aware operator '?[' is unnecessary - lib\features\account\presentation\account_info.dart:54:49 - invalid_null_aware_operator
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\features\account\presentation\account_info.dart:55:35 - invalid_null_aware_operator
+warning - Dead code - lib\features\account\presentation\account_info.dart:57:44 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\features\account\presentation\account_info.dart:57:47 - dead_null_aware_expression
+warning - The receiver can't be null, so the null-aware operator '?[' is unnecessary - lib\features\admin\admin\widget\staf_data_table.dart:21:46 - invalid_null_aware_operator
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\features\admin\admin\widget\staf_data_table.dart:21:80 - invalid_null_aware_operator
+warning - Dead code - lib\features\admin\admin\widget\staf_data_table.dart:22:41 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\features\admin\admin\widget\staf_data_table.dart:22:44 - dead_null_aware_expression
+warning - Unused import: 'package:freelancer/core/error/auth_failure.dart' - lib\features\auth\data\repos\auth_repo_impl.dart:5:8 - unused_import
+warning - Dead code - lib\features\host\presentation\host_listing.dart:27:30 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\features\host\presentation\host_listing.dart:27:33 - dead_null_aware_expression
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:561:54 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:567:53 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:570:54 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:584:52 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:596:50 - use_build_context_synchronously
+
+27 issues found. (ran in 5.2s)

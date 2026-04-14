@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class RoleAvatar extends StatelessWidget {
   final String role;
-  const RoleAvatar({required this.role});
+  const RoleAvatar({super.key, required this.role});
   @override
   Widget build(BuildContext context) {
     return Container(

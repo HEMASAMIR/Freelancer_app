@@ -36,7 +36,7 @@ class _WishlistsViewState extends State<WishlistsView> {
         Text(
           'Manage your favorite properties and saved lists.',
           style: TextStyle(
-              fontSize: 16, color: AppColors.sub.withOpacity(0.8), height: 1.2),
+              fontSize: 16, color: AppColors.sub.withValues(alpha: 0.8), height: 1.2),
         ),
         const SizedBox(height: 32),
         BlocBuilder<FavCubit, FavState>(
@@ -77,7 +77,7 @@ class _WishlistsViewState extends State<WishlistsView> {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.dividerGrey.withOpacity(0.3)),
+        border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -91,7 +91,7 @@ class _WishlistsViewState extends State<WishlistsView> {
             textAlign: TextAlign.center,
             style: TextStyle(
                 fontSize: 15,
-                color: AppColors.sub.withOpacity(0.8),
+                color: AppColors.sub.withValues(alpha: 0.8),
                 height: 1.4),
           ),
         ],
@@ -115,7 +115,7 @@ class _WishlistCard extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(15),
               border: Border.all(
-                  color: AppColors.dividerGrey.withOpacity(0.5)),
+                  color: AppColors.dividerGrey.withValues(alpha: 0.5)),
             ),
             child: const Center(
               child: Icon(Icons.favorite,

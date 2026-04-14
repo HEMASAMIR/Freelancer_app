@@ -1,6 +1,5 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import '../../../../core/constant/constant.dart';
 import '../models/booking_model.dart';
 import 'bookings_repo.dart';
@@ -77,22 +76,26 @@ class BookingsRepositoryImpl implements BookingsRepository {
     required String checkOut,
     required int guests,
     required num subtotal,
-    required String commissionRateId,
+    String? commissionRateId,
   }) async {
     try {
+      final payload = {
+        "listing_id": listingId,
+        "user_id": userId,
+        "check_in": checkIn,
+        "check_out": checkOut,
+        "guests": guests,
+        "subtotal": subtotal,
+        "status": "pending",
+        "escrow_status": "none",
+      };
+      if (commissionRateId != null) {
+        payload["commission_rate_id"] = commissionRateId;
+      }
+
       final response = await dio.post(
         SupabaseKeys.bookingsRest,
-        data: {
-          "listing_id": listingId,
-          "user_id": userId,
-          "check_in": checkIn,
-          "check_out": checkOut,
-          "guests": guests,
-          "subtotal": subtotal,
-          "commission_rate_id": commissionRateId,
-          "status": "pending",
-          "escrow_status": "none",
-        },
+        data: payload,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

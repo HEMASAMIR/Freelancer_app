@@ -89,7 +89,7 @@ class _EarningsBalanceViewState extends State<EarningsBalanceView> {
               'View your balance, request withdrawals, and track transactions.',
               style: TextStyle(
                 fontSize: 16,
-                color: AppColors.sub.withOpacity(0.8),
+                color: AppColors.sub.withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 32),
@@ -171,7 +171,7 @@ class _BalanceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.dividerGrey.withOpacity(0.3)),
+        border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,7 +210,7 @@ class _TransactionTable extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.dividerGrey.withOpacity(0.3)),
+          border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
@@ -238,14 +238,14 @@ class _TransactionTable extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.dividerGrey.withOpacity(0.3)),
+        border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.3)),
       ),
       child: ListView.separated(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: history.length,
         separatorBuilder: (_, _) =>
-            Divider(color: AppColors.dividerGrey.withOpacity(0.3), height: 1),
+            Divider(color: AppColors.dividerGrey.withValues(alpha: 0.3), height: 1),
         itemBuilder: (context, index) {
           final tx = history[index];
           final type = tx['type'] ?? 'payment';
@@ -313,7 +313,7 @@ class _WithdrawalForm extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.dividerGrey.withOpacity(0.3)),
+        border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -27,7 +27,6 @@ class _ToastWidget extends StatefulWidget {
   final VoidCallback onDismiss;
 
   const _ToastWidget({
-    super.key,
     required this.message,
     required this.state,
     required this.onDismiss,
@@ -87,7 +86,7 @@ class _ToastWidgetState extends State<_ToastWidget>
                   border: Border.all(color: _getMainColor(), width: 1),
                   boxShadow: [
                     BoxShadow(
-                      color: _getMainColor().withOpacity(0.2),
+                      color: _getMainColor().withValues(alpha: 0.2),
                       blurRadius: 10,
                       offset: const Offset(
                         0,

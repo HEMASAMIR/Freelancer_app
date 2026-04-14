@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class PageActionBtn extends StatelessWidget {
   final IconData icon;
-  const PageActionBtn({required this.icon});
+  const PageActionBtn({super.key, required this.icon});
   @override
   Widget build(BuildContext context) {
     return Container(

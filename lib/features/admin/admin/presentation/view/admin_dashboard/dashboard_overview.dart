@@ -1,10 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/shared_helper/app_color.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/host/logic/cubit/host_cubit.dart';
+import 'package:freelancer/features/host/logic/cubit/host_state.dart';
 
-class AdminOverviewScreen extends StatelessWidget {
-  const AdminOverviewScreen({super.key});
+class DashboardOverviewContent extends StatefulWidget {
+  final Function(String)? onViewChanged;
+
+  const DashboardOverviewContent({super.key, this.onViewChanged});
+
+  @override
+  State<DashboardOverviewContent> createState() => _DashboardOverviewContentState();
+}
+
+class _DashboardOverviewContentState extends State<DashboardOverviewContent> {
+  @override
+  void initState() {
+    super.initState();
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthAdminSuccess) {
+      context.read<HostCubit>().getHostOverview(authState.user.id);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,34 +51,56 @@ class AdminOverviewScreen extends StatelessWidget {
             ),
             SizedBox(height: 32.h),
 
-            _buildDashboardCard(
-              title: 'My Listings',
-              subtitle: 'Manage your properties',
-              icon: Icons.home_outlined,
-              iconColor: Colors.blue,
-              onTap: () =>
-                  Navigator.pushNamed(context, AppRoutes.adminDashboard),
-            ),
-            _buildDashboardCard(
-              title: 'My Trips',
-              subtitle: 'View your reservations',
-              icon: Icons.calendar_today_outlined,
-              iconColor: Colors.green,
-              onTap: () => Navigator.pushNamed(context, AppRoutes.trips),
-            ),
-            _buildDashboardCard(
-              title: 'Wishlists',
-              subtitle: 'Places you saved',
-              icon: Icons.favorite_border,
-              iconColor: Colors.pink,
-              onTap: () => Navigator.pushNamed(context, AppRoutes.wishlists),
-            ),
-            _buildDashboardCard(
-              title: 'Account Settings',
-              subtitle: 'Profile & verification',
-              icon: Icons.settings_outlined,
-              iconColor: Colors.blueGrey,
-              onTap: () => Navigator.pushNamed(context, AppRoutes.account),
+            BlocBuilder<HostCubit, HostState>(
+              builder: (context, state) {
+                int? listingsCount;
+                int? tripsCount;
+                bool isLoading = state is HostLoading || state is HostInitial;
+                
+                if (state is HostDashboardLoaded) {
+                  listingsCount = state.listingIds.length;
+                  tripsCount = state.bookingIds.length;
+                }
+
+                return Column(
+                  children: [
+                    _buildDashboardCard(
+                      title: 'My Listings',
+                      subtitle: isLoading ? 'Loading data...' : 'Manage your ${listingsCount ?? 0} properties',
+                      icon: Icons.home_outlined,
+                      iconColor: Colors.blue,
+                      onTap: () {
+                        if (widget.onViewChanged != null) {
+                          widget.onViewChanged!('My Listings');
+                        } else {
+                          Navigator.pushNamed(context, AppRoutes.adminDashboard);
+                        }
+                      },
+                    ),
+                    _buildDashboardCard(
+                      title: 'My Trips',
+                      subtitle: isLoading ? 'Loading data...' : 'View your ${tripsCount ?? 0} reservations',
+                      icon: Icons.calendar_today_outlined,
+                      iconColor: Colors.green,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.trips),
+                    ),
+                    _buildDashboardCard(
+                      title: 'Wishlists',
+                      subtitle: 'Places you saved',
+                      icon: Icons.favorite_border,
+                      iconColor: Colors.pink,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.wishlists),
+                    ),
+                    _buildDashboardCard(
+                      title: 'Account Settings',
+                      subtitle: 'Profile & verification',
+                      icon: Icons.settings_outlined,
+                      iconColor: Colors.blueGrey,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.account),
+                    ),
+                  ],
+                );
+              },
             ),
 
             SizedBox(height: 24.h),
@@ -92,7 +135,7 @@ class AdminOverviewScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

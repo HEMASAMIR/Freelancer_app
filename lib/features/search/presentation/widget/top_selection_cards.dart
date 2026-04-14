@@ -24,7 +24,7 @@ class TopSelectionCards extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8),
         ],
       ),
       child: Column(
