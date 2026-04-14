@@ -59,15 +59,23 @@ class SearchParamsModel {
     };
   }
 
-  // ✅ بيبعت كل الـ parameters دايماً حتى لو null
-  Map<String, dynamic> toRequestBody() => {
-    'p_limit': limit,
-    'p_offset': offset,
-    'p_best_offer': bestOffer ?? false,
+  // ✅ بيبعت كل الـ parameters عشان يتجنب الـ Candidate Function Error في Supabase
+  Map<String, dynamic> toRequestBody() {
+    final Map<String, dynamic> body = {
+      'p_limit': limit,
+      'p_offset': offset,
+      'p_sort_by': 'created_at',
+      'p_locale': 'ar', // ✅ Fix: يحدد الـ function signature بشكل صريح
+    };
 
-    'p_location': location, // ✅ null مسموح بيه في Supabase
-    'p_guests': guests, // ✅
-    'p_min_price': priceMin, // ✅
-    'p_max_price': priceMax, // ✅
-  };
+    if (location != null) body['p_location'] = location;
+    if (guests != null) body['p_guests'] = guests;
+    if (priceMin != null) body['p_price_min'] = priceMin;
+    if (priceMax != null) body['p_price_max'] = priceMax;
+    if (checkIn != null) body['p_check_in'] = checkIn;
+    if (checkOut != null) body['p_check_out'] = checkOut;
+    if (bestOffer != null) body['p_best_offer'] = bestOffer;
+
+    return body;
+  }
 }

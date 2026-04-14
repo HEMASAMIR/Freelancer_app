@@ -12,14 +12,31 @@ final class FavInitial extends FavState {}
 final class FavLoading extends FavState {}
 
 final class FavLoaded extends FavState {
-  final List<ListingModel> favorites; // القائمة الكاملة للعرض
-  final List<String>
-  favoriteIds; // الـ IDs فقط عشان التشيك (الـ Getter اللي ناقصك)
+  final List<ListingModel> favorites;
+  final List<String> favoriteIds;
+  final List<WishlistModel> wishlists;
 
-  const FavLoaded(this.favorites, this.favoriteIds);
+  const FavLoaded({
+    
+    required this.favorites,
+    required this.favoriteIds,
+    required this.wishlists,
+  });
+
+  FavLoaded copyWith({
+    List<ListingModel>? favorites,
+    List<String>? favoriteIds,
+    List<WishlistModel>? wishlists,
+  }) {
+    return FavLoaded(
+      favorites: favorites ?? this.favorites,
+      favoriteIds: favoriteIds ?? this.favoriteIds,
+      wishlists: wishlists ?? this.wishlists,
+    );
+  }
 
   @override
-  List<Object?> get props => [favorites, favoriteIds];
+  List<Object?> get props => [favorites, favoriteIds, wishlists];
 }
 
 final class FavError extends FavState {

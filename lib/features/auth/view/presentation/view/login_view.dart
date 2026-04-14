@@ -229,7 +229,7 @@ class _LoginViewState extends State<LoginView> {
                                 ? null
                                 : () => Navigator.pushReplacementNamed(
                                     context,
-                                    '/register',
+                                    AppRoutes.signUp,
                                   ),
                             child: Text(
                               'Sign up',
@@ -237,7 +237,6 @@ class _LoginViewState extends State<LoginView> {
                                 fontSize: 11.sp,
                                 color: const Color(0xFF8B2323),
                                 fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.underline,
                               ),
                             ),
                           ),

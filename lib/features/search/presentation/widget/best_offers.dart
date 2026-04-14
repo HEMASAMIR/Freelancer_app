@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/features/search/data/search_model/search_params_model.dart';
+import 'package:freelancer/features/search/logic/search_cubit/cubit/search_cubit.dart';
+import 'package:freelancer/features/search/presentation/view/search_result_screen.dart';
 
 class BestOffersRow extends StatefulWidget {
-  /// لو استدعيته من شاشة تانية بدون params — يشتغل standalone
-  /// لو استدعيته من _FiltersChipsBar — بيستقبل selectedTab و onTabTap من بره
   final String? selectedTab;
   final ValueChanged<String>? onTabTap;
 
@@ -33,27 +35,30 @@ class _BestOffersRowState extends State<BestOffersRow> {
   void _onTap(String tab) {
     setState(() => _selected = tab);
 
+    // لو في callback من بره — فوّض له وخلاص
     if (widget.onTabTap != null) {
       widget.onTabTap!(tab);
       return;
     }
 
+    // ✅ FIX: Standalone mode — بنبني الـ params صح وبنفتح الـ SearchResultScreen
     final params = SearchParamsModel(
       location: tab == 'Best Offers' ? null : tab,
-      bestOffer: tab == 'Best Offers' ? true : false,
+      bestOffer: tab == 'Best Offers',
       limit: 20,
       offset: 0,
     );
 
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (_) => BlocProvider(
-    //       create: (_) => sl<SearchCubit>()..getListings(params: params),
-    //       child: (params: params),
-    //     ),
-    //   ),
-    // );
+    // ✅ FIX: فكّينا التعليق وصلّحنا الـ syntax (كان child: (params: params) وده خطأ)
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => sl<SearchCubit>()..getListings(params: params),
+          child: SearchResultScreen(params: params),
+        ),
+      ),
+    );
   }
 
   @override

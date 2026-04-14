@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -125,7 +126,7 @@ class _WhoBookingPageState extends State<WhoBookingPage> {
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
-                onPressed: () => print("Searching for $guests guests"),
+                onPressed: () => debugPrint("Searching for $guests guests"),
                 child: Text(
                   "Search",
                   style: TextStyle(color: Colors.white, fontSize: 16.sp),

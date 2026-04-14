@@ -6,10 +6,8 @@ import 'package:freelancer/features/search/logic/search_cubit/cubit/search_cubit
 import 'location_tag_item.dart';
 import 'package:freelancer/features/home/presentation/widget/best_offers_banner.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_card.dart';
-import 'package:freelancer/features/home/presentation/widget/custom_fotter.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_her_widget.dart';
-
-// ✅ استيراد الملفات المطلوبة للانتقال
 import 'package:freelancer/features/search/presentation/view/search_result_screen.dart';
 import 'package:freelancer/features/search/data/search_model/search_params_model.dart';
 
@@ -30,6 +28,24 @@ class _HomescreenBodyState extends State<HomescreenBody> {
     "Cairo",
   ];
 
+  void _onCategoryTap(String city) {
+    setState(() => selectedCategory = city);
+
+    final params = city == "Best Offers"
+        ? SearchParamsModel(bestOffer: true)
+        : SearchParamsModel(location: city);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BlocProvider(
+          create: (context) => sl<SearchCubit>()..getListings(params: params),
+          child: SearchResultScreen(params: params),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -38,15 +54,13 @@ class _HomescreenBodyState extends State<HomescreenBody> {
       children: [
         const BestOffersBanner(),
         const HeroWidget(),
-
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 24.h),
-
-              // ✅ قسم التاجز (المدن) سكرول عرضي
+              // Categories Row
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
@@ -57,40 +71,14 @@ class _HomescreenBodyState extends State<HomescreenBody> {
                       child: LocationTagItem(
                         title: city,
                         isSelected: selectedCategory == city,
-                        onTap: () {
-                          // 1. تحديث شكل التاج في الصفحة الحالية
-                          setState(() {
-                            selectedCategory = city;
-                          });
-
-                          // 2. الانتقال لصفحة النتائج مع توفير الـ Cubit
-                          if (city != "Best Offers") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => BlocProvider(
-                                  // بنستخدم sl عشان نجيب الـ SearchCubit اللي سجلناه في الـ Service Locator
-                                  create: (context) => sl<SearchCubit>(),
-                                  child: SearchResultScreen(
-                                    params: SearchParamsModel(
-                                      location:
-                                          city, // تمرير المدينة اللي ضغطت عليها
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
-                        },
+                        onTap: () => _onCategoryTap(city),
                       ),
                     );
                   }).toList(),
                 ),
               ),
-
               SizedBox(height: 24.h),
-
-              // ✅ قائمة العقارات الافتراضية في الهوم (قبل الانتقال)
+              // Featured Property
               const PropertyCard(
                 title: "Featured Property",
                 location: "Cairo, Egypt",
@@ -102,9 +90,8 @@ class _HomescreenBodyState extends State<HomescreenBody> {
                 bedrooms: 1,
                 baths: 1,
               ),
-
               SizedBox(height: 40.h),
-              const CustomFotter(),
+              const CustomFooter(),
               SizedBox(height: 30.h),
             ],
           ),

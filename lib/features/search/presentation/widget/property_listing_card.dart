@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:freelancer/core/constant/constant.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/utils/animation/custom_snackbar.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
-import 'package:freelancer/features/home/presentation/widget/best_offers_banner.dart';
+import 'package:freelancer/features/favourite/presentation/widget/wishlist_bottom_sheet.dart';
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
 
 class PropertyListingCard extends StatelessWidget {
@@ -39,7 +40,7 @@ class PropertyListingCard extends StatelessWidget {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(16.r),
+                  borderRadius: BorderRadius.circular(24.r),
                   child: Image.network(
                     imageUrl,
                     height: 280.h,
@@ -85,19 +86,13 @@ class PropertyListingCard extends StatelessWidget {
                             ),
                           ),
                           onPressed: () {
-                            final favCubit = context.read<FavCubit>();
-                            final bool currentlyFav = favCubit.isFavorite(
-                              listing.id.toString(),
-                            );
-
-                            favCubit.toggleFavorite(listing);
-
-                            CustomSnackBar.show(
-                              context,
-                              isError: currentlyFav,
-                              message: currentlyFav
-                                  ? "Removed from your favorites"
-                                  : "Added to your favorites! ❤️",
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (_) => BlocProvider.value(
+                                value: context.read<FavCubit>(),
+                                child: WishlistBottomSheet(listing: listing),
+                              ),
                             );
                           },
                         ),
@@ -141,8 +136,9 @@ class PropertyListingCard extends StatelessWidget {
                   child: Text(
                     listing.title ?? "Cozy Stay",
                     style: TextStyle(
-                      fontSize: 16.sp,
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBurgundy,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),

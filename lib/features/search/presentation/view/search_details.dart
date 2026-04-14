@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/core/utils/animation/custom_snackbar.dart';
 import 'package:freelancer/core/utils/widgets/custom_app_bar.dart';
-import 'package:freelancer/features/home/presentation/widget/custom_fotter.dart';
+import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
+import 'package:freelancer/features/favourite/presentation/widget/wishlist_bottom_sheet.dart';
+import 'package:freelancer/features/search/data/search_model/listing_model.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:freelancer/features/search/data/search_model/listing_model.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/bookings/logic/cubit/bookings_cubit.dart';
+import 'package:freelancer/core/app_router/routes.dart';
 
 const Color airbnbMaroon = Color(0xFF710E1F);
 const Color airbnbBg = Color(0xFFF7F3F0);
@@ -17,6 +26,7 @@ class SearchDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(),
+      drawer: const SideDrawer(),
       backgroundColor: airbnbBg,
       body: Stack(
         children: [
@@ -61,7 +71,7 @@ class SearchDetails extends StatelessWidget {
                       const _CustomDivider(),
                       _BookingCard(listing: listing),
                       SizedBox(height: 40.h),
-                      const CustomFotter(),
+                      const CustomFooter(),
                       SizedBox(height: 100.h),
                     ],
                   ),
@@ -142,9 +152,36 @@ class _TopInfoSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              _ActionBtn(icon: Icons.ios_share, label: "Share"),
+              _ActionBtn(
+                icon: Icons.ios_share,
+                label: "Share",
+                onTap: () {
+                  // يمكن إضافة مشاركة الرابط هنا لاحقاً
+                },
+              ),
               SizedBox(width: 20.w),
-              _ActionBtn(icon: Icons.favorite_border, label: "Save"),
+              BlocBuilder<FavCubit, FavState>(
+                builder: (context, state) {
+                  final favCubit = context.read<FavCubit>();
+                  final bool isFav = favCubit.isFavorite(listing.id.toString());
+
+                  return _ActionBtn(
+                    icon: isFav ? Icons.favorite : Icons.favorite_border,
+                    label: isFav ? "Saved" : "Save",
+                    iconColor: isFav ? Colors.red : Colors.black,
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (_) => BlocProvider.value(
+                          value: context.read<FavCubit>(),
+                          child: WishlistBottomSheet(listing: listing),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ],
           ),
         ],
@@ -222,22 +259,33 @@ class _BestOffersBannerFullWidth extends StatelessWidget {
 class _ActionBtn extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _ActionBtn({required this.icon, required this.label});
+  final VoidCallback onTap;
+  final Color? iconColor;
+
+  const _ActionBtn({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.iconColor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 18.sp),
-        SizedBox(width: 4.w),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.sp,
-            decoration: TextDecoration.underline,
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Icon(icon, size: 18.sp, color: iconColor),
+          SizedBox(width: 4.w),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14.sp,
+              decoration: TextDecoration.underline,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -431,6 +479,7 @@ class _BookingCard extends StatefulWidget {
 class _BookingCardState extends State<_BookingCard> {
   DateTimeRange? selectedDateRange;
   int guestsCount = 1;
+  bool isLoading = false;
 
   Future<void> _selectDateRange(BuildContext context) async {
     final DateTimeRange? picked = await showDateRangePicker(
@@ -524,27 +573,118 @@ class _BookingCardState extends State<_BookingCard> {
             width: double.infinity,
             height: 52.h,
             child: ElevatedButton(
-              onPressed: () {
-                if (selectedDateRange == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text(
-                        "Please selectchech in & check out dates first",
-                      ),
-                      backgroundColor: airbnbMaroon,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      if (selectedDateRange == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Please select check-in & check-out dates first",
+                            ),
+                            backgroundColor: airbnbMaroon,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      } else {
+                        setState(() => isLoading = true);
+                        try {
+                          final bookingCubit = context.read<BookingsCubit>();
+                          final authState = context.read<AuthCubit>().state;
+
+                          if (authState is! AuthSuccess &&
+                              authState is! AuthAdminSuccess) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Please log in first to book"),
+                                backgroundColor: airbnbMaroon,
+                              ),
+                            );
+                            setState(() => isLoading = false);
+                            return;
+                          }
+
+                          final userId = authState is AuthSuccess
+                              ? authState.user.id
+                              : (authState as AuthAdminSuccess).user.id;
+
+                          final bool isAvailable =
+                              await bookingCubit.checkAvailability(
+                            widget.listing.id!,
+                            selectedDateRange!.start.toIso8601String(),
+                            selectedDateRange!.end.toIso8601String(),
+                          );
+
+                          if (isAvailable) {
+                            final commission =
+                                await bookingCubit.getCommissionRate();
+                            final days = selectedDateRange!.duration.inDays;
+                            final subtotal = (widget.listing.pricePerNight ?? 0) *
+                                (days > 0 ? days : 1);
+
+                            await bookingCubit.createBooking(
+                              listingId: widget.listing.id!,
+                              userId: userId,
+                              checkIn: selectedDateRange!.start.toIso8601String(),
+                              checkOut: selectedDateRange!.end.toIso8601String(),
+                              guests: guestsCount,
+                              subtotal: subtotal,
+                              commissionRateId:
+                                  commission?['id'] ?? 'default_rate_id',
+                            );
+
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Booking created successfully!"),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                              Navigator.pushNamed(context, AppRoutes.trips);
+                            }
+                          } else {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "Selected dates are not available.",
+                                  ),
+                                  backgroundColor: airbnbMaroon,
+                                ),
+                              );
+                            }
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Error: ${e.toString()}"),
+                                backgroundColor: airbnbMaroon,
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) setState(() => isLoading = false);
+                        }
+                      }
+                    },
               style: ElevatedButton.styleFrom(backgroundColor: airbnbMaroon),
-              child: const Text(
-                "Check availability",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      "Check availability",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ),
           const Divider(height: 40),

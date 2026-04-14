@@ -5,7 +5,11 @@ import 'package:freelancer/features/auth/data/repos/auth_repo.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
-const List<String> _adminEmails = ['admin.aclone@atomicmail.io'];
+const List<String> _adminEmails = [
+  'admin.aclone@atomicmail.io',
+  'joe@gmail.com',
+  '01055673184hs@gmail.com',
+];
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepo _authRepo;
