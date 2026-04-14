@@ -8,6 +8,8 @@ class SupabaseKeys {
       'sb_publishable_aCMcsxno9Z3X5O3ktGQ4VQ_IPqpp53z';
 
   static const String restBaseUrl = '$supabaseUrl/rest/v1/';
+  static const String adminApiBaseUrl = '$supabaseUrl/api/admin/';
+
 
   static const String searchRpc = 'rpc/search_listings';
   static const String listingsRest = 'listings';
@@ -18,6 +20,26 @@ class SupabaseKeys {
   static const String commissionRatesRest = 'commission_rates';
   static const String checkAvailabilityRpc = 'rpc/check_listing_availability';
   static const String hostBalanceRpc = 'rpc/get_host_balance';
+
+  // Listing Wizard endpoints
+  static const String propertyTypes = 'property_types';
+  static const String lifestyleCategories = 'lifestyle_categories';
+  static const String listingConditions = 'listing_conditions';
+  static const String countries = 'countries';
+  static const String states = 'states';
+  static const String cities = 'cities';
+  static const String listingImagesRest = 'listing_images';
+  static const String listingLifestylesRest = 'listing_lifestyles';
+  static const String listingConditionAssignmentsRest = 'listing_condition_assignments';
+
+  // Host Management endpoints
+  static const String userBalanceRpc = 'rpc/get_user_balance';
+  static const String listingAvailabilityRest = 'listing_availability';
+  static const String reviewsRest = 'reviews';
+
+  // Admin specialized endpoints
+  static const String adminListingsStatus = 'listings/status';
+  static const String adminPayoutsProcess = 'payouts/process';
 }
 
 class AppColors {

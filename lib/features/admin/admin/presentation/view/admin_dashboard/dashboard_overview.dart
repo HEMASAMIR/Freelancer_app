@@ -25,21 +25,18 @@ class AdminOverviewScreen extends StatelessWidget {
             ),
             SizedBox(height: 8.h),
             Text(
-              'Welcome back! Here’s an overview of your account.',
+              'Welcome back! Here\'s an overview of your account.',
               style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600),
             ),
             SizedBox(height: 32.h),
 
-            // Cards Grid/List
             _buildDashboardCard(
               title: 'My Listings',
               subtitle: 'Manage your properties',
               icon: Icons.home_outlined,
               iconColor: Colors.blue,
-              onTap: () => Navigator.pushNamed(
-                context,
-                AppRoutes.adminDashboard,
-              ), // أو المسار المناسب
+              onTap: () =>
+                  Navigator.pushNamed(context, AppRoutes.adminDashboard),
             ),
             _buildDashboardCard(
               title: 'My Trips',
@@ -65,12 +62,10 @@ class AdminOverviewScreen extends StatelessWidget {
 
             SizedBox(height: 24.h),
 
-            // Become a Host Card
             _buildBecomeHostCard(context),
 
             SizedBox(height: 40.h),
 
-            // Footer Info
             Center(
               child: Text(
                 '© 2026 QuickIn Inc. · Terms · Sitemap · Privacy',
@@ -151,8 +146,9 @@ class AdminOverviewScreen extends StatelessWidget {
           ),
           SizedBox(height: 16.h),
           ElevatedButton(
+            // ← يروح لشاشة Identity Verification
             onPressed: () =>
-                Navigator.pushNamed(context, AppRoutes.hostDashboard),
+                Navigator.pushNamed(context, AppRoutes.identityVerification),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.maroon,
               foregroundColor: Colors.white,

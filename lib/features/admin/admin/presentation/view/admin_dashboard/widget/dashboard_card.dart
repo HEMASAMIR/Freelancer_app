@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-
 class DashboardCard extends StatefulWidget {
   final IconData icon;
   final Color iconColor;

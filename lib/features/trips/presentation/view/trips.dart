@@ -4,7 +4,6 @@ import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
-
 import 'package:freelancer/features/bookings/data/models/booking_model.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_cubit.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_state.dart';
@@ -80,7 +79,7 @@ class _TripsScreenState extends State<TripsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ──
+            // ── Header ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
               child: Column(
@@ -103,7 +102,8 @@ class _TripsScreenState extends State<TripsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // ── Search ──
+
+                  // ── Search ─────────────────────────────────────────
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -130,7 +130,8 @@ class _TripsScreenState extends State<TripsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // ── Filters ──
+
+                  // ── Filter Chips ───────────────────────────────────
                   Row(
                     children: ['Pending', 'Upcoming', 'History'].map((filter) {
                       final isSelected = _selectedFilter == filter;
@@ -181,8 +182,10 @@ class _TripsScreenState extends State<TripsScreen> {
                 ],
               ),
             ),
+
             const SizedBox(height: 16),
-            // ── Content ──
+
+            // ── Content ──────────────────────────────────────────────
             Expanded(
               child: BlocBuilder<BookingsCubit, BookingsState>(
                 builder: (context, state) {
@@ -208,6 +211,17 @@ class _TripsScreenState extends State<TripsScreen> {
                 },
               ),
             ),
+
+            // ── Footer ───────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16, top: 8),
+              child: Center(
+                child: Text(
+                  '© 2026 QuickIn, Inc. · Terms · Sitemap · Privacy',
+                  style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -222,6 +236,9 @@ class _EmptyTrips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ كل تاب له محتوى مختلف
+    final config = _emptyConfig(filter);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -236,13 +253,13 @@ class _EmptyTrips extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.calendar_month_outlined,
+                config['icon'] as IconData,
                 size: 56,
                 color: AppColors.sub.withOpacity(0.4),
               ),
               const SizedBox(height: 16),
               Text(
-                'No ${filter.toLowerCase()} trips',
+                config['title'] as String,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -251,39 +268,72 @@ class _EmptyTrips extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Time to plan your next adventure',
+                config['subtitle'] as String,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.sub.withOpacity(0.6),
                 ),
               ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () =>
-                      Navigator.of(context).pushNamed(AppRoutes.home),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryRed,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+
+              // ✅ الزرار بيظهر بس لو مش History
+              if (config['buttonLabel'] != null) ...[
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.searchResult),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryRed,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                  ),
-                  child: const Text(
-                    'Start searching',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
+                    child: Text(
+                      config['buttonLabel'] as String,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
       ),
     );
+  }
+
+  Map<String, dynamic> _emptyConfig(String filter) {
+    switch (filter) {
+      case 'Pending':
+        return {
+          'icon': Icons.access_time_rounded,
+          'title': 'No pending requests',
+          'subtitle':
+              'Your booking requests that are awaiting host approval will appear here',
+          'buttonLabel': 'Browse listings', // ✅ زرار مختلف
+        };
+      case 'History':
+        return {
+          'icon': Icons.history_rounded,
+          'title': 'No past trips',
+          'subtitle': 'Your completed and cancelled trips will appear here',
+          'buttonLabel': null, // ✅ مفيش زرار
+        };
+      case 'Upcoming':
+      default:
+        return {
+          'icon': Icons.calendar_month_outlined,
+          'title': 'No upcoming trips',
+          'subtitle': 'Time to plan your next adventure',
+          'buttonLabel': 'Start searching',
+        };
+    }
   }
 }
 
@@ -396,7 +446,6 @@ class _TripCard extends StatelessWidget {
             const SizedBox(height: 12),
             GestureDetector(
               onTap: () {
-                // Cancel booking
                 final authState = context.read<AuthCubit>().state;
                 final userId = authState is AuthSuccess
                     ? authState.user.id

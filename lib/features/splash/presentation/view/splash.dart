@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     Timer(const Duration(seconds: 4), () {
       if (!mounted) return;
-      
+
       final authState = context.read<AuthCubit>().state;
       if (authState is AuthAdminSuccess) {
         Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);

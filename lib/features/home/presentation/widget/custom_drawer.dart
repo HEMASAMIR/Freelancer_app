@@ -51,7 +51,11 @@ class _SideDrawerState extends State<SideDrawer> {
         final route = _getRouteForItem(item, mode);
         if (route != null) {
           // تأكد إن AppRoutes.adminDashboard هو المسار لـ AdminOverviewScreen
-          Navigator.of(context).pushNamed(route);
+          if (route == AppRoutes.adminDashboard || route == AppRoutes.adminOverview) {
+            Navigator.of(context).pushNamed(route, arguments: item);
+          } else {
+            Navigator.of(context).pushNamed(route);
+          }
         }
       }
     });
@@ -81,6 +85,11 @@ class _SideDrawerState extends State<SideDrawer> {
         return AppRoutes.trips;
       case 'Wishlists':
         return AppRoutes.wishlists;
+      case 'Earnings & Balance':
+      case 'My Listings':
+      case 'All Listings':
+      case 'Create New':
+        return AppRoutes.adminDashboard;
       default:
         return null;
     }
@@ -342,53 +351,164 @@ class _SideDrawerState extends State<SideDrawer> {
     if (user == null) return const SizedBox.shrink();
     final String name =
         user.userMetadata?['full_name'] ?? user.email?.split('@')[0] ?? 'User';
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      color: Colors.black.withOpacity(0.02),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 20.r,
-            backgroundColor: Colors.white,
-            child: Text(
-              name[0].toUpperCase(),
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primaryRed,
+    final String email = user.email ?? '';
+    final String initials = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+
+    return PopupMenuButton<String>(
+      offset: const Offset(0, -280),
+      color: Colors.white,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          enabled: false,
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20.r,
+                backgroundColor: AppColors.bgColor,
+                child: Text(
+                  initials,
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryRed,
+                  ),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      email,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.grey.shade600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: 'Personal Info',
+          child: Row(
+            children: [
+              Icon(Icons.person_outline, size: 20.sp, color: Colors.grey.shade700),
+              SizedBox(width: 12.w),
+              Text('Personal Info', style: TextStyle(fontSize: 14.sp)),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'Settings',
+          child: Row(
+            children: [
+              Icon(Icons.settings_outlined, size: 20.sp, color: Colors.grey.shade700),
+              SizedBox(width: 12.w),
+              Text('Settings', style: TextStyle(fontSize: 14.sp)),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'Notifications',
+          child: Row(
+            children: [
+              Icon(Icons.notifications_outlined, size: 20.sp, color: Colors.grey.shade700),
+              SizedBox(width: 12.w),
+              Text('Notifications', style: TextStyle(fontSize: 14.sp)),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'Help Center',
+          child: Row(
+            children: [
+              Icon(Icons.help_outline, size: 20.sp, color: Colors.grey.shade700),
+              SizedBox(width: 12.w),
+              Text('Help Center', style: TextStyle(fontSize: 14.sp)),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: 'Log out',
+          child: Row(
+            children: [
+              Icon(Icons.logout, size: 20.sp, color: Colors.grey.shade700),
+              SizedBox(width: 12.w),
+              Text('Log out', style: TextStyle(fontSize: 14.sp)),
+            ],
+          ),
+        ),
+      ],
+      onSelected: (value) {
+        DrawerMode mode = DrawerMode.user;
+        final state = context.read<AuthCubit>().state;
+        if (state is AuthAdminSuccess) mode = DrawerMode.admin;
+        _select(value, context, mode);
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+        color: Colors.black.withOpacity(0.02),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20.r,
+              backgroundColor: Colors.white,
+              child: Text(
+                initials,
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryRed,
+                ),
               ),
             ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  user.email ?? '',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: Colors.grey.shade600,
+                  Text(
+                    email,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey.shade600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          IconButton(
-            onPressed: () => context.read<AuthCubit>().signOut(),
-            icon: Icon(Icons.logout, size: 20.sp, color: Colors.grey.shade600),
-          ),
-        ],
+            Icon(Icons.unfold_more_outlined, size: 20.sp, color: Colors.grey.shade600),
+          ],
+        ),
       ),
     );
   }
