@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AnimatedPressButton extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
-  const AnimatedPressButton({required this.child, required this.onTap});
+  const AnimatedPressButton({super.key, required this.child, required this.onTap});
 
   @override
   State<AnimatedPressButton> createState() => AnimatedPressButtonState();

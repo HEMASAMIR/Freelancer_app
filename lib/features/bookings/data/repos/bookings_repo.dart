@@ -17,7 +17,7 @@ abstract class BookingsRepository {
     required String checkOut,
     required int guests,
     required num subtotal,
-    required String commissionRateId,
+    String? commissionRateId,
   });
 
   Future<Either<String, Unit>> cancelBooking({

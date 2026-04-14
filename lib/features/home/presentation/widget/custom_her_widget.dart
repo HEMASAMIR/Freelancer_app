@@ -27,7 +27,7 @@ class HeroWidget extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+              colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
             ),
           ),
         ),
@@ -51,7 +51,7 @@ class HeroWidget extends StatelessWidget {
               Text(
                 "Handpicked homes designed for comfort,\nbeauty, and calm.",
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 17.sp,
                   height: 1.4,
                 ),

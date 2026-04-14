@@ -25,14 +25,14 @@ class BookingsCubit extends Cubit<BookingsState> {
     return result.fold((l) => null, (r) => r);
   }
 
-  Future<void> createBooking({
+  Future<bool> createBooking({
     required String listingId,
     required String userId,
     required String checkIn,
     required String checkOut,
     required int guests,
     required num subtotal,
-    required String commissionRateId,
+    String? commissionRateId,
   }) async {
     emit(BookingsLoading());
     final result = await repository.createBooking(
@@ -44,9 +44,15 @@ class BookingsCubit extends Cubit<BookingsState> {
       subtotal: subtotal,
       commissionRateId: commissionRateId,
     );
-    result.fold(
-      (error) => emit(BookingsError(error)),
-      (booking) => emit(BookingsSuccess(booking)),
+    return result.fold(
+      (error) {
+        emit(BookingsError(error));
+        return false;
+      },
+      (booking) {
+        emit(BookingsSuccess(booking));
+        return true;
+      },
     );
   }
 

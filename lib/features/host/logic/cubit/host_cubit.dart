@@ -13,7 +13,7 @@ class HostCubit extends Cubit<HostState> {
     
     final listingsResult = await _repository.getHostListingsIds(userId);
     final bookingsResult = await _repository.getGuestBookingsIds(userId);
-    final balanceResult = await _repository.getUserBalance();
+    final balanceResult = await _repository.getUserBalance(userId);
 
     listingsResult.fold(
       (error) => emit(HostError(error)),

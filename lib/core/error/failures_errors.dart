@@ -80,7 +80,7 @@ class ServerFailure extends AuthFailure {
 // ─────────────────────────────────────────────
 
 class UnknownFailure extends AuthFailure {
-  const UnknownFailure([String msg = 'حدث خطأ غير متوقع']) : super(msg);
+  const UnknownFailure([super.msg = 'حدث خطأ غير متوقع']);
 }
 
 

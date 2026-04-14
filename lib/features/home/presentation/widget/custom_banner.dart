@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/shared_helper/app_color.dart';
 
 class OfferBanner extends StatelessWidget {
-  const OfferBanner();
+  const OfferBanner({super.key});
 
   @override
   Widget build(BuildContext context) {

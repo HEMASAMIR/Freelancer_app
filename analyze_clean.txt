@@ -1,0 +1,14 @@
+Analyzing freelancer...                                         
+
+warning - Duplicate import - lib\core\di\service_locator.dart:76:8 - duplicate_import
+warning - Dead code - lib\core\utils\widgets\custom_app_bar.dart:169:52 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\core\utils\widgets\custom_app_bar.dart:169:55 - dead_null_aware_expression
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:187:57 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:190:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:236:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:238:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\account\presentation\security_screen.dart:296:63 - deprecated_member_use
+warning - The declaration '_PlaceholderView' isn't referenced - lib\features\admin\admin\presentation\view\admin_dashboard.dart:145:7 - unused_element
+warning - Unused import: 'package:freelancer/features/listing_wizard/data/models/wizard_models.dart' - lib\features\listing_wizard\logic\cubit\listing_form_cubit.dart:3:8 - unused_import
+
+10 issues found. (ran in 15.1s)

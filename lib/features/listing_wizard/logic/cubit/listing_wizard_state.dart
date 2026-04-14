@@ -18,16 +18,38 @@ class ListingWizardLookupsLoaded extends ListingWizardState {
   final List<LifestyleCategoryModel> lifestyleCategories;
   final List<ListingConditionModel> listingConditions;
   final List<CountryModel> countries;
+  final List<StateModel> states;
+  final List<CityModel> cities;
 
   const ListingWizardLookupsLoaded({
     required this.propertyTypes,
     required this.lifestyleCategories,
     required this.listingConditions,
     required this.countries,
+    this.states = const [],
+    this.cities = const [],
   });
 
+  ListingWizardLookupsLoaded copyWith({
+    List<PropertyTypeModel>? propertyTypes,
+    List<LifestyleCategoryModel>? lifestyleCategories,
+    List<ListingConditionModel>? listingConditions,
+    List<CountryModel>? countries,
+    List<StateModel>? states,
+    List<CityModel>? cities,
+  }) {
+    return ListingWizardLookupsLoaded(
+      propertyTypes: propertyTypes ?? this.propertyTypes,
+      lifestyleCategories: lifestyleCategories ?? this.lifestyleCategories,
+      listingConditions: listingConditions ?? this.listingConditions,
+      countries: countries ?? this.countries,
+      states: states ?? this.states,
+      cities: cities ?? this.cities,
+    );
+  }
+
   @override
-  List<Object?> get props => [propertyTypes, lifestyleCategories, listingConditions, countries];
+  List<Object?> get props => [propertyTypes, lifestyleCategories, listingConditions, countries, states, cities];
 }
 
 class ListingWizardLocationsLoaded extends ListingWizardState {

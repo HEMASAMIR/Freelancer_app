@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
 import 'package:freelancer/features/search/data/search_model/search_params_model.dart';
-import 'package:freelancer/features/search/presentation/view/search_result_screen.dart';
 // استيراد الـ Widgets المنفصلة
 import 'package:freelancer/features/search/presentation/widget/filter_selection.dart';
 import 'package:freelancer/features/search/presentation/widget/section_shell.dart';

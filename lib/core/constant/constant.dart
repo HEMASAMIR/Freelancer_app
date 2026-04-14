@@ -9,6 +9,7 @@ class SupabaseKeys {
 
   static const String restBaseUrl = '$supabaseUrl/rest/v1/';
   static const String adminApiBaseUrl = '$supabaseUrl/api/admin/';
+  static const String authBaseUrl = '$supabaseUrl/auth/v1/';
 
 
   static const String searchRpc = 'rpc/search_listings';

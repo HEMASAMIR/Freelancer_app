@@ -10,6 +10,7 @@ class SectionShell extends StatelessWidget {
   final Widget child;
 
   const SectionShell({
+    super.key,
     required this.isExpanded,
     required this.closedTitle,
     required this.closedSub,
@@ -30,7 +31,7 @@ class SectionShell extends StatelessWidget {
         boxShadow: isExpanded
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),

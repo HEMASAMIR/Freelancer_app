@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:freelancer/features/auth/data/models/user_model.dart';
 
 abstract class AuthState extends Equatable {
   const AuthState();
@@ -25,7 +25,7 @@ class GoogleAuthState extends AuthState {
 }
 
 class AuthSuccess extends AuthState {
-  final User user;
+  final UserModel user;
   const AuthSuccess(this.user);
 
   @override
@@ -48,7 +48,7 @@ class AuthSignedOut extends AuthState {
 
 // ✅ زود الـ state ده
 class AuthAdminSuccess extends AuthState {
-  final User user;
+  final UserModel user;
   const AuthAdminSuccess(this.user);
 
   @override

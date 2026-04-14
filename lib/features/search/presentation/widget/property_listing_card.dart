@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:freelancer/core/utils/animation/custom_snackbar.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/favourite/presentation/widget/wishlist_bottom_sheet.dart';
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
@@ -111,7 +110,7 @@ class PropertyListingCard extends StatelessWidget {
                         vertical: 4.h,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(20.r),
                       ),
                       child: Text(

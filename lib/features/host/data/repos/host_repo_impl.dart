@@ -40,7 +40,7 @@ class HostRepositoryImpl implements HostRepository {
       final response = await dio.get(
         SupabaseKeys.bookingsRest,
         queryParameters: {
-          'guest_id': 'eq.$userId',
+          'user_id': 'eq.$userId',
           'select': 'id',
         },
       );
@@ -133,12 +133,23 @@ class HostRepositoryImpl implements HostRepository {
   }
 
   @override
-  Future<Either<String, double>> getUserBalance() async {
+  Future<Either<String, double>> getUserBalance(String userId) async {
     try {
-      final response = await dio.post(SupabaseKeys.userBalanceRpc);
+      final response = await dio.get(
+        SupabaseKeys.bookingsRest,
+        queryParameters: {
+          'select': 'subtotal,listing:listings!inner(user_id)',
+          'listing.user_id': 'eq.$userId',
+        },
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return Right((response.data as num).toDouble());
+        final List data = response.data;
+        double totalBalance = 0.0;
+        for (var booking in data) {
+          totalBalance += ((booking['subtotal'] as num?) ?? 0.0).toDouble();
+        }
+        return Right(totalBalance);
       }
       return const Left("فشل في جلب رصيدك.");
     } on DioException catch (e) {

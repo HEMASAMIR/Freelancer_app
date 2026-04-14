@@ -8,16 +8,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:freelancer/core/constant/constant.dart';
+import 'package:freelancer/core/network/auth_interceptor.dart';
 
 // Auth
 import 'package:freelancer/features/auth/data/repos/auth_repo.dart';
 import 'package:freelancer/features/auth/data/repos/auth_repo_impl.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/account/logic/security_cubit.dart';
+import 'package:freelancer/features/listing_wizard/logic/cubit/listing_wizard_cubit.dart';
+import 'package:freelancer/features/listing_wizard/logic/cubit/listing_form_cubit.dart';
+import 'package:freelancer/features/admin/logic/wallet_cubit.dart';
 
 // Listing Wizard
 import 'package:freelancer/features/listing_wizard/data/repos/listing_wizard_repo.dart';
 import 'package:freelancer/features/listing_wizard/data/repos/listing_wizard_repo_impl.dart';
-import 'package:freelancer/features/listing_wizard/logic/cubit/listing_wizard_cubit.dart';
 
 // Host Management
 import 'package:freelancer/features/host/data/repos/host_repo.dart';
@@ -90,31 +94,39 @@ Future<void> setupServiceLocator() async {
   // Supabase Client
   sl.registerLazySingleton<SupabaseClient>(() => Supabase.instance.client);
 
-  // Dio Client
+  // Dio Client (Base without interceptors for refresh)
+  final baseDio = Dio(
+    BaseOptions(
+      baseUrl: SupabaseKeys.restBaseUrl,
+      headers: {
+        'apikey': SupabaseKeys.supabaseAnonKey,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      },
+    ),
+  );
+
   sl.registerLazySingleton<Dio>(
-    () =>
-        Dio(
-            BaseOptions(
-              baseUrl: SupabaseKeys.restBaseUrl,
-              headers: {
-                'apikey': SupabaseKeys.supabaseAnonKey,
-                'Authorization': 'Bearer ${SupabaseKeys.supabaseAnonKey}',
-                'Content-Type': 'application/json',
-                'Prefer': 'return=representation',
-              },
-            ),
-          )
-          ..interceptors.add(
-            PrettyDioLogger(
-              requestHeader: true,
-              requestBody: true,
-              responseBody: true,
-              responseHeader: false,
-              error: true,
-              compact: true,
-              maxWidth: 90,
-            ),
-          ),
+    () => Dio(
+      BaseOptions(
+        baseUrl: SupabaseKeys.restBaseUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        },
+      ),
+    )..interceptors.addAll([
+        AuthInterceptor(sharedPreferences: sharedPrefs, baseDio: baseDio),
+        PrettyDioLogger(
+          requestHeader: true,
+          requestBody: true,
+          responseBody: true,
+          responseHeader: false,
+          error: true,
+          compact: true,
+          maxWidth: 90,
+        ),
+      ]),
   );
 
   // ------------------------------------------------------------------
@@ -123,10 +135,16 @@ Future<void> setupServiceLocator() async {
 
   // --- Auth Feature ---
   sl.registerLazySingleton<AuthRepo>(
-    () => AuthRepoImpl(supabase: sl<SupabaseClient>()),
+    () => AuthRepoImpl(
+      dio: sl<Dio>(),
+      prefs: sl<SharedPreferences>(),
+    ),
   );
   sl.registerLazySingleton<AuthCubit>(
     () => AuthCubit(authRepo: sl<AuthRepo>()),
+  );
+  sl.registerFactory<SecurityCubit>(
+    () => SecurityCubit(authRepo: sl<AuthRepo>()),
   );
 
   // --- Search Feature ---
@@ -188,9 +206,8 @@ Future<void> setupServiceLocator() async {
       supabase: sl<SupabaseClient>(),
     ),
   );
-  sl.registerFactory<ListingWizardCubit>(
-    () => ListingWizardCubit(sl<ListingWizardRepository>()),
-  );
+  sl.registerFactory(() => ListingWizardCubit(sl()));
+  sl.registerFactory(() => ListingFormCubit());
 
   // --- Host Management Feature ---
   sl.registerLazySingleton<HostRepository>(

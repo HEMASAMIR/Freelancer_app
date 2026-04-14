@@ -1,0 +1,11 @@
+Analyzing freelancer...                                         
+
+warning - Dead code - lib\core\utils\widgets\custom_app_bar.dart:169:52 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\core\utils\widgets\custom_app_bar.dart:169:55 - dead_null_aware_expression
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:561:54 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:567:53 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:570:54 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:584:52 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\features\search\presentation\view\search_details.dart:596:50 - use_build_context_synchronously
+
+7 issues found. (ran in 5.4s)

@@ -24,7 +24,7 @@ class ProfileHeaderCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -68,7 +68,7 @@ class ProfileHeaderCard extends StatelessWidget {
                   email,
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.sub.withOpacity(0.8),
+                    color: AppColors.sub.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(height: 12),

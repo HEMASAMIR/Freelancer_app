@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:freelancer/core/utils/animation/custom_snackbar.dart';
 import 'package:freelancer/core/utils/widgets/custom_app_bar.dart';
+import 'package:freelancer/features/bookings/logic/cubit/bookings_state.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
@@ -290,82 +290,6 @@ class _ActionBtn extends StatelessWidget {
   }
 }
 
-// --- قسم الهيدر (المعدل بوضع البانر والتقييم في Row واحد) ---
-class _HeaderSection extends StatelessWidget {
-  final ListingModel listing;
-  const _HeaderSection({required this.listing});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // الصف اللي فيه البانر والتقييم والمكان
-        Row(
-          children: [
-            if (listing.displayPrice != null) ...[
-              _BestOffersBanner(),
-              SizedBox(width: 12.w),
-            ],
-            Icon(Icons.star, size: 16.sp),
-            SizedBox(width: 4.w),
-            Text(
-              listing.isGuestFavorite == true ? "Guest Favorite" : "New",
-              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              " · 0 reviews",
-              style: TextStyle(fontSize: 14.sp, color: Colors.grey[700]),
-            ),
-            SizedBox(width: 8.w),
-            Expanded(
-              child: Text(
-                "${listing.city}, ${listing.country}",
-                style: const TextStyle(decoration: TextDecoration.underline),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 16.h),
-        // العنوان تحتهم
-        Text(
-          listing.title ?? "No Title",
-          style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold),
-        ),
-      ],
-    );
-  }
-}
-
-// الويجت الخاص بالبانر عشان الكود يكون منظم
-class _BestOffersBanner extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: airbnbMaroon,
-        borderRadius: BorderRadius.circular(4.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.local_offer_outlined, color: Colors.white, size: 12.sp),
-          SizedBox(width: 4.w),
-          Text(
-            "Best Offer",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 11.sp,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // --- قسم الخريطة ---
 class _LocationMapSection extends StatelessWidget {
@@ -622,28 +546,41 @@ class _BookingCardState extends State<_BookingCard> {
                             final subtotal = (widget.listing.pricePerNight ?? 0) *
                                 (days > 0 ? days : 1);
 
-                            await bookingCubit.createBooking(
+                            final isSuccess = await bookingCubit.createBooking(
                               listingId: widget.listing.id!,
                               userId: userId,
                               checkIn: selectedDateRange!.start.toIso8601String(),
                               checkOut: selectedDateRange!.end.toIso8601String(),
                               guests: guestsCount,
                               subtotal: subtotal,
-                              commissionRateId:
-                                  commission?['id'] ?? 'default_rate_id',
+                              commissionRateId: commission?['id'],
                             );
 
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Booking created successfully!"),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                              Navigator.pushNamed(context, AppRoutes.trips);
+                            if (context.mounted) {
+                              if (isSuccess) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Booking created successfully!"),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                                Navigator.pushNamed(context, AppRoutes.trips);
+                              } else {
+                                final state = bookingCubit.state;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      state is BookingsError
+                                          ? state.message
+                                          : "Booking failed. Please try again.",
+                                    ),
+                                    backgroundColor: airbnbMaroon,
+                                  ),
+                                );
+                              }
                             }
                           } else {
-                            if (mounted) {
+                            if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
@@ -655,7 +592,7 @@ class _BookingCardState extends State<_BookingCard> {
                             }
                           }
                         } catch (e) {
-                          if (mounted) {
+                          if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text("Error: ${e.toString()}"),
@@ -783,26 +720,16 @@ class _ImageSliderAppBar extends StatelessWidget {
     expandedHeight: 280.h,
     flexibleSpace: FlexibleSpaceBar(
       background: (listing.images?.isNotEmpty ?? false)
-          ? Image.network(listing.images!.first.url!, fit: BoxFit.cover)
+          ? Image.network(
+              listing.images!.first.url!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: Colors.grey[200],
+                child: const Center(child: Icon(Icons.broken_image)),
+              ),
+            )
           : Container(color: Colors.grey[200]),
     ),
-  );
-}
-
-class _ReviewsSection extends StatelessWidget {
-  final ListingModel listing;
-  const _ReviewsSection({required this.listing});
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      const Icon(Icons.star, size: 20),
-      SizedBox(width: 8.w),
-      Text(
-        listing.isGuestFavorite == true ? "Guest Favorite" : "New",
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      const Text(" • 0 reviews"),
-    ],
   );
 }
 

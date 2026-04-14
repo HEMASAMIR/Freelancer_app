@@ -47,7 +47,7 @@ class _DashboardCardState extends State<DashboardCard> {
               ? []
               : [
                   BoxShadow(
-                    color: AppColors.ink.withOpacity(0.03),
+                    color: AppColors.ink.withValues(alpha: 0.03),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -67,7 +67,7 @@ class _DashboardCardState extends State<DashboardCard> {
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.ink.withOpacity(0.7),
+                    color: AppColors.ink.withValues(alpha: 0.7),
                   ),
                 ),
                 Icon(widget.icon, size: 18, color: widget.iconColor),

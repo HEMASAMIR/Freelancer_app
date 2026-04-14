@@ -98,6 +98,7 @@ class ListingModel {
     PropertyTypeModel? propertyType,
     List<ListingImage>? images,
     List<LifestyleModel>? lifestyles,
+    String? hostId,
     Map<String, dynamic>? translations,
   }) {
     return ListingModel(

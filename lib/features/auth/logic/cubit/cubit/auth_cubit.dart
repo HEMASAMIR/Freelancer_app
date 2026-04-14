@@ -3,7 +3,7 @@ import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/features/auth/data/repos/auth_repo.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+import 'package:freelancer/features/auth/data/models/user_model.dart';
 
 const List<String> _adminEmails = [
   'admin.aclone@atomicmail.io',
@@ -129,8 +129,8 @@ class AuthCubit extends Cubit<AuthState> {
   //  Helpers
   // ─────────────────────────────────────────────
 
-  AuthState _resolveSuccess(User user) {
-    final email = user.email?.toLowerCase().trim() ?? '';
+  AuthState _resolveSuccess(UserModel user) {
+    final email = user.email.toLowerCase().trim();
     final isAdminUser = _adminEmails.contains(email);
 
     log(

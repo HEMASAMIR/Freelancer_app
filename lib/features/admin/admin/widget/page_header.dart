@@ -5,7 +5,7 @@ import 'package:freelancer/core/utils/animation/animation_press_button.dart';
 class PageHeader extends StatelessWidget {
   final Color maroonColor;
   final Color greyColor;
-  const PageHeader({required this.maroonColor, required this.greyColor});
+  const PageHeader({super.key, required this.maroonColor, required this.greyColor});
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,14 @@ class PageHeader extends StatelessWidget {
 
         // ✅ الزرار بـ size ثابت - ميتمددش
         AnimatedPressButton(
-          onTap: () {},
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Add Staff functionality coming soon!"),
+                backgroundColor: Colors.blueGrey,
+              ),
+            );
+          },
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
             decoration: BoxDecoration(
