@@ -41,11 +41,13 @@ class FavCubit extends Cubit<FavState> {
       // تحميل الـ Wishlists بالمرة
       final wishlists = await _repository.getWishlists();
 
-      emit(FavLoaded(
-        favorites: favoritesToShow,
-        favoriteIds: favoriteIds,
-        wishlists: wishlists,
-      ));
+      emit(
+        FavLoaded(
+          favorites: favoritesToShow,
+          favoriteIds: favoriteIds,
+          wishlists: wishlists,
+        ),
+      );
     } catch (e) {
       debugPrint("Error loading favorites: $e");
       emit(const FavError("Failed to load favorites"));
@@ -77,7 +79,9 @@ class FavCubit extends Cubit<FavState> {
 
       if (state is FavLoaded) {
         final currentState = state as FavLoaded;
-        final newContent = Map<String, List<ListingModel>>.from(currentState.wishlistContent);
+        final newContent = Map<String, List<ListingModel>>.from(
+          currentState.wishlistContent,
+        );
         newContent[wishlistId] = itemsToShow;
         emit(currentState.copyWith(wishlistContent: newContent));
       }
@@ -88,44 +92,87 @@ class FavCubit extends Cubit<FavState> {
 
   // تحميل الـ Wishlists فقط
   Future<void> loadWishlists() async {
+    // نحتفظ بالحالة السابقة إذا كانت FavLoaded عشان مانكسرش الـ UI
+    final previousState = state;
+    if (previousState is! FavLoaded) {
+      emit(FavLoading());
+    }
     try {
       final wishlists = await _repository.getWishlists();
-      if (state is FavLoaded) {
-        final currentState = state as FavLoaded;
-        emit(currentState.copyWith(wishlists: wishlists));
+      if (previousState is FavLoaded) {
+        emit(previousState.copyWith(wishlists: wishlists));
       } else {
-        emit(FavLoaded(favorites: [], favoriteIds: [], wishlists: wishlists));
+        emit(
+          FavLoaded(
+            favorites: const [],
+            favoriteIds: const [],
+            wishlists: wishlists,
+          ),
+        );
       }
     } catch (e) {
-      emit(const FavError("Failed to load wishlists"));
+      debugPrint("loadWishlists error: $e");
+      // نرجع للحالة السابقة بدل ما نكسر الـ UI
+      if (previousState is FavLoaded) {
+        emit(previousState);
+      } else {
+        emit(
+          FavLoaded(
+            favorites: const [],
+            favoriteIds: const [],
+            wishlists: const [],
+          ),
+        );
+      }
     }
   }
 
-  Future<void> createWishlist(String name, {ListingModel? listingToSave}) async {
+  Future<bool> createWishlist(
+    String name, {
+    ListingModel? listingToSave,
+  }) async {
     final result = await _repository.createWishlist(name);
-    result.fold(
-      (failure) => emit(const FavError("Failed to create wishlist")),
+    return await result.fold(
+      (failure) {
+        emit(FavError(failure.message));
+        return Future.value(false);
+      },
       (wishlist) async {
         if (listingToSave != null) {
-          await toggleFavorite(listingToSave, wishlistId: wishlist.id);
-        } else {
-          loadWishlists();
+          final toggleResult = await _repository.toggle(
+            listingToSave.id.toString(),
+            wishlistId: wishlist.id,
+          );
+
+          return await toggleResult.fold(
+            (failure) {
+              emit(FavError(failure.message));
+              return Future.value(false);
+            },
+            (_) async {
+              await loadFavorites();
+              return true;
+            },
+          );
         }
+
+        await loadWishlists();
+        return true;
       },
     );
   }
 
   Future<void> deleteWishlist(String wishlistId) async {
     final result = await _repository.deleteWishlist(wishlistId);
-    result.fold(
-      (failure) => emit(const FavError("Failed to delete wishlist")),
-      (_) {
-        loadWishlists();
-      },
-    );
+    result.fold((failure) => emit(FavError(failure.message)), (_) {
+      loadWishlists();
+    });
   }
 
-  Future<void> toggleFavorite(ListingModel property, {String? wishlistId}) async {
+  Future<bool> toggleFavorite(
+    ListingModel property, {
+    String? wishlistId,
+  }) async {
     final String id = property.id.toString();
 
     if (!_cachedFavModels.any((element) => element.id == property.id)) {
@@ -134,10 +181,14 @@ class FavCubit extends Cubit<FavState> {
 
     final result = await _repository.toggle(id, wishlistId: wishlistId);
 
-    result.fold(
-      (failure) => emit(const FavError("Could not update favorites")),
-      (_) {
-        loadFavorites();
+    return await result.fold(
+      (failure) {
+        emit(FavError(failure.message));
+        return Future.value(false);
+      },
+      (_) async {
+        await loadFavorites();
+        return true;
       },
     );
   }

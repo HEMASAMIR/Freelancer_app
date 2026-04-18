@@ -110,26 +110,28 @@ Future<void> setupServiceLocator() async {
   );
 
   sl.registerLazySingleton<Dio>(
-    () => Dio(
-      BaseOptions(
-        baseUrl: SupabaseKeys.restBaseUrl,
-        headers: {
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation',
-        },
-      ),
-    )..interceptors.addAll([
-        AuthInterceptor(sharedPreferences: sharedPrefs, baseDio: baseDio),
-        PrettyDioLogger(
-          requestHeader: true,
-          requestBody: true,
-          responseBody: true,
-          responseHeader: false,
-          error: true,
-          compact: true,
-          maxWidth: 90,
-        ),
-      ]),
+    () =>
+        Dio(
+            BaseOptions(
+              baseUrl: SupabaseKeys.restBaseUrl,
+              headers: {
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation',
+              },
+            ),
+          )
+          ..interceptors.addAll([
+            AuthInterceptor(sharedPreferences: sharedPrefs, baseDio: baseDio),
+            PrettyDioLogger(
+              requestHeader: true,
+              requestBody: true,
+              responseBody: true,
+              responseHeader: false,
+              error: true,
+              compact: true,
+              maxWidth: 90,
+            ),
+          ]),
   );
 
   // ------------------------------------------------------------------
@@ -138,10 +140,7 @@ Future<void> setupServiceLocator() async {
 
   // --- Auth Feature ---
   sl.registerLazySingleton<AuthRepo>(
-    () => AuthRepoImpl(
-      dio: sl<Dio>(),
-      prefs: sl<SharedPreferences>(),
-    ),
+    () => AuthRepoImpl(dio: sl<Dio>(), prefs: sl<SharedPreferences>()),
   );
   // Register AdminEmailService — load() must complete before AuthCubit is created
   // because AuthCubit's constructor calls isAdmin() synchronously.
@@ -149,7 +148,10 @@ Future<void> setupServiceLocator() async {
   await adminEmailService.load();
   sl.registerSingleton<AdminEmailService>(adminEmailService);
   sl.registerLazySingleton<AuthCubit>(
-    () => AuthCubit(authRepo: sl<AuthRepo>(), adminService: sl<AdminEmailService>()),
+    () => AuthCubit(
+      authRepo: sl<AuthRepo>(),
+      adminService: sl<AdminEmailService>(),
+    ),
   );
   sl.registerFactory<SecurityCubit>(
     () => SecurityCubit(authRepo: sl<AuthRepo>()),
@@ -159,9 +161,7 @@ Future<void> setupServiceLocator() async {
   sl.registerLazySingleton<SearchRepository>(
     () => SearchRepositoryImpl(dio: sl<Dio>()),
   );
-  sl.registerLazySingleton<SearchCubit>(
-    () => SearchCubit(sl<SearchRepository>()),
-  );
+  sl.registerFactory<SearchCubit>(() => SearchCubit(sl<SearchRepository>()));
 
   // --- Favorites Feature ---
   sl.registerLazySingleton<FavoriteRepository>(
@@ -256,7 +256,10 @@ Future<void> setupServiceLocator() async {
     () => AdminManagementRepositoryImpl(dio: sl<Dio>()),
   );
   sl.registerFactory<AdminManagementCubit>(
-    () => AdminManagementCubit(sl<AdminManagementRepository>(), sl<SupabaseClient>()),
+    () => AdminManagementCubit(
+      sl<AdminManagementRepository>(),
+      sl<SupabaseClient>(),
+    ),
   );
   sl.registerFactory<IdentityVerificationCubit>(
     () => IdentityVerificationCubit(sl<AuthRepo>(), sl<AuthCubit>()),

@@ -17,6 +17,7 @@ import 'package:freelancer/features/account/presentation/account_info.dart';
 import 'package:freelancer/features/account/presentation/security_screen.dart';
 import 'package:freelancer/features/home/presentation/view/home.dart';
 import 'package:freelancer/features/host/presentation/host_listing.dart';
+import 'package:freelancer/features/identity_verification/logic/identity_verification_cubit.dart';
 import 'package:freelancer/features/payment/logic/cubit/payment_cubit.dart';
 import 'package:freelancer/features/search/data/search_model/search_params_model.dart';
 import 'package:freelancer/features/search/logic/search_cubit/cubit/search_cubit.dart';
@@ -173,7 +174,13 @@ class AppRouter {
       // ✅ شاشة Identity Verification
       case AppRoutes.identityVerification:
         return MaterialPageRoute(
-          builder: (_) => const IdentityVerificationScreen(),
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: sl<AuthCubit>()),
+              BlocProvider(create: (_) => sl<IdentityVerificationCubit>()),
+            ],
+            child: const IdentityVerificationScreen(),
+          ),
         );
 
       case AppRoutes.account:

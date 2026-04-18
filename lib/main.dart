@@ -28,7 +28,7 @@ void main() async {
     anonKey: SupabaseKeys.supabaseAnonKey,
   );
   await CacheHelper.init();
-  setupServiceLocator();
+  await setupServiceLocator();
 
   Bloc.observer = AppBlocObserver();
 
@@ -52,24 +52,25 @@ class FreelancerApp extends StatelessWidget {
         builder: (context, child) {
           return MaterialApp(
             navigatorKey: navigatorKey,
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            fontFamily: 'Cairo',
-            scaffoldBackgroundColor: AppColors.backgroundCream,
-            primaryColor: AppColors.primaryBurgundy,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: AppColors.primaryBurgundy,
-              primary: AppColors.primaryBurgundy,
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              fontFamily: 'Cairo',
+              scaffoldBackgroundColor: AppColors.backgroundCream,
+              primaryColor: AppColors.primaryBurgundy,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: AppColors.primaryBurgundy,
+                primary: AppColors.primaryBurgundy,
+              ),
+              appBarTheme: const AppBarTheme(
+                backgroundColor: AppColors.cardWhite,
+                elevation: 0,
+              ),
             ),
-            appBarTheme: const AppBarTheme(
-              backgroundColor: AppColors.cardWhite,
-              elevation: 0,
-            ),
-          ),
-          onGenerateRoute: AppRouter.generateRoute,
-          initialRoute: AppRoutes.splash,
-        );
-      },
-    ));
+            onGenerateRoute: AppRouter.generateRoute,
+            initialRoute: AppRoutes.splash,
+          );
+        },
+      ),
+    );
   }
 }

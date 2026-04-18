@@ -308,8 +308,16 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         break;
 
       case 'dashboard':
-        Navigator.pushNamed(context, AppRoutes.adminDashboard);
-        break;
+        {
+          final authState = context.read<AuthCubit>().state;
+          if (authState is AuthAdminSuccess) {
+            Navigator.pushNamed(context, AppRoutes.adminDashboard);
+          } else {
+            // غير الادمن بيروح للهوم
+            Navigator.pushNamed(context, AppRoutes.home);
+          }
+          break;
+        }
 
       case 'trips':
       case 'bookings':
@@ -325,8 +333,26 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         break;
 
       case 'manage_listings':
-        Navigator.pushNamed(context, AppRoutes.adminDashboard);
-        break;
+        {
+          final authState = context.read<AuthCubit>().state;
+          if (authState is AuthAdminSuccess) {
+            // الادمن فقط يدخل لإدارة اللسينجز
+            Navigator.pushNamed(context, AppRoutes.adminDashboard);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Admin access only'),
+                backgroundColor: AppColors.maroon,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                margin: EdgeInsets.all(16.w),
+              ),
+            );
+          }
+          break;
+        }
 
       case 'logout':
         context.read<AuthCubit>().signOut();

@@ -23,7 +23,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // السطر اللي جاي ده هو اللي هيحل مشكلة الـ Could not find io.flutter
         maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
     }
 }

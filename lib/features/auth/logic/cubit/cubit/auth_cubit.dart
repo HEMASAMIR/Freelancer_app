@@ -220,9 +220,15 @@ class AuthCubit extends Cubit<AuthState> {
   /// Navigate to the appropriate dashboard after a successful login.
   void navigateAfterLogin(BuildContext context) {
     if (state is AuthAdminSuccess) {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.adminDashboard);
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.adminDashboard,
+        (route) => false, // امسح كل الـ stack
+      );
     } else if (state is AuthSuccess) {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.dashboard);
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.home,
+        (route) => false, // امسح كل الـ stack
+      );
     }
   }
 
