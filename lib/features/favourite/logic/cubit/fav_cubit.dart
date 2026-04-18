@@ -94,21 +94,13 @@ class FavCubit extends Cubit<FavState> {
   Future<void> loadWishlists() async {
     // نحتفظ بالحالة السابقة إذا كانت FavLoaded عشان مانكسرش الـ UI
     final previousState = state;
-    if (previousState is! FavLoaded) {
-      emit(FavLoading());
-    }
+    emit(FavLoading());
     try {
       final wishlists = await _repository.getWishlists();
       if (previousState is FavLoaded) {
         emit(previousState.copyWith(wishlists: wishlists));
       } else {
-        emit(
-          FavLoaded(
-            favorites: const [],
-            favoriteIds: const [],
-            wishlists: wishlists,
-          ),
-        );
+        emit(FavLoaded(favorites: const [], favoriteIds: const [], wishlists: wishlists));
       }
     } catch (e) {
       debugPrint("loadWishlists error: $e");
@@ -116,13 +108,7 @@ class FavCubit extends Cubit<FavState> {
       if (previousState is FavLoaded) {
         emit(previousState);
       } else {
-        emit(
-          FavLoaded(
-            favorites: const [],
-            favoriteIds: const [],
-            wishlists: const [],
-          ),
-        );
+        emit(FavLoaded(favorites: const [], favoriteIds: const [], wishlists: const []));
       }
     }
   }
