@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/features/search/data/search_model/search_params_model.dart';
 import 'package:freelancer/features/search/logic/search_cubit/cubit/search_cubit.dart';
 import 'package:freelancer/features/search/logic/search_cubit/cubit/search_state.dart';
-import 'package:freelancer/features/search/presentation/view/search_details.dart';
 import 'package:freelancer/features/search/presentation/widget/property_listing_card.dart';
 import 'location_tag_item.dart';
 import 'package:freelancer/features/home/presentation/widget/best_offers_banner.dart';
@@ -143,11 +143,10 @@ class _HomescreenBodyState extends State<HomescreenBody> {
                           .take(5) // show first 5 on home
                           .map((listing) => PropertyListingCard(
                                 listing: listing,
-                                onTap: () => Navigator.push(
+                                onTap: () => Navigator.pushNamed(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (_) => SearchDetails(listing: listing),
-                                  ),
+                                  AppRoutes.details,
+                                  arguments: listing,
                                 ),
                               ))
                           .toList(),

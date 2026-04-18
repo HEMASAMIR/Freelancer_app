@@ -53,7 +53,10 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
           BlocBuilder<FavCubit, FavState>(
             builder: (context, state) {
               if (state is FavLoading) {
-                return const Center(child: CircularProgressIndicator());
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                );
               }
 
               if (state is FavLoaded) {
@@ -73,7 +76,8 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
                 );
               }
 
-              return const SizedBox();
+              // FavInitial أو FavError - نبين الـ empty state بدل SizedBox
+              return _buildNoWishlists();
             },
           ),
           SizedBox(height: 20.h),
