@@ -26,3 +26,26 @@ class AdminManagementError extends AdminManagementState {
   @override
   List<Object?> get props => [message];
 }
+
+/// Holds the 4 overview stats shown on the admin dashboard
+class AdminDashboardStatsLoaded extends AdminManagementState {
+  final int totalListings;
+  final int totalUsers;
+  final int bookingsThisMonth;
+  final int pendingApprovals;
+
+  const AdminDashboardStatsLoaded({
+    required this.totalListings,
+    required this.totalUsers,
+    required this.bookingsThisMonth,
+    required this.pendingApprovals,
+  });
+
+  @override
+  List<Object?> get props => [
+        totalListings,
+        totalUsers,
+        bookingsThisMonth,
+        pendingApprovals,
+      ];
+}

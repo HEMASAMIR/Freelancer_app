@@ -323,4 +323,25 @@ class AuthRepoImpl implements AuthRepo {
       return left(NetworkFailure(e.toString()));
     }
   }
+  @override
+  Future<Either<AuthFailure, UserModel>> updateMetadata(Map<String, dynamic> metadata) async {
+    try {
+      final response = await _dio.put(
+        '${SupabaseKeys.authBaseUrl}user',
+        data: {'data': metadata},
+      );
+      final data = response.data;
+      if (data == null) {
+        return left(const UnknownFailure('فشل تحديث بيانات المستخدم'));
+      }
+      final userModel = UserModel.fromJson(data);
+      await _prefs.setString('supabase_user', jsonEncode(data));
+      return right(userModel);
+    } on DioException catch (e) {
+      final msg = e.response?.data?['error_description'] ?? e.response?.data?['msg'] ?? e.message;
+      return left(UnknownFailure(msg.toString()));
+    } catch (e) {
+      return left(NetworkFailure(e.toString()));
+    }
+  }
 }

@@ -177,13 +177,52 @@ class _BookingRequestsViewState extends State<BookingRequestsView>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _BookingList(bookings: pending,   emptyLabel: 'No pending requests'),
-                  _BookingList(bookings: confirmed, emptyLabel: 'No confirmed bookings'),
-                  _BookingList(bookings: filtered,  emptyLabel: 'No bookings found'),
+                  _BookingList(
+                    bookings: pending, 
+                    emptyLabel: 'No pending booking requests',
+                    icon: Icons.access_time_rounded,
+                  ),
+                  _BookingList(
+                    bookings: confirmed, 
+                    emptyLabel: 'No confirmed bookings',
+                    icon: Icons.check_circle_outline_rounded,
+                  ),
+                  _BookingList(
+                    bookings: filtered, 
+                    emptyLabel: 'No booking requests yet',
+                    icon: Icons.calendar_month_outlined,
+                  ),
                 ],
               ),
             );
           },
+        ),
+
+        // ── Footer ─────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Column(
+            children: [
+              const Divider(height: 1, color: AppColors.dividerGrey),
+              const SizedBox(height: 24),
+              Text(
+                '© 2026 QuickIn, Inc. · Terms · Sitemap · Privacy',
+                style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.public, size: 14, color: Colors.grey.shade600),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'English (US)  EGP',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.ink),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
       ),
@@ -195,22 +234,37 @@ class _BookingRequestsViewState extends State<BookingRequestsView>
 class _BookingList extends StatelessWidget {
   final List<BookingModel> bookings;
   final String emptyLabel;
-  const _BookingList({required this.bookings, required this.emptyLabel});
+  final IconData icon;
+  const _BookingList({required this.bookings, required this.emptyLabel, required this.icon});
 
   @override
   Widget build(BuildContext context) {
     if (bookings.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.inbox_outlined, size: 52, color: AppColors.sub.withValues(alpha: 0.4)),
-            const SizedBox(height: 12),
-            Text(
-              emptyLabel,
-              style: const TextStyle(fontSize: 15, color: AppColors.sub, fontWeight: FontWeight.w500),
-            ),
-          ],
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(vertical: 20),
+          padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.5)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 56, color: AppColors.sub.withValues(alpha: 0.3)),
+              const SizedBox(height: 16),
+              Text(
+                emptyLabel,
+                style: const TextStyle(
+                  fontSize: 15, 
+                  color: AppColors.sub, 
+                  fontWeight: FontWeight.w500
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }

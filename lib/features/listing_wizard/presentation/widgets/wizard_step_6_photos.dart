@@ -1,11 +1,11 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_form_cubit.dart';
-
 
 class WizardStep6Photos extends StatelessWidget {
   const WizardStep6Photos({super.key});
@@ -33,22 +33,46 @@ class WizardStep6Photos extends StatelessWidget {
             builder: (context, formState) {
               return Column(
                 children: [
+                  // ── Upload Zone ────────────────────────────────────
                   GestureDetector(
                     onTap: () async {
                       final picker = ImagePicker();
                       final List<XFile> images = await picker.pickMultiImage();
-                      
-                      if (images.isNotEmpty && context.mounted) {
+                      if (images.isEmpty || !context.mounted) return;
+
+                      if (kIsWeb) {
+                        // Web: read bytes from XFile
+                        final Map<String, Uint8List> bytesMap = {};
+                        final List<String> paths = [];
+                        for (final xfile in images) {
+                          final bytes = await xfile.readAsBytes();
+                          bytesMap[xfile.name] = bytes;
+                          paths.add(xfile.name);
+                        }
+                        if (context.mounted) {
+                          context
+                              .read<ListingFormCubit>()
+                              .addPhotos(paths, bytes: bytesMap);
+                        }
+                      } else {
+                        // Mobile/Desktop: use file path
                         final paths = images.map((e) => e.path).toList();
-                        context.read<ListingFormCubit>().addPhotos(paths);
+                        if (context.mounted) {
+                          context.read<ListingFormCubit>().addPhotos(paths);
+                        }
                       }
                     },
                     child: Container(
                       width: double.infinity,
-                      padding: EdgeInsets.symmetric(vertical: 48.h, horizontal: 24.w),
+                      padding: EdgeInsets.symmetric(
+                          vertical: 48.h, horizontal: 24.w),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryRed.withValues(alpha: 0.02),
-                        border: Border.all(color: AppColors.primaryRed.withValues(alpha: 0.3), width: 2),
+                        color:
+                            AppColors.primaryRed.withValues(alpha: 0.02),
+                        border: Border.all(
+                            color: AppColors.primaryRed
+                                .withValues(alpha: 0.3),
+                            width: 2),
                         borderRadius: BorderRadius.circular(16.r),
                       ),
                       child: Column(
@@ -58,9 +82,13 @@ class WizardStep6Photos extends StatelessWidget {
                             padding: EdgeInsets.all(12.w),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.primaryRed.withValues(alpha: 0.5), width: 1.5),
+                              border: Border.all(
+                                  color: AppColors.primaryRed
+                                      .withValues(alpha: 0.5),
+                                  width: 1.5),
                             ),
-                            child: Icon(Icons.file_upload_outlined, color: AppColors.primaryRed, size: 32.sp),
+                            child: Icon(Icons.file_upload_outlined,
+                                color: AppColors.primaryRed, size: 32.sp),
                           ),
                           SizedBox(height: 24.h),
                           Text(
@@ -84,12 +112,14 @@ class WizardStep6Photos extends StatelessWidget {
                     ),
                   ),
 
+                  // ── Photo Grid ─────────────────────────────────────
                   if (formState.photoPaths.isNotEmpty) ...[
                     SizedBox(height: 32.h),
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3,
                         crossAxisSpacing: 8.w,
                         mainAxisSpacing: 8.h,
@@ -97,13 +127,27 @@ class WizardStep6Photos extends StatelessWidget {
                       itemCount: formState.photoPaths.length,
                       itemBuilder: (context, index) {
                         final path = formState.photoPaths[index];
+                        final bytes = formState.photoBytes[path];
+
+                        ImageProvider imageProvider;
+                        if (kIsWeb && bytes != null) {
+                          imageProvider = MemoryImage(bytes);
+                        } else if (!kIsWeb) {
+                          imageProvider = FileImage(File(path));
+                        } else {
+                          // Web but no bytes — shouldn't happen, fallback
+                          imageProvider = const AssetImage(
+                              'assets/images/placeholder.png');
+                        }
+
                         return Stack(
                           children: [
                             Container(
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8.r),
+                                borderRadius:
+                                    BorderRadius.circular(8.r),
                                 image: DecorationImage(
-                                  image: FileImage(File(path)),
+                                  image: imageProvider,
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -112,14 +156,18 @@ class WizardStep6Photos extends StatelessWidget {
                               top: 4.h,
                               right: 4.w,
                               child: GestureDetector(
-                                onTap: () => context.read<ListingFormCubit>().removePhoto(path),
+                                onTap: () => context
+                                    .read<ListingFormCubit>()
+                                    .removePhoto(path),
                                 child: Container(
                                   padding: const EdgeInsets.all(4),
                                   decoration: const BoxDecoration(
                                     color: Colors.white,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(Icons.close, size: 14.sp, color: AppColors.primaryRed),
+                                  child: Icon(Icons.close,
+                                      size: 14.sp,
+                                      color: AppColors.primaryRed),
                                 ),
                               ),
                             ),
@@ -127,7 +175,7 @@ class WizardStep6Photos extends StatelessWidget {
                         );
                       },
                     ),
-                  ]
+                  ],
                 ],
               );
             },

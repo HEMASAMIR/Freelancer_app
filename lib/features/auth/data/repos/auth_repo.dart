@@ -34,7 +34,7 @@ abstract class AuthRepo {
 
   Future<Either<AuthFailure, Map<String, dynamic>>> refreshToken();
 
-  Future<Either<AuthFailure, UserModel>> getUserInfo();
+  Future<Either<AuthFailure, UserModel>> updateMetadata(Map<String, dynamic> metadata);
 
   UserModel? getCurrentUser();
 }
