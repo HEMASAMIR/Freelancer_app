@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:freelancer/features/favourite/data/fav_repos/fav_repo.dart';
@@ -19,10 +20,23 @@ class FavCubit extends Cubit<FavState> {
     try {
       final favoriteIds = await _repository.getFavorites();
 
-      final favoritesToShow =
-          _cachedFavModels
-              .where((element) => favoriteIds.contains(element.id.toString()))
-              .toList();
+      // Check if we need to hydrate missing listings (e.g. after app restart)
+      final List<String> missingIds = favoriteIds
+          .where((id) => !_cachedFavModels.any((m) => m.id.toString() == id))
+          .toList();
+
+      if (missingIds.isNotEmpty) {
+        final hydratedListings = await _repository.getListingsByIds(missingIds);
+        for (var l in hydratedListings) {
+          if (!_cachedFavModels.any((m) => m.id == l.id)) {
+            _cachedFavModels.add(l);
+          }
+        }
+      }
+
+      final favoritesToShow = _cachedFavModels
+          .where((element) => favoriteIds.contains(element.id.toString()))
+          .toList();
 
       // تحميل الـ Wishlists بالمرة
       final wishlists = await _repository.getWishlists();
@@ -33,7 +47,42 @@ class FavCubit extends Cubit<FavState> {
         wishlists: wishlists,
       ));
     } catch (e) {
+      debugPrint("Error loading favorites: $e");
       emit(const FavError("Failed to load favorites"));
+    }
+  }
+
+  // تحميل محتويات الـ Wishlist المحددة
+  Future<void> loadWishlistItems(String wishlistId) async {
+    try {
+      final itemIds = await _repository.getWishlistItems(wishlistId);
+
+      // التأكد من تحميل بيانات العقارات (Hydration)
+      final List<String> missingIds = itemIds
+          .where((id) => !_cachedFavModels.any((m) => m.id.toString() == id))
+          .toList();
+
+      if (missingIds.isNotEmpty) {
+        final hydratedListings = await _repository.getListingsByIds(missingIds);
+        for (var l in hydratedListings) {
+          if (!_cachedFavModels.any((m) => m.id == l.id)) {
+            _cachedFavModels.add(l);
+          }
+        }
+      }
+
+      final itemsToShow = _cachedFavModels
+          .where((element) => itemIds.contains(element.id.toString()))
+          .toList();
+
+      if (state is FavLoaded) {
+        final currentState = state as FavLoaded;
+        final newContent = Map<String, List<ListingModel>>.from(currentState.wishlistContent);
+        newContent[wishlistId] = itemsToShow;
+        emit(currentState.copyWith(wishlistContent: newContent));
+      }
+    } catch (e) {
+      debugPrint("Error loading wishlist items: $e");
     }
   }
 
@@ -52,11 +101,25 @@ class FavCubit extends Cubit<FavState> {
     }
   }
 
-  Future<void> createWishlist(String name) async {
+  Future<void> createWishlist(String name, {ListingModel? listingToSave}) async {
     final result = await _repository.createWishlist(name);
     result.fold(
       (failure) => emit(const FavError("Failed to create wishlist")),
-      (wishlist) {
+      (wishlist) async {
+        if (listingToSave != null) {
+          await toggleFavorite(listingToSave, wishlistId: wishlist.id);
+        } else {
+          loadWishlists();
+        }
+      },
+    );
+  }
+
+  Future<void> deleteWishlist(String wishlistId) async {
+    final result = await _repository.deleteWishlist(wishlistId);
+    result.fold(
+      (failure) => emit(const FavError("Failed to delete wishlist")),
+      (_) {
         loadWishlists();
       },
     );

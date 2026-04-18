@@ -48,13 +48,20 @@ class _SignUpViewState extends State<SignUpView> {
       create: (_) => sl<AuthCubit>(),
       child: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
-          if (state is AuthSuccess) {
+          if (state is AuthAdminSuccess) {
+            CustomToast.show(
+              context,
+              "Admin account created! 👑",
+              ToastState.success,
+            );
+            context.read<AuthCubit>().navigateAfterLogin(context);
+          } else if (state is AuthSuccess) {
             CustomToast.show(
               context,
               "Account created! 🚀",
               ToastState.success,
             );
-            Navigator.pushReplacementNamed(context, AppRoutes.home);
+            context.read<AuthCubit>().navigateAfterLogin(context);
           } else if (state is AuthError) {
             CustomToast.show(context, state.message, ToastState.error);
           }

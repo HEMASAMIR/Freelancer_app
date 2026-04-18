@@ -16,6 +16,8 @@ import 'package:freelancer/features/listing_wizard/logic/cubit/listing_form_cubi
 import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/features/trips/presentation/view/trips.dart';
 import 'package:freelancer/features/wishlists/presentation/view/wishlist_screen.dart';
+import 'package:freelancer/features/host/presentation/calendar_management_view.dart';
+import 'package:freelancer/features/host/presentation/host_reviews_view.dart';
 
 class AdminOverviewScreen extends StatefulWidget {
   final String initialView;
@@ -135,6 +137,10 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
           ],
           child: const ListingWizardScreen(),
         );
+      case 'Calendar':
+        return const CalendarManagementView();
+      case 'Host Reviews':
+        return const HostReviewsView();
       default:
         return const AccountScreen();
     }

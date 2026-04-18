@@ -91,7 +91,7 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
           style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
         ),
         SizedBox(height: 30.h),
-        const CircularProgressIndicator(strokeWidth: 2),
+        Icon(Icons.bookmark_border_rounded, size: 60.sp, color: Colors.grey.shade300),
         SizedBox(height: 30.h),
         Text(
           "You don't have any wishlists yet.",
@@ -114,6 +114,7 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
               widget.listing,
               wishlistId: wishlist.id,
             );
+        _showSuccessToast(context, 'Saved to ${wishlist.name}');
         Navigator.pop(context);
       },
       leading: Container(
@@ -169,9 +170,16 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (_nameController.text.isNotEmpty) {
-                  context.read<FavCubit>().createWishlist(_nameController.text);
+                if (_nameController.text.trim().isNotEmpty) {
+                  final name = _nameController.text.trim();
+                  context.read<FavCubit>().createWishlist(
+                    name,
+                    listingToSave: widget.listing,
+                  );
+                  _showSuccessToast(context, 'Saved to $name');
+                  // إغلاق الفورم والـ BottomSheet بعد الإنشاء والحفظ
                   setState(() => _isCreating = false);
+                  Navigator.pop(context);
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -184,6 +192,25 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
           ],
         ),
       ],
+    );
+  }
+
+  void _showSuccessToast(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.favorite, color: Colors.white, size: 20),
+            SizedBox(width: 12.w),
+            Expanded(child: Text(message, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14.sp))),
+          ],
+        ),
+        backgroundColor: const Color(0xFF710E1F),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: EdgeInsets.only(bottom: 24.h, left: 24.w, right: 24.w),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 }

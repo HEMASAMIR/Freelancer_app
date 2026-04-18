@@ -32,5 +32,9 @@ abstract class AuthRepo {
     required String newPassword,
   });
 
+  Future<Either<AuthFailure, Map<String, dynamic>>> refreshToken();
+
+  Future<Either<AuthFailure, UserModel>> getUserInfo();
+
   UserModel? getCurrentUser();
 }

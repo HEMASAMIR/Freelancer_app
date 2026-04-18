@@ -17,10 +17,10 @@ abstract class ListingWizardRepository {
   Future<Either<String, List<CountryModel>>> getCountries();
   
   // 4b. Location: Get States
-  Future<Either<String, List<StateModel>>> getStates({required String countryId});
+  Future<Either<String, List<StateModel>>> getStates({required String countryIso2});
   
   // 4c. Location: Get Cities
-  Future<Either<String, List<CityModel>>> getCities({required String stateId});
+  Future<Either<String, List<CityModel>>> getCities({required String stateIso2});
   
   // 5. Upload Listing Photo
   Future<Either<String, String>> uploadListingPhoto({required String userId, required File imageFile});
@@ -36,4 +36,25 @@ abstract class ListingWizardRepository {
   
   // 9. Bulk Link Conditions
   Future<Either<String, void>> bulkLinkConditions(List<Map<String, dynamic>> conditionsData);
+
+  // 10. Get all amenities grouped by category
+  Future<Either<String, List<AmenityModel>>> getAmenities();
+
+  // 11. Get amenities linked to a specific listing
+  Future<Either<String, List<String>>> getListingAmenities(String listingId);
+
+  // 12. Save listing amenities (bulk upsert)
+  Future<Either<String, void>> upsertListingAmenities({
+    required String listingId,
+    required List<String> amenityIds,
+  });
+
+  // 13. Submit a custom condition for admin approval
+  Future<Either<String, void>> submitCustomCondition({
+    required String listingId,
+    required String nameEn,
+    required String nameAr,
+    String? descEn,
+    String? descAr,
+  });
 }

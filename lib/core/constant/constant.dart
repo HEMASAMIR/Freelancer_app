@@ -41,6 +41,14 @@ class SupabaseKeys {
   // Admin specialized endpoints
   static const String adminListingsStatus = 'listings/status';
   static const String adminPayoutsProcess = 'payouts/process';
+
+  // Amenities endpoints
+  static const String amenitiesRest = 'amenities';
+  static const String amenityCategoriesRest = 'amenity_categories';
+  static const String listingAmenitiesRest = 'listing_amenities';
+
+  // Custom conditions (pending approval)
+  static const String customConditionsRest = 'custom_listing_conditions';
 }
 
 class AppColors {

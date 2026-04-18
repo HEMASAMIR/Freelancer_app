@@ -615,24 +615,116 @@ class _BookingCardState extends State<_BookingCard> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text(
-                      "Check availability",
-                      style: TextStyle(
+                  :  Text(
+                      selectedDateRange != null ? "Request to Book" : "Check availability",
+
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
             ),
           ),
+          
+          // --- PRICE BREAKDOWN ---
+          if (selectedDateRange != null) ...[
+            SizedBox(height: 16.h),
+            const Text(
+              "You won't be charged yet",
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+            SizedBox(height: 16.h),
+            _buildPriceBreakdown(),
+          ],
+          
           const Divider(height: 40),
+
           const _CalendarLegend(),
         ],
       ),
     );
   }
+
+  // --- حساب وتفصيل فاتورة الحجز ---
+  Widget _buildPriceBreakdown() {
+    final start = selectedDateRange!.start;
+    final end = selectedDateRange!.end;
+    final int days = end.difference(start).inDays;
+    if (days <= 0) return const SizedBox();
+
+    final double basePrice = widget.listing.pricePerNight ?? 0;
+    double expectedSubtotal = 0;
+    List<Widget> dailyRows = [];
+    
+    for (int i = 0; i < days; i++) {
+        final currentDate = start.add(Duration(days: i));
+        final bool isWeekend = currentDate.weekday == DateTime.friday || currentDate.weekday == DateTime.saturday;
+        final double dailyPrice = isWeekend ? basePrice * 1.15 : basePrice; 
+        expectedSubtotal += dailyPrice;
+        
+        dailyRows.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "${DateFormat('EEE, MMM d').format(currentDate)}${isWeekend ? ' (Weekend day)' : ''}",
+                  style: TextStyle(fontSize: 12.sp, color: isWeekend ? airbnbMaroon.withOpacity(0.8) : Colors.black87),
+                ),
+                Text(
+                  "EGP ${NumberFormat('#,###').format(dailyPrice)}",
+                  style: TextStyle(fontSize: 12.sp, color: Colors.black87),
+                ),
+              ],
+            ),
+          ),
+        );
+    }
+
+    final double serviceFee = expectedSubtotal * 0.10; 
+    final double total = expectedSubtotal + serviceFee;
+
+    return Column(
+      children: [
+        ...dailyRows,
+        const Divider(height: 24),
+        _priceRow("Subtotal ($days nights)", expectedSubtotal, isBold: false),
+        const SizedBox(height: 8),
+        _priceRow("Service fee", serviceFee, isBold: false),
+        const Divider(height: 24),
+        _priceRow("Total", total, isBold: true),
+      ],
+    );
+  }
+
+  Widget _priceRow(String label, double amount, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: isBold ? 14.sp : 13.sp,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        Text(
+          "EGP ${NumberFormat('#,###').format(amount)}",
+          style: TextStyle(
+            fontSize: isBold ? 14.sp : 13.sp,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+            color: Colors.black,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // --- الويجتات الصغيرة المساعدة ---
+
 
 class _GuestSelector extends StatelessWidget {
   final int count;
@@ -712,25 +804,83 @@ class _HostInfoSection extends StatelessWidget {
   );
 }
 
-class _ImageSliderAppBar extends StatelessWidget {
+class _ImageSliderAppBar extends StatefulWidget {
   final ListingModel listing;
   const _ImageSliderAppBar({required this.listing});
+
   @override
-  Widget build(BuildContext context) => SliverAppBar(
-    expandedHeight: 280.h,
-    flexibleSpace: FlexibleSpaceBar(
-      background: (listing.images?.isNotEmpty ?? false)
-          ? Image.network(
-              listing.images!.first.url!,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
+  State<_ImageSliderAppBar> createState() => _ImageSliderAppBarState();
+}
+
+class _ImageSliderAppBarState extends State<_ImageSliderAppBar> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final images = widget.listing.images ?? [];
+    return SliverAppBar(
+      expandedHeight: 280.h,
+      backgroundColor: Colors.white,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Stack(
+          children: [
+            if (images.isNotEmpty)
+              PageView.builder(
+                controller: _pageController,
+                itemCount: images.length,
+                onPageChanged: (index) => setState(() => _currentPage = index),
+                itemBuilder: (context, index) {
+                  return Image.network(
+                    images[index].url ?? '',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: Colors.grey[200],
+                      child: const Center(child: Icon(Icons.broken_image, size: 40)),
+                    ),
+                  );
+                },
+              )
+            else
+              Container(
                 color: Colors.grey[200],
-                child: const Center(child: Icon(Icons.broken_image)),
+                child: const Center(child: Icon(Icons.home_outlined, size: 60, color: Colors.grey)),
               ),
-            )
-          : Container(color: Colors.grey[200]),
-    ),
-  );
+            
+            // Image Indicator Badge
+            if (images.length > 1)
+              Positioned(
+                bottom: 16.h,
+                right: 16.w,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Text(
+                    "${_currentPage + 1} / ${images.length}",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _CalendarLegend extends StatelessWidget {

@@ -308,11 +308,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         break;
 
       case 'dashboard':
-        final state = context.read<AuthCubit>().state;
-        Navigator.pushNamed(
-          context,
-          state is AuthAdminSuccess ? AppRoutes.adminDashboard : AppRoutes.home,
-        );
+        Navigator.pushNamed(context, AppRoutes.adminDashboard);
         break;
 
       case 'trips':

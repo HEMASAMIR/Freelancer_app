@@ -55,20 +55,20 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
   }
 
   @override
-  Future<Either<String, List<StateModel>>> getStates({required String countryId}) async {
+  Future<Either<String, List<StateModel>>> getStates({required String countryIso2}) async {
     return _fetchList(
       endpoint: SupabaseKeys.states,
-      queryParameters: {'country_id': 'eq.$countryId', 'select': 'id,name,iso2,latitude,longitude', 'order': 'name.asc'},
+      queryParameters: {'country_iso2': 'eq.$countryIso2', 'select': '*', 'order': 'name.asc'},
       mapper: (json) => StateModel.fromJson(json),
       errorMessage: 'فشل في جلب المحافظات/الولايات',
     );
   }
 
   @override
-  Future<Either<String, List<CityModel>>> getCities({required String stateId}) async {
+  Future<Either<String, List<CityModel>>> getCities({required String stateIso2}) async {
     return _fetchList(
       endpoint: SupabaseKeys.cities,
-      queryParameters: {'state_id': 'eq.$stateId', 'select': 'id,name,latitude,longitude', 'order': 'name.asc'},
+      queryParameters: {'state_iso2': 'eq.$stateIso2', 'select': '*', 'order': 'name.asc'},
       mapper: (json) => CityModel.fromJson(json),
       errorMessage: 'فشل في جلب المدن',
     );
@@ -155,10 +155,22 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
       }
       return Left(errorMessage);
     } on DioException catch (e) {
-      debugPrint("❌ Dio Error fetching $endpoint: ${e.message}");
-      return Left(e.message ?? "حدث خطأ في الشبكة");
-    } catch (e) {
-      debugPrint("❌ Unexpected Error fetching $endpoint: $e");
+      final errorData = e.response?.data;
+      String? msg;
+      String? hint;
+
+      if (errorData is Map) {
+        msg = errorData['message']?.toString();
+        hint = errorData['hint']?.toString();
+      }
+
+      debugPrint("❌ Dio Error fetching $endpoint: ${msg ?? e.message}");
+      if (hint != null) debugPrint("💡 Hint: $hint");
+
+      return Left(msg ?? e.message ?? "حدث خطأ في الشبكة");
+    } catch (e, stack) {
+      debugPrint("❌ CRITICAL Unexpected Error fetching $endpoint: $e");
+      debugPrint(stack.toString());
       return Left("خطأ غير متوقع: ${e.toString()}");
     }
   }
@@ -181,6 +193,98 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
     } catch (e) {
       debugPrint("❌ Unexpected Error posting to $endpoint: $e");
       return Left("خطأ غير متوقع: ${e.toString()}");
+    }
+  }
+
+  @override
+  Future<Either<String, List<AmenityModel>>> getAmenities() async {
+    return _fetchList(
+      endpoint: SupabaseKeys.amenitiesRest,
+      queryParameters: {'select': 'id,name,icon,category_id', 'order': 'category_id,name'},
+      mapper: (json) => AmenityModel.fromJson(json),
+      errorMessage: 'فشل في جلب المرافق',
+    );
+  }
+
+  @override
+  Future<Either<String, List<String>>> getListingAmenities(String listingId) async {
+    try {
+      final res = await dio.get(
+        SupabaseKeys.listingAmenitiesRest,
+        queryParameters: {
+          'select': 'amenity_id',
+          'listing_id': 'eq.$listingId',
+        },
+      );
+      if (res.statusCode == 200) {
+        final List data = res.data;
+        return Right(data.map<String>((e) {
+          return e['amenity_id'].toString();
+        }).toList());
+      }
+      return const Right([]);
+    } on DioException catch (e) {
+      return Left(e.message ?? 'Network error');
+    } catch (e) {
+      return Left(e.toString());
+    }
+  }
+
+  @override
+  Future<Either<String, void>> upsertListingAmenities({
+    required String listingId,
+    required List<String> amenityIds,
+  }) async {
+    try {
+      // Delete old, then insert new
+      await dio.delete(
+        SupabaseKeys.listingAmenitiesRest,
+        queryParameters: {'listing_id': 'eq.$listingId'},
+      );
+      if (amenityIds.isEmpty) return const Right(null);
+      final payload = amenityIds
+          .map((id) => {'listing_id': listingId, 'amenity_id': id})
+          .toList();
+      final res = await dio.post(SupabaseKeys.listingAmenitiesRest, data: payload);
+      if (res.statusCode == 200 || res.statusCode == 201 || res.statusCode == 204) {
+        return const Right(null);
+      }
+      return const Left('فشل في حفظ المرافق');
+    } on DioException catch (e) {
+      return Left(e.message ?? 'Network error');
+    } catch (e) {
+      return Left(e.toString());
+    }
+  }
+
+  @override
+  Future<Either<String, void>> submitCustomCondition({
+    required String listingId,
+    required String nameEn,
+    required String nameAr,
+    String? descEn,
+    String? descAr,
+  }) async {
+    try {
+      final res = await dio.post(
+        SupabaseKeys.customConditionsRest,
+        data: {
+          'listing_id': listingId,
+          'name': nameEn,
+          'name_ar': nameAr,
+          'description': descEn,
+          'description_ar': descAr,
+          'status': 'pending',
+        },
+      );
+      if (res.statusCode == 200 || res.statusCode == 201 || res.statusCode == 204) {
+        return const Right(null);
+      }
+      return const Left('فشل في إرسال الشرط للمراجعة');
+    } on DioException catch (e) {
+      return Left(e.message ?? 'Network error');
+    } catch (e) {
+      return Left(e.toString());
     }
   }
 }

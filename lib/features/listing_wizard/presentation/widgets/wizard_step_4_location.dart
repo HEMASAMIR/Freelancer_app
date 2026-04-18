@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/constant/constant.dart';
+import 'package:freelancer/features/listing_wizard/data/models/wizard_models.dart';
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_form_cubit.dart';
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_wizard_cubit.dart';
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_wizard_state.dart';
@@ -56,9 +57,9 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
   Widget build(BuildContext context) {
     return BlocBuilder<ListingWizardCubit, ListingWizardState>(
       builder: (context, wizardState) {
-        if (wizardState is! ListingWizardLookupsLoaded) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        final List<dynamic> countriesList = wizardState is ListingWizardLookupsLoaded ? wizardState.countries : [];
+        final List<dynamic> statesList = wizardState is ListingWizardLookupsLoaded ? wizardState.states : [];
+        final List<dynamic> citiesList = wizardState is ListingWizardLookupsLoaded ? wizardState.cities : [];
 
         return SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
@@ -77,33 +78,12 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
               ),
               SizedBox(height: 24.h),
               
-              // ─── Map Placeholder ───
-              Container(
-                height: 180.h,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.dividerGrey,
-                  borderRadius: BorderRadius.circular(16.r),
-                  image: const DecorationImage(
-                    image: NetworkImage('https://i.stack.imgur.com/HILmr.png'), // generic map placeholder
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Icon(Icons.location_on, size: 40.sp, color: AppColors.primaryRed),
-                  ],
-                ),
-              ),
-              SizedBox(height: 32.h),
-
               // ─── Dropdowns ───
               BlocBuilder<ListingFormCubit, ListingFormState>(
                 builder: (context, formState) {
-                  final countryName = wizardState.countries.where((c) => c.id.toString() == formState.countryId).firstOrNull?.name;
-                  final stateName = wizardState.states.where((s) => s.id.toString() == formState.stateId).firstOrNull?.name;
-                  final cityName = wizardState.cities.where((c) => c.id.toString() == formState.cityId).firstOrNull?.name;
+                  final countryName = countriesList.where((c) => c.id.toString() == formState.countryId).firstOrNull?.name;
+                  final stateName = statesList.where((s) => s.id.toString() == formState.stateId).firstOrNull?.name;
+                  final cityName = citiesList.where((c) => c.id.toString() == formState.cityId).firstOrNull?.name;
 
                   return Column(
                     children: [
@@ -111,15 +91,26 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
                         title: 'Country',
                         hint: 'Select country...',
                         value: countryName,
-                        onTap: () => _showCountrySheet(context, wizardState.countries),
+                        onTap: () => _showCountrySheet(context, countriesList),
                       ),
                       _buildSelector(
                         title: 'State / Region',
                         hint: 'Select state...',
                         value: stateName,
                         onTap: () {
-                          if (formState.countryId.isEmpty) return;
-                          _showStateSheet(context, wizardState.states);
+                          if (formState.countryId.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please select a country first'), backgroundColor: Colors.orange),
+                            );
+                            return;
+                          }
+                          if (statesList.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Loading states or no states available'), backgroundColor: Colors.orange),
+                            );
+                            return;
+                          }
+                          _showStateSheet(context, statesList);
                         },
                       ),
                       _buildSelector(
@@ -127,8 +118,19 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
                         hint: 'Select city...',
                         value: cityName,
                         onTap: () {
-                          if (formState.stateId.isEmpty) return;
-                          _showCitySheet(context, wizardState.cities);
+                          if (formState.stateId.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please select a state first'), backgroundColor: Colors.orange),
+                            );
+                            return;
+                          }
+                          if (citiesList.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Loading cities or no cities available'), backgroundColor: Colors.orange),
+                            );
+                            return;
+                          }
+                          _showCitySheet(context, citiesList);
                         },
                       ),
                     ],
@@ -155,7 +157,28 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
                 controller: _addressController,
                 maxLines: 4,
               ),
-              
+
+              SizedBox(height: 32.h),
+
+              // ─── Map Placeholder ───
+              Container(
+                height: 180.h,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.dividerGrey,
+                  borderRadius: BorderRadius.circular(16.r),
+                  image: const DecorationImage(
+                    image: NetworkImage('https://i.stack.imgur.com/HILmr.png'), // generic map placeholder
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(Icons.location_on, size: 40.sp, color: AppColors.primaryRed),
+                  ],
+                ),
+              ),
               SizedBox(height: 32.h),
             ],
           ),
@@ -206,9 +229,21 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
       context: context,
       items: items,
       hintTitle: 'Search country...',
-      onSelect: (id) {
-        context.read<ListingFormCubit>().setLocationGeographic(countryId: id.toString(), stateId: '', cityId: '');
-        context.read<ListingWizardCubit>().fetchStates(id.toString());
+      onSelect: (item) {
+        if (!mounted) return;
+        try {
+          final country = item as CountryModel;
+          debugPrint("📍 Selected Country: ${country.name} (Lat: ${country.latitude}, Lng: ${country.longitude})");
+          
+          context.read<ListingFormCubit>().setLocationGeographic(countryId: country.id, stateId: '', cityId: '');
+          
+          if (country.latitude != null) _latController.text = country.latitude!;
+          if (country.longitude != null) _lngController.text = country.longitude!;
+          
+          context.read<ListingWizardCubit>().fetchStates(country.iso2 ?? country.id);
+        } catch (e) {
+          debugPrint("❌ Error selecting country: $e");
+        }
       },
     );
   }
@@ -218,9 +253,21 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
       context: context,
       items: items,
       hintTitle: 'Search state...',
-      onSelect: (id) {
-        context.read<ListingFormCubit>().setLocationGeographic(stateId: id.toString(), cityId: '');
-        context.read<ListingWizardCubit>().fetchCities(id.toString());
+      onSelect: (item) {
+        if (!mounted) return;
+        try {
+          final stateModel = item as StateModel;
+          debugPrint("📍 Selected State: ${stateModel.name} (Lat: ${stateModel.latitude}, Lng: ${stateModel.longitude})");
+          
+          context.read<ListingFormCubit>().setLocationGeographic(stateId: stateModel.id, cityId: '');
+          
+          if (stateModel.latitude != null) _latController.text = stateModel.latitude!;
+          if (stateModel.longitude != null) _lngController.text = stateModel.longitude!;
+          
+          context.read<ListingWizardCubit>().fetchCities(stateModel.iso2 ?? stateModel.id);
+        } catch (e) {
+          debugPrint("❌ Error selecting state: $e");
+        }
       },
     );
   }
@@ -230,8 +277,19 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
       context: context,
       items: items,
       hintTitle: 'Search city...',
-      onSelect: (id) {
-        context.read<ListingFormCubit>().setLocationGeographic(cityId: id.toString());
+      onSelect: (item) {
+        if (!mounted) return;
+        try {
+          final city = item as CityModel;
+          debugPrint("📍 Selected City: ${city.name} (Lat: ${city.latitude}, Lng: ${city.longitude})");
+          
+          context.read<ListingFormCubit>().setLocationGeographic(cityId: city.id);
+          
+          if (city.latitude != null) _latController.text = city.latitude!;
+          if (city.longitude != null) _lngController.text = city.longitude!;
+        } catch (e) {
+          debugPrint("❌ Error selecting city: $e");
+        }
       },
     );
   }
@@ -240,7 +298,7 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
     required BuildContext context,
     required List<dynamic> items,
     required String hintTitle,
-    required Function(String id) onSelect,
+    required Function(dynamic item) onSelect,
   }) {
     showModalBottomSheet(
       context: context,
@@ -248,13 +306,12 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
       backgroundColor: AppColors.bgColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24.r))),
       builder: (_) {
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
-          builder: (_, scrollController) {
-            return Column(
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(height: 16.h),
                 Container(width: 40.w, height: 4.h, decoration: BoxDecoration(color: AppColors.dividerGrey, borderRadius: BorderRadius.circular(2.r))),
@@ -272,25 +329,26 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
                   ),
                 ),
                 SizedBox(height: 16.h),
-                Expanded(
+                Flexible(
                   child: ListView.builder(
-                    controller: scrollController,
+                    shrinkWrap: true,
                     itemCount: items.length,
                     itemBuilder: (ctx, index) {
                       final item = items[index];
                       return ListTile(
                         title: Text(item.name, style: TextStyle(fontSize: 15.sp, color: AppColors.inkBlack)),
                         onTap: () {
-                          onSelect(item.id.toString());
+                          onSelect(item);
                           Navigator.pop(ctx);
                         },
                       );
                     },
                   ),
                 ),
+                SizedBox(height: 16.h),
               ],
-            );
-          },
+            ),
+          ),
         );
       },
     );

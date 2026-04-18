@@ -5,7 +5,7 @@ import 'package:freelancer/features/favourite/data/fav_repos/fav_repo.dart';
 import 'package:freelancer/features/favourite/data/models/wishlist_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'package:freelancer/features/search/data/search_model/listing_model.dart';
 
 
 class FavoriteRepositoryImpl implements FavoriteRepository {
@@ -105,6 +105,24 @@ class FavoriteRepositoryImpl implements FavoriteRepository {
   }
 
   @override
+  Future<Either<Failure, Unit>> deleteWishlist(String wishlistId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return const Left(ServerFailure());
+
+    try {
+      await _supabase
+          .from('wishlists')
+          .delete()
+          .eq('id', wishlistId)
+          .eq('user_id', user.id);
+      return const Right(unit);
+    } catch (e) {
+      debugPrint("Error deleting wishlist: $e");
+      return const Left(ServerFailure());
+    }
+  }
+
+  @override
   Future<Either<Failure, Unit>> toggle(String listingId, {String? wishlistId}) async {
     final user = _supabase.auth.currentUser;
     if (user == null) return const Left(ServerFailure());
@@ -159,6 +177,22 @@ class FavoriteRepositoryImpl implements FavoriteRepository {
     } catch (e) {
       debugPrint("Error toggling favorite: $e");
       return const Left(ServerFailure());
+    }
+  }
+
+  @override
+  Future<List<ListingModel>> getListingsByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    try {
+      final response = await _supabase
+          .from('listings')
+          .select('*, listing_images(*)')
+          .inFilter('id', ids);
+
+      return (response as List).map((json) => ListingModel.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint("Error fetching listings by ids: $e");
+      return [];
     }
   }
 }

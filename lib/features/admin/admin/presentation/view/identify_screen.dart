@@ -1,9 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/app_router/routes.dart';
+import 'package:freelancer/features/listing_wizard/presentation/view/listing_success_screen.dart';
 
-class IdentityVerificationScreen extends StatelessWidget {
-  const IdentityVerificationScreen({super.key});
+class IdentityVerificationScreen extends StatefulWidget {
+  final bool fromListingWizard;
+  
+  const IdentityVerificationScreen({
+    super.key, 
+    this.fromListingWizard = false,
+  });
+
+  @override
+  State<IdentityVerificationScreen> createState() => _IdentityVerificationScreenState();
+}
+
+class _IdentityVerificationScreenState extends State<IdentityVerificationScreen> {
+  bool _isVerifying = false;
+
+  void _handleVerify(BuildContext context) async {
+    if (widget.fromListingWizard) {
+      // Simulate verification / document upload process logic
+      setState(() {
+        _isVerifying = true;
+      });
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) {
+        // Proceed to ListingSuccessScreen where both the listing & identity are under review
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ListingSuccessScreen()),
+        );
+      }
+    } else {
+      // Standard static logic if accessed via navigation drawer/profile
+      Navigator.pushNamed(
+        context,
+        AppRoutes.account,
+        arguments: 1, // ✅ يفتح تاب Verification مباشرة
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,24 +106,28 @@ class IdentityVerificationScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.account,
-                        arguments: 1, // ✅ يفتح تاب Verification مباشرة
-                      ),
-                      icon: Icon(
-                        Icons.shield,
-                        size: 18.sp,
-                        color: Colors.white,
-                      ),
-                      label: Text(
-                        'Verify Your Identity',
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
+                      onPressed: _isVerifying ? null : () => _handleVerify(context),
+                      icon: _isVerifying 
+                        ? const SizedBox.shrink()
+                        : Icon(
+                            Icons.shield,
+                            size: 18.sp,
+                            color: Colors.white,
+                          ),
+                      label: _isVerifying
+                        ? SizedBox(
+                            height: 20.h,
+                            width: 20.h,
+                            child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : Text(
+                            'Verify Your Identity',
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF7B1C1C),
                         padding: EdgeInsets.symmetric(vertical: 14.h),

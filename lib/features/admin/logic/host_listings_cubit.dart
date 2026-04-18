@@ -6,13 +6,18 @@ import 'host_listings_state.dart';
 class HostListingsCubit extends Cubit<HostListingsState> {
   final HostListingsRepository _repository;
 
+  String? _lastHostId;
+  String _lastSortOption = 'Newest first';
+
   HostListingsCubit({required HostListingsRepository repository})
       : _repository = repository,
         super(HostListingsInitial());
 
-  Future<void> getHostListings(String hostId) async {
+  Future<void> getHostListings(String hostId, {String sortOption = 'Newest first'}) async {
+    _lastHostId = hostId;
+    _lastSortOption = sortOption;
     emit(HostListingsLoading());
-    final result = await _repository.getHostListings(hostId);
+    final result = await _repository.getHostListings(hostId, sortOption: sortOption);
     result.fold(
       (error) => emit(HostListingsError(error)),
       (listings) => emit(HostListingsLoaded(listings)),
@@ -26,7 +31,9 @@ class HostListingsCubit extends Cubit<HostListingsState> {
       (error) => emit(HostListingsError(error)),
       (_) {
         emit(HostListingActionSuccess("تم إضافة العقار بنجاح"));
-        getHostListings(listing.hostId ?? '');
+        if (_lastHostId != null) {
+          getHostListings(_lastHostId!, sortOption: _lastSortOption);
+        }
       },
     );
   }
@@ -38,7 +45,9 @@ class HostListingsCubit extends Cubit<HostListingsState> {
       (error) => emit(HostListingsError(error)),
       (_) {
         emit(HostListingActionSuccess("تم حذف العقار بنجاح"));
-        getHostListings(hostId);
+        if (_lastHostId != null) {
+          getHostListings(_lastHostId!, sortOption: _lastSortOption);
+        }
       },
     );
   }

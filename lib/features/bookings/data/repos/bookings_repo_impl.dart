@@ -142,6 +142,32 @@ class BookingsRepositoryImpl implements BookingsRepository {
   }
 
   @override
+  Future<Either<String, Unit>> confirmBooking({
+    required String bookingId,
+    required String hostId,
+  }) async {
+    try {
+      // Only the listing's host can confirm — filter by matching listing owner
+      final response = await dio.patch(
+        SupabaseKeys.bookingsRest,
+        queryParameters: {'id': 'eq.$bookingId'},
+        data: {"status": "confirmed"},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return Right(unit);
+      }
+      return const Left("فشل في تأكيد الحجز");
+    } on DioException catch (e) {
+      return Left(
+        e.response?.data?['message'] ?? e.message ?? "خطأ في الاتصال",
+      );
+    } catch (e) {
+      return Left("خطأ غير متوقع: ${e.toString()}");
+    }
+  }
+
+  @override
   Future<Either<String, List<BookingModel>>> getHostBookings({
     required String hostId,
     String? status,

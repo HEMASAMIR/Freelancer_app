@@ -10,14 +10,23 @@ class HostListingsRepositoryImpl implements HostListingsRepository {
   HostListingsRepositoryImpl({required this.dio});
 
   @override
-  Future<Either<String, List<ListingModel>>> getHostListings(String hostId) async {
+  Future<Either<String, List<ListingModel>>> getHostListings(String hostId, {String sortOption = 'Newest first'}) async {
     try {
+      String orderParam = 'created_at.desc';
+      if (sortOption == 'Oldest first') {
+        orderParam = 'created_at.asc';
+      } else if (sortOption == 'Price: High to Low') {
+        orderParam = 'price_per_night.desc';
+      } else if (sortOption == 'Price: Low to High') {
+        orderParam = 'price_per_night.asc';
+      }
+
       final response = await dio.get(
         SupabaseKeys.listingsRest,
         queryParameters: {
           'user_id': 'eq.$hostId',
           'select': 'id,title,location,price_per_night,is_published,listing_code,listing_images(url)',
-          'order': 'created_at.desc',
+          'order': orderParam,
         },
       );
 

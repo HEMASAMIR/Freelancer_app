@@ -6,6 +6,7 @@ class ProfileHeaderCard extends StatelessWidget {
   final String email;
   final String initials;
   final String memberSince;
+  final bool isIdentityVerified;
 
   const ProfileHeaderCard({
     super.key,
@@ -13,6 +14,7 @@ class ProfileHeaderCard extends StatelessWidget {
     required this.email,
     required this.initials,
     required this.memberSince,
+    this.isIdentityVerified = false,
   });
 
   @override
@@ -78,23 +80,31 @@ class ProfileHeaderCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.dividerGrey),
+                    border: Border.all(
+                      color: isIdentityVerified ? Colors.green : AppColors.dividerGrey,
+                    ),
                     borderRadius: BorderRadius.circular(20),
+                    color: isIdentityVerified
+                        ? Colors.green.withValues(alpha: 0.08)
+                        : Colors.transparent,
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.verified_user_outlined,
+                        isIdentityVerified
+                            ? Icons.verified_user_outlined
+                            : Icons.shield_outlined,
                         size: 14,
-                        color: AppColors.sub,
+                        color: isIdentityVerified ? Colors.green.shade700 : AppColors.sub,
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        'Email',
+                        isIdentityVerified ? 'Verified' : 'Not verified',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
+                          color: isIdentityVerified ? Colors.green.shade700 : AppColors.sub,
                         ),
                       ),
                     ],

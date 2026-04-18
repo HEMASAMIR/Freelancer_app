@@ -5,6 +5,8 @@ class AccountProfileModel {
   final String? avatarUrl;
   final String? phone;
   final String? country;
+  final String? address;
+  final String? bio;
   final DateTime? createdAt;
   final Map<String, dynamic>? metadata;
 
@@ -15,6 +17,8 @@ class AccountProfileModel {
     this.avatarUrl,
     this.phone,
     this.country,
+    this.address,
+    this.bio,
     this.createdAt,
     this.metadata,
   });
@@ -27,6 +31,8 @@ class AccountProfileModel {
       avatarUrl: json['avatar_url'],
       phone: json['phone'],
       country: json['country'],
+      address: json['address'],
+      bio: json['bio'],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
       metadata: json['metadata'],
     );
@@ -39,6 +45,8 @@ class AccountProfileModel {
       if (avatarUrl != null) 'avatar_url': avatarUrl,
       if (phone != null) 'phone': phone,
       if (country != null) 'country': country,
+      if (address != null) 'address': address,
+      if (bio != null) 'bio': bio,
       if (metadata != null) 'metadata': metadata,
     };
   }
