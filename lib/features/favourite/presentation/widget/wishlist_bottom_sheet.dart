@@ -15,6 +15,7 @@ class WishlistBottomSheet extends StatefulWidget {
 
 class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
   bool _isCreating = false;
+  bool _isSubmitting = false;
   final TextEditingController _nameController = TextEditingController();
 
   @override
@@ -95,7 +96,11 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
           style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
         ),
         SizedBox(height: 30.h),
-        Icon(Icons.bookmark_border_rounded, size: 60.sp, color: Colors.grey.shade300),
+        Icon(
+          Icons.bookmark_border_rounded,
+          size: 60.sp,
+          color: Colors.grey.shade300,
+        ),
         SizedBox(height: 30.h),
         Text(
           "You don't have any wishlists yet.",
@@ -113,14 +118,25 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
 
   Widget _buildWishlistItem(WishlistModel wishlist) {
     return ListTile(
-      onTap: () {
-        context.read<FavCubit>().toggleFavorite(
-              widget.listing,
-              wishlistId: wishlist.id,
-            );
-        _showSuccessToast(context, 'Saved to ${wishlist.name}');
-        Navigator.pop(context);
-      },
+      onTap: _isSubmitting
+          ? null
+          : () async {
+              setState(() => _isSubmitting = true);
+              final success = await context.read<FavCubit>().toggleFavorite(
+                widget.listing,
+                wishlistId: wishlist.id,
+              );
+
+              if (!mounted) return;
+              setState(() => _isSubmitting = false);
+
+              if (success) {
+                _showSuccessToast(context, 'Saved to ${wishlist.name}');
+                Navigator.pop(context);
+              } else {
+                _showErrorToast(_extractErrorMessage());
+              }
+            },
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -130,7 +146,10 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
         child: const Icon(Icons.favorite, color: Colors.red),
       ),
       title: Text(wishlist.name),
-      subtitle: const Text("SAVED", style: TextStyle(fontSize: 10, color: Colors.grey)),
+      subtitle: const Text(
+        "SAVED",
+        style: TextStyle(fontSize: 10, color: Colors.grey),
+      ),
     );
   }
 
@@ -143,7 +162,10 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
           children: [
             const Icon(Icons.add_box_outlined, color: Colors.black),
             SizedBox(width: 10.w),
-            const Text("Create new wishlist", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              "Create new wishlist",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),
@@ -154,7 +176,10 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("NAME YOUR WISHLIST", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+        const Text(
+          "NAME YOUR WISHLIST",
+          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+        ),
         SizedBox(height: 5.h),
         TextField(
           controller: _nameController,
@@ -170,32 +195,78 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
           children: [
             TextButton(
               onPressed: () => setState(() => _isCreating = false),
-              child: const Text("Cancel", style: TextStyle(color: Colors.black)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.black),
+              ),
             ),
             ElevatedButton(
-              onPressed: () {
-                if (_nameController.text.trim().isNotEmpty) {
-                  final name = _nameController.text.trim();
-                  context.read<FavCubit>().createWishlist(
-                    name,
-                    listingToSave: widget.listing,
-                  );
-                  _showSuccessToast(context, 'Saved to $name');
-                  // إغلاق الفورم والـ BottomSheet بعد الإنشاء والحفظ
-                  setState(() => _isCreating = false);
-                  Navigator.pop(context);
-                }
-              },
+              onPressed: _isSubmitting
+                  ? null
+                  : () async {
+                      if (_nameController.text.trim().isNotEmpty) {
+                        final name = _nameController.text.trim();
+                        setState(() => _isSubmitting = true);
+                        final success = await context
+                            .read<FavCubit>()
+                            .createWishlist(
+                              name,
+                              listingToSave: widget.listing,
+                            );
+
+                        if (!mounted) return;
+                        setState(() {
+                          _isSubmitting = false;
+                          _isCreating = false;
+                        });
+
+                        if (success) {
+                          _showSuccessToast(context, 'Saved to $name');
+                          Navigator.pop(context);
+                        } else {
+                          _showErrorToast(_extractErrorMessage());
+                        }
+                      }
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF710E1F),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              child: const Text("Create and save"),
+              child: _isSubmitting
+                  ? SizedBox(
+                      width: 16.w,
+                      height: 16.w,
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text("Create and save"),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  String _extractErrorMessage() {
+    final state = context.read<FavCubit>().state;
+    if (state is FavError && state.message.trim().isNotEmpty) {
+      return state.message;
+    }
+    return 'Wishlist action failed. Please try again.';
+  }
+
+  void _showErrorToast(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -206,7 +277,12 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
           children: [
             const Icon(Icons.favorite, color: Colors.white, size: 20),
             SizedBox(width: 12.w),
-            Expanded(child: Text(message, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14.sp))),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14.sp),
+              ),
+            ),
           ],
         ),
         backgroundColor: const Color(0xFF710E1F),

@@ -10,9 +10,17 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
 
   ListingWizardCubit(this._repository) : super(ListingWizardInitial());
 
+  void _emitIfOpen(ListingWizardState state) {
+    if (!isClosed) {
+      emit(state);
+    }
+  }
+
   // 1-3 & 4a. Fetch Initial Lookups (silently — wizard opens immediately)
   Future<void> fetchInitialLookups() async {
-    emit(ListingWizardLookupsLoading()); // lightweight, NOT the full-screen loading
+    _emitIfOpen(
+      ListingWizardLookupsLoading(),
+    ); // lightweight, NOT the full-screen loading
 
     final typesResult = await _repository.getPropertyTypes();
     final lifestylesResult = await _repository.getLifestyleCategories();
@@ -20,32 +28,32 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
     final countriesResult = await _repository.getCountries();
 
     // Use dartz fold to handle results
-    typesResult.fold(
-      (error) => emit(ListingWizardError(error)),
-      (types) {
-        lifestylesResult.fold(
-          (error) => emit(ListingWizardError(error)),
-          (lifestyles) {
-            conditionsResult.fold(
-              (error) => emit(ListingWizardError(error)),
-              (conditions) {
-                countriesResult.fold(
-                  (error) => emit(ListingWizardError(error)),
-                  (countries) {
-                    emit(ListingWizardLookupsLoaded(
-                      propertyTypes: types,
-                      lifestyleCategories: lifestyles,
-                      listingConditions: conditions,
-                      countries: countries,
-                    ));
-                  },
+    typesResult.fold((error) => _emitIfOpen(ListingWizardError(error)), (
+      types,
+    ) {
+      lifestylesResult.fold((error) => _emitIfOpen(ListingWizardError(error)), (
+        lifestyles,
+      ) {
+        conditionsResult.fold(
+          (error) => _emitIfOpen(ListingWizardError(error)),
+          (conditions) {
+            countriesResult.fold(
+              (error) => _emitIfOpen(ListingWizardError(error)),
+              (countries) {
+                _emitIfOpen(
+                  ListingWizardLookupsLoaded(
+                    propertyTypes: types,
+                    lifestyleCategories: lifestyles,
+                    listingConditions: conditions,
+                    countries: countries,
+                  ),
                 );
               },
             );
           },
         );
-      },
-    );
+      });
+    });
   }
 
   // 4b. Fetch States
@@ -54,13 +62,18 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
       final result = await _repository.getStates(countryIso2: countryIso2);
       result.fold(
         (error) {
-          // Log error but don't emit ListingWizardError(error) 
+          // Log error but don't emit ListingWizardError(error)
           // as it wipes the whole lookup state and crashes/pops the wizard.
           print("Geographic Lookup Error (States): $error");
         },
         (states) {
           if (!isClosed && state is ListingWizardLookupsLoaded) {
-             emit((state as ListingWizardLookupsLoaded).copyWith(states: states, cities: [])); // clear cities on new state
+            _emitIfOpen(
+              (state as ListingWizardLookupsLoaded).copyWith(
+                states: states,
+                cities: [],
+              ),
+            ); // clear cities on new state
           }
         },
       );
@@ -82,7 +95,9 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
         },
         (cities) {
           if (!isClosed && state is ListingWizardLookupsLoaded) {
-             emit((state as ListingWizardLookupsLoaded).copyWith(cities: cities));
+            _emitIfOpen(
+              (state as ListingWizardLookupsLoaded).copyWith(cities: cities),
+            );
           }
         },
       );
@@ -93,11 +108,14 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
 
   // 5. Upload Photo
   Future<void> uploadPhoto(String userId, File imageFile) async {
-    emit(ListingWizardLoading());
-    final result = await _repository.uploadListingPhoto(userId: userId, imageFile: imageFile);
+    _emitIfOpen(ListingWizardLoading());
+    final result = await _repository.uploadListingPhoto(
+      userId: userId,
+      imageFile: imageFile,
+    );
     result.fold(
-      (error) => emit(ListingWizardError(error)),
-      (url) => emit(ListingWizardImageUploaded(url)),
+      (error) => _emitIfOpen(ListingWizardError(error)),
+      (url) => _emitIfOpen(ListingWizardImageUploaded(url)),
     );
   }
 
@@ -109,14 +127,14 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
     required List<String> lifestyleIds,
     required List<String> conditionIds,
   }) async {
-    emit(ListingWizardLoading());
-    
+    _emitIfOpen(ListingWizardLoading());
+
     // 6. Create Primary Listing
     final primaryResult = await _repository.createPrimaryListing(listingData);
-    
+
     await primaryResult.fold(
       (error) async {
-        emit(ListingWizardError(error));
+        _emitIfOpen(ListingWizardError(error));
       },
       (newListing) async {
         try {
@@ -129,7 +147,7 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
               userId: userId,
               imageFile: File(path),
             );
-            
+
             uploadResult.fold(
               (error) => debugPrint("Failed to upload image $path: $error"),
               (url) => imageLinks.add({'listing_id': listingId, 'url': url}),
@@ -160,10 +178,14 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
           if (futures.isNotEmpty) {
             await Future.wait(futures);
           }
-          
-          emit(ListingWizardSuccess(newListing));
+
+          _emitIfOpen(ListingWizardSuccess(newListing));
         } catch (e) {
-          emit(ListingWizardError("An error occurred during bulk linking: ${e.toString()}"));
+          _emitIfOpen(
+            ListingWizardError(
+              "An error occurred during bulk linking: ${e.toString()}",
+            ),
+          );
         }
       },
     );

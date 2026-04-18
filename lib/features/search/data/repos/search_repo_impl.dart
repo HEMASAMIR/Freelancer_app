@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:dartz/dartz.dart';
+import 'dart:async';
 import 'package:freelancer/core/constant/constant.dart';
 import '../search_model/listing_model.dart';
 import '../search_model/search_params_model.dart';
@@ -8,6 +9,7 @@ import 'search_repo.dart';
 
 class SearchRepositoryImpl implements SearchRepository {
   final Dio dio;
+  static const Duration _requestTimeout = Duration(seconds: 20);
 
   SearchRepositoryImpl({required this.dio});
 
@@ -31,10 +33,12 @@ class SearchRepositoryImpl implements SearchRepository {
   Future<Either<String, ListingModel>> getListingDetails(String id) async {
     try {
       debugPrint("ℹ️ Fetching details for ID: $id");
-      final response = await dio.get(
-        SupabaseKeys.listingsRest,
-        queryParameters: {'select': '*,listing_images(*)', 'id': 'eq.$id'},
-      );
+      final response = await dio
+          .get(
+            SupabaseKeys.listingsRest,
+            queryParameters: {'select': '*,listing_images(*)', 'id': 'eq.$id'},
+          )
+          .timeout(_requestTimeout);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final List data = response.data;
@@ -50,6 +54,8 @@ class SearchRepositoryImpl implements SearchRepository {
       return Left(
         e.response?.data?['message'] ?? e.message ?? "حدث خطأ في الشبكة",
       );
+    } on TimeoutException {
+      return const Left('انتهت مهلة الطلب. تأكد من الاتصال وحاول مرة أخرى.');
     } catch (e) {
       debugPrint("❌ Unexpected Error: $e");
       return Left("خطأ غير متوقع: ${e.toString()}");
@@ -60,7 +66,9 @@ class SearchRepositoryImpl implements SearchRepository {
     Map<String, dynamic> body,
   ) async {
     try {
-      final response = await dio.post(SupabaseKeys.searchRpc, data: body);
+      final response = await dio
+          .post(SupabaseKeys.searchRpc, data: body)
+          .timeout(_requestTimeout);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final List data = response.data;
@@ -71,6 +79,8 @@ class SearchRepositoryImpl implements SearchRepository {
       return Left(
         e.response?.data?['message'] ?? e.message ?? "خطأ في الاتصال",
       );
+    } on TimeoutException {
+      return const Left('التحميل أخذ وقتاً أطول من المتوقع. حاول مجدداً.');
     } catch (e) {
       return Left("خطأ غير متوقع: ${e.toString()}");
     }

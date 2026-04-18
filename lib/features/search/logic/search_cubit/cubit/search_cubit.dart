@@ -14,21 +14,25 @@ class SearchCubit extends Cubit<SearchState> {
     emit(SearchLoading());
 
     debugPrint('🔍 [SearchCubit] جاري البحث بـ Params: ${params.toJson()}');
+    try {
+      final result = await _searchRepository.searchListings(params);
 
-    final result = await _searchRepository.searchListings(params);
-
-    result.fold(
-      (failure) {
-        debugPrint('❌ [SearchCubit] فشل البحث: $failure');
-        emit(SearchError(failure));
-      },
-      (listings) {
-        debugPrint(
-          '✅ [SearchCubit] نجاح البحث: تم إيجاد ${listings.length} عنصر',
-        );
-        emit(SearchSuccess(listings: listings));
-      },
-    );
+      result.fold(
+        (failure) {
+          debugPrint('❌ [SearchCubit] فشل البحث: $failure');
+          emit(SearchError(failure));
+        },
+        (listings) {
+          debugPrint(
+            '✅ [SearchCubit] نجاح البحث: تم إيجاد ${listings.length} عنصر',
+          );
+          emit(SearchSuccess(listings: listings));
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ [SearchCubit] استثناء غير متوقع أثناء البحث: $e');
+      emit(SearchError('حدث خطأ غير متوقع أثناء تحميل البيانات.'));
+    }
   }
 
   // 2. وظيفة جلب تفاصيل عقار محدد (Details)
