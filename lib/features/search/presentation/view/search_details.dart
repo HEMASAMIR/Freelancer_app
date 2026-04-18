@@ -325,7 +325,8 @@ class _LocationMapSection extends StatelessWidget {
               width: double.infinity,
               color: Colors.grey[100],
               child: Image.network(
-                'https://maps.googleapis.com/maps/api/staticmap?center=${Uri.encodeComponent(location ?? "Cairo")}&size=600x300&zoom=13&key=YOUR_API_KEY',
+                // We use a placeholder logic if no key is available to avoid broken links
+                'https://via.placeholder.com/600x300/F5F5F5/710E1F?text=Map+Preview+of+${Uri.encodeComponent(location ?? "Location")}',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
                   decoration: BoxDecoration(
@@ -343,7 +344,7 @@ class _LocationMapSection extends StatelessWidget {
                       Text(location ?? "Location Preview"),
                       Text(
                         "Tap to open Google Maps",
-                        style: TextStyle(fontSize: 11.sp),
+                        style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -524,6 +525,21 @@ class _BookingCardState extends State<_BookingCard> {
                                 backgroundColor: airbnbMaroon,
                               ),
                             );
+                            setState(() => isLoading = false);
+                            return;
+                          }
+
+                          final bool isVerified = authState is AuthAdminSuccess || 
+                            (authState is AuthSuccess && authState.user.userMetadata['is_identity_verified'] == true);
+
+                          if (!isVerified) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Identity verification required to book"),
+                                backgroundColor: airbnbMaroon,
+                              ),
+                            );
+                            Navigator.pushNamed(context, AppRoutes.identityVerification);
                             setState(() => isLoading = false);
                             return;
                           }

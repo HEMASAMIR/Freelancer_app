@@ -24,6 +24,8 @@ class _EarningsBalanceViewState extends State<EarningsBalanceView> {
     final authState = context.read<AuthCubit>().state;
     if (authState is AuthAdminSuccess) {
       context.read<WalletCubit>().loadWallet(authState.user.id);
+    } else if (authState is AuthSuccess) {
+      context.read<WalletCubit>().loadWallet(authState.user.id);
     }
   }
 
@@ -42,8 +44,11 @@ class _EarningsBalanceViewState extends State<EarningsBalanceView> {
             const SnackBar(content: Text('Withdrawal requested successfully!')),
           );
           final authState = context.read<AuthCubit>().state;
-          if (authState is AuthAdminSuccess) {
-            context.read<WalletCubit>().loadWallet(authState.user.id);
+          final userId = authState is AuthAdminSuccess
+              ? authState.user.id
+              : authState is AuthSuccess ? authState.user.id : null;
+          if (userId != null) {
+            context.read<WalletCubit>().loadWallet(userId);
           }
           _amountController.clear();
         } else if (state is WalletError) {
@@ -248,12 +253,16 @@ class _TransactionTable extends StatelessWidget {
             Divider(color: AppColors.dividerGrey.withValues(alpha: 0.3), height: 1),
         itemBuilder: (context, index) {
           final tx = history[index];
-          final type = tx['type'] ?? 'payment';
-          final isCredit = type == 'payment' || type == 'refund';
+          // Repo returns: subtotal, status, created_at, listing:{title,user_id}
+          final status = tx['status'] ?? 'pending';
+          final isCredit = status == 'confirmed' || status == 'completed';
+          final subtotal = (tx['subtotal'] as num?)?.toDouble() ?? 0.0;
+          final listingTitle = (tx['listing'] is Map)
+              ? tx['listing']['title'] as String? ?? 'Booking'
+              : 'Booking';
+          final shortId = (tx['id'] as String? ?? '--------').substring(0, 8);
           final date = tx['created_at'] != null
-              ? DateFormat(
-                  'MMM d, yyyy',
-                ).format(DateTime.parse(tx['created_at']))
+              ? DateFormat('MMM d, yyyy').format(DateTime.parse(tx['created_at']))
               : '-';
           return ListTile(
             contentPadding: const EdgeInsets.symmetric(
@@ -263,28 +272,52 @@ class _TransactionTable extends StatelessWidget {
             leading: CircleAvatar(
               backgroundColor: isCredit
                   ? Colors.green.shade50
-                  : Colors.red.shade50,
+                  : Colors.orange.shade50,
               child: Icon(
-                isCredit ? Icons.arrow_downward : Icons.arrow_upward,
-                color: isCredit ? Colors.green : Colors.red,
+                isCredit ? Icons.arrow_downward : Icons.hourglass_top,
+                color: isCredit ? Colors.green : Colors.orange,
                 size: 20,
               ),
             ),
             title: Text(
-              tx['description'] ?? type,
+              listingTitle,
               style: const TextStyle(fontWeight: FontWeight.w600),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             subtitle: Text(
-              date,
+              '#$shortId  ·  $date',
               style: TextStyle(color: AppColors.sub, fontSize: 12),
             ),
-            trailing: Text(
-              '${isCredit ? '+' : '-'}EGP ${tx['amount']}',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isCredit ? Colors.green : Colors.red,
-                fontSize: 14,
-              ),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  'EGP ${subtotal.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isCredit ? Colors.green : Colors.orange,
+                    fontSize: 14,
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isCredit ? Colors.green.shade50 : Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: isCredit ? Colors.green : Colors.orange,
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         },
@@ -382,9 +415,12 @@ class _WithdrawalForm extends StatelessWidget {
                         return;
                       }
                       final authState = context.read<AuthCubit>().state;
-                      if (authState is AuthAdminSuccess) {
+                      final userId = authState is AuthAdminSuccess
+                          ? authState.user.id
+                          : authState is AuthSuccess ? authState.user.id : null;
+                      if (userId != null) {
                         context.read<WalletCubit>().requestWithdrawal(
-                          hostId: authState.user.id,
+                          hostId: userId,
                           amount: amount,
                           method: withdrawalMethod,
                         );

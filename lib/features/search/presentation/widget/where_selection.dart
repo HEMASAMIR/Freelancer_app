@@ -16,7 +16,7 @@ class WhereSection extends StatelessWidget {
   static const List<Map<String, dynamic>> destinations = [
     {'name': 'Best Offers', 'icon': Icons.beach_access},
     {'name': 'Main Office', 'icon': Icons.location_city},
-    {'name': 'Merakia', 'icon': Icons.place},
+    {'name': 'Marakia', 'icon': Icons.place},
     {'name': 'Cairo', 'icon': Icons.place},
   ];
 

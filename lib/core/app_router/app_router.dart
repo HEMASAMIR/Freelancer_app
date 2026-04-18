@@ -4,6 +4,7 @@ import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/features/admin/admin/presentation/view/admin_dashboard.dart';
 import 'package:freelancer/features/admin/admin/presentation/view/identify_screen.dart';
+import 'package:freelancer/features/admin/logic/admin_management_cubit.dart';
 import 'package:freelancer/features/host/logic/cubit/host_cubit.dart';
 import 'package:freelancer/features/admin/logic/host_listings_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
@@ -99,7 +100,7 @@ class AppRouter {
         );
 
       case AppRoutes.adminDashboard:
-        final view = settings.arguments as String? ?? 'Overview';
+        final view = settings.arguments as String? ?? 'Dashboard';
         return MaterialPageRoute(
           builder: (_) => MultiBlocProvider(
             providers: [
@@ -109,13 +110,14 @@ class AppRouter {
               BlocProvider.value(value: sl<HostListingsCubit>()),
               BlocProvider.value(value: sl<HostCubit>()),
               BlocProvider.value(value: sl<WalletCubit>()),
+              BlocProvider(create: (_) => sl<AdminManagementCubit>()),
             ],
             child: AdminOverviewScreen(initialView: view),
           ),
         );
 
       case AppRoutes.adminOverview:
-        final view = settings.arguments as String? ?? 'Overview';
+        final view = settings.arguments as String? ?? 'Dashboard';
         return MaterialPageRoute(
           builder: (_) => MultiBlocProvider(
             providers: [
@@ -125,6 +127,7 @@ class AppRouter {
               BlocProvider.value(value: sl<HostListingsCubit>()),
               BlocProvider.value(value: sl<HostCubit>()),
               BlocProvider.value(value: sl<WalletCubit>()),
+              BlocProvider(create: (_) => sl<AdminManagementCubit>()),
             ],
             child: AdminOverviewScreen(initialView: view),
           ),

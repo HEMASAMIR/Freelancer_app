@@ -27,23 +27,46 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       backgroundColor: Colors.white,
       drawer: const SideDrawer(),
       appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Wishlists",
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 28.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            BlocBuilder<FavCubit, FavState>(
+              builder: (context, state) {
+                if (state is FavLoaded) {
+                  final count = state.wishlists.length;
+                  return Text(
+                    "$count list${count == 1 ? '' : 's'} available",
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ],
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
+        toolbarHeight: 100.h,
+        leadingWidth: 56.w,
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu, color: Colors.black),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: Text(
-          "Wishlists",
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 24.sp,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: false,
       ),
       body: BlocBuilder<FavCubit, FavState>(
         builder: (context, state) {
@@ -59,16 +82,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             }
 
             return GridView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 0),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                crossAxisSpacing: 15.w,
-                mainAxisSpacing: 15.h,
-                childAspectRatio: 0.9,
+                crossAxisSpacing: 20.w,
+                mainAxisSpacing: 24.h,
+                childAspectRatio: 0.85,
               ),
               itemCount: state.wishlists.length,
               itemBuilder: (context, index) {
-                return _buildWishlistCard(state.wishlists[index]);
+                return _buildWishlistCard(state.wishlists[index], state);
               },
             );
           }
@@ -83,7 +106,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  Widget _buildWishlistCard(WishlistModel wishlist) {
+  Widget _buildWishlistCard(WishlistModel wishlist, FavState state) {
+    int itemCount = 0;
+    if (state is FavLoaded) {
+      itemCount = state.wishlistContent[wishlist.id]?.length ?? 0;
+    }
+
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -102,25 +130,39 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.grey[300]!),
+                color: const Color(0xFFF3EFE9), // Beige/Light grey match
+                borderRadius: BorderRadius.circular(20.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: const Center(
-                child: Icon(Icons.favorite, color: Color(0xFF710E1F), size: 40),
+              child: Center(
+                child: Icon(
+                  Icons.favorite_rounded, 
+                  color: Colors.white, 
+                  size: 48.sp,
+                  shadows: [
+                    Shadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)
+                  ],
+                ),
               ),
             ),
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: 12.h),
           Text(
             wishlist.name,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp, color: Colors.black87),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+          SizedBox(height: 2.h),
           Text(
-            "Saved items", // يمكن جلب عدد العناصر هنا لاحقاً
-            style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+            "$itemCount saved listing${itemCount == 1 ? '' : 's'}", 
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 13.sp),
           ),
         ],
       ),
