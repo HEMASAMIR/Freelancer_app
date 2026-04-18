@@ -13,11 +13,7 @@ class WizardStep2Lifestyles extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ListingWizardCubit, ListingWizardState>(
       builder: (context, wizardState) {
-        if (wizardState is! ListingWizardLookupsLoaded) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final categories = wizardState.lifestyleCategories;
+        final List<dynamic> categories = wizardState is ListingWizardLookupsLoaded ? wizardState.lifestyleCategories : [];
 
         return SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),

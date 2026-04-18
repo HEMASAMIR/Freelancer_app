@@ -73,42 +73,46 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
           ),
           SizedBox(height: 32.h),
 
-          _buildInputField(
-            title: 'Title (English)',
-            hint: 'e.g., Cozy Cabin with Mountain View',
-            controller: _titleEnController,
-          ),
-          _buildInputField(
-            title: 'Title (Arabic) / (بالعربية)',
-            hint: 'مثال: كابينة مريحة مع إطلالة على الجبل',
-            controller: _titleArController,
-            isRtl: true,
-          ),
-          _buildInputField(
-            title: 'Description (English)',
-            hint: 'Describe your place...',
-            controller: _descEnController,
-            maxLines: 4,
-          ),
-          _buildInputField(
-            title: 'Description (Arabic) / (بالعربية)',
-            hint: '... صف مكانك',
-            controller: _descArController,
-            maxLines: 4,
-            isRtl: true,
-          ),
           BlocBuilder<ListingFormCubit, ListingFormState>(
             builder: (context, state) {
-              if (state.descriptionAr.length < 20 && state.descriptionAr.isNotEmpty) {
-                return Padding(
-                  padding: EdgeInsets.only(bottom: 16.h),
-                  child: Text(
-                    'Description must be at least 20 characters',
-                    style: TextStyle(fontSize: 12.sp, color: AppColors.primaryRed, fontWeight: FontWeight.w600),
+              final bool showErrors = state.showValidationErrors;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildInputField(
+                    title: 'Title (English)',
+                    hint: 'e.g., Cozy Cabin with Mountain View',
+                    controller: _titleEnController,
+                    showError: showErrors && state.titleEn.length < 5,
+                    errorMsg: 'Title must be at least 5 characters',
                   ),
-                );
-              }
-              return const SizedBox.shrink();
+                  _buildInputField(
+                    title: 'Title (Arabic) / (بالعربية)',
+                    hint: 'مثال: كابينة مريحة مع إطلالة على الجبل',
+                    controller: _titleArController,
+                    isRtl: true,
+                    showError: showErrors && state.titleAr.length < 5,
+                    errorMsg: 'Title must be at least 5 characters',
+                  ),
+                  _buildInputField(
+                    title: 'Description (English)',
+                    hint: 'Describe your place...',
+                    controller: _descEnController,
+                    maxLines: 4,
+                    showError: showErrors && state.descriptionEn.length < 10,
+                    errorMsg: 'Description must be at least 10 characters',
+                  ),
+                  _buildInputField(
+                    title: 'Description (Arabic) / (بالعربية)',
+                    hint: '... صف مكانك',
+                    controller: _descArController,
+                    maxLines: 4,
+                    isRtl: true,
+                    showError: showErrors && state.descriptionAr.length < 10,
+                    errorMsg: 'Description must be at least 10 characters',
+                  ),
+                ],
+              );
             },
           ),
           
@@ -124,6 +128,8 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
     required TextEditingController controller,
     int maxLines = 1,
     bool isRtl = false,
+    bool showError = false,
+    String errorMsg = '',
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,6 +170,14 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
             ),
           ),
         ),
+        if (showError)
+          Padding(
+            padding: EdgeInsets.only(top: 8.h),
+            child: Text(
+              errorMsg,
+              style: TextStyle(fontSize: 13.sp, color: AppColors.primaryRed, fontWeight: FontWeight.w600),
+            ),
+          ),
         SizedBox(height: 24.h),
       ],
     );

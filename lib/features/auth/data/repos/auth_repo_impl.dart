@@ -279,4 +279,48 @@ class AuthRepoImpl implements AuthRepo {
       return left(NetworkFailure(e.toString()));
     }
   }
+  @override
+  Future<Either<AuthFailure, Map<String, dynamic>>> refreshToken() async {
+    try {
+      final refreshToken = _prefs.getString('supabase_refresh_token');
+      if (refreshToken == null) {
+        return left(const UnknownFailure('No refresh token found. Please login again.'));
+      }
+      final response = await _dio.post(
+        '${SupabaseKeys.authBaseUrl}token?grant_type=refresh_token',
+        data: {'refresh_token': refreshToken},
+      );
+      final data = response.data;
+      if (data == null || data['access_token'] == null) {
+        return left(const UnknownFailure('Failed to refresh token'));
+      }
+      await _saveSession(data);
+      return right(data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final msg = e.response?.data?['error_description'] ?? e.response?.data?['msg'] ?? e.message;
+      return left(UnknownFailure(msg.toString()));
+    } catch (e) {
+      return left(NetworkFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<AuthFailure, UserModel>> getUserInfo() async {
+    try {
+      final response = await _dio.get('${SupabaseKeys.authBaseUrl}user');
+      final data = response.data;
+      if (data == null) {
+        return left(const UnknownFailure('Failed to fetch user data'));
+      }
+      // Usually, /user endpoint returns just the user object. We update cached user context if valid.
+      final userModel = UserModel.fromJson(data);
+      await _prefs.setString('supabase_user', jsonEncode(data));
+      return right(userModel);
+    } on DioException catch (e) {
+      final msg = e.response?.data?['error_description'] ?? e.response?.data?['msg'] ?? e.message;
+      return left(UnknownFailure(msg.toString()));
+    } catch (e) {
+      return left(NetworkFailure(e.toString()));
+    }
+  }
 }

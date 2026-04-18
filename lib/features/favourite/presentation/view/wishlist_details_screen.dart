@@ -18,7 +18,7 @@ class _WishlistDetailsScreenState extends State<WishlistDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    // هنا ممكن نحمل الداتا لو مش محملة، بس حالياً بنعتمد على الـ Cubit State
+    context.read<FavCubit>().loadWishlistItems(widget.wishlist.id);
   }
 
   @override
@@ -34,17 +34,17 @@ class _WishlistDetailsScreenState extends State<WishlistDetailsScreen> {
       body: BlocBuilder<FavCubit, FavState>(
         builder: (context, state) {
           if (state is FavLoaded) {
-            // In a real app, we would filter by wishlist ID. 
-            // For now, we'll check if there are any favorites.
-            if (state.favorites.isEmpty) {
+            final items = state.wishlistContent[widget.wishlist.id] ?? [];
+            
+            if (items.isEmpty) {
               return _buildEmptyState();
             }
 
             return ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-              itemCount: state.favorites.length,
+              itemCount: items.length,
               itemBuilder: (context, index) {
-                final item = state.favorites[index];
+                final item = items[index];
                 return PropertyListingCard(
                   listing: item,
                   onTap: () {

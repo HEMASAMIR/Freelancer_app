@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:freelancer/core/services/admin_email_service.dart';
 import 'package:freelancer/features/admin/data/repos/wallet_repo.dart';
 import 'package:freelancer/features/favourite/data/fav_repos/fav_repo.dart';
 import 'package:freelancer/features/favourite/data/fav_repos/fav_repo_impl.dart';
@@ -73,7 +74,6 @@ import 'package:freelancer/features/admin/data/repos/host_listings_repo.dart';
 import 'package:freelancer/features/admin/data/repos/host_listings_repo_impl.dart';
 import 'package:freelancer/features/admin/logic/host_listings_cubit.dart';
 import 'package:freelancer/features/admin/data/repos/wallet_repo_impl.dart';
-import 'package:freelancer/features/admin/logic/wallet_cubit.dart';
 
 // Admin Management (Specialized APIs)
 import 'package:freelancer/features/admin/data/admin_repo/admin_management_repo.dart';
@@ -140,8 +140,13 @@ Future<void> setupServiceLocator() async {
       prefs: sl<SharedPreferences>(),
     ),
   );
+  // Register AdminEmailService — load() must complete before AuthCubit is created
+  // because AuthCubit's constructor calls isAdmin() synchronously.
+  final adminEmailService = AdminEmailService();
+  await adminEmailService.load();
+  sl.registerSingleton<AdminEmailService>(adminEmailService);
   sl.registerLazySingleton<AuthCubit>(
-    () => AuthCubit(authRepo: sl<AuthRepo>()),
+    () => AuthCubit(authRepo: sl<AuthRepo>(), adminService: sl<AdminEmailService>()),
   );
   sl.registerFactory<SecurityCubit>(
     () => SecurityCubit(authRepo: sl<AuthRepo>()),

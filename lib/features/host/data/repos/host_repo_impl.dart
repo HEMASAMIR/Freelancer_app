@@ -135,21 +135,13 @@ class HostRepositoryImpl implements HostRepository {
   @override
   Future<Either<String, double>> getUserBalance(String userId) async {
     try {
-      final response = await dio.get(
-        SupabaseKeys.bookingsRest,
-        queryParameters: {
-          'select': 'subtotal,listing:listings!inner(user_id)',
-          'listing.user_id': 'eq.$userId',
-        },
+      final response = await dio.post(
+        SupabaseKeys.hostBalanceRpc,
+        data: {'host_id': userId},
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final List data = response.data;
-        double totalBalance = 0.0;
-        for (var booking in data) {
-          totalBalance += ((booking['subtotal'] as num?) ?? 0.0).toDouble();
-        }
-        return Right(totalBalance);
+      if (response.statusCode == 200) {
+        return Right((response.data as num).toDouble());
       }
       return const Left("فشل في جلب رصيدك.");
     } on DioException catch (e) {
@@ -246,6 +238,60 @@ class HostRepositoryImpl implements HostRepository {
       return const Left("فشل في جلب التقييمات.");
     } on DioException catch (e) {
       return Left(e.message ?? "حدث خطأ في الشبكة");
+    } catch (e) {
+      return Left(e.toString());
+    }
+  }
+
+  @override
+  Future<Either<String, void>> updateListingSettings({
+    required String listingId,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      final response = await dio.patch(
+        SupabaseKeys.listingsRest,
+        queryParameters: {'id': 'eq.$listingId'},
+        data: data,
+      );
+      if (response.statusCode == 200 ||
+          response.statusCode == 204 ||
+          response.statusCode == 201) {
+        return const Right(null);
+      }
+      return const Left('فشل في تحديث بيانات العقار.');
+    } on DioException catch (e) {
+      debugPrint('❌ updateListingSettings: ${e.message}');
+      return Left(e.message ?? 'حدث خطأ في الشبكة');
+    } catch (e) {
+      return Left(e.toString());
+    }
+  }
+
+  @override
+  Future<Either<String, void>> upsertPriceAdjustment({
+    required String listingId,
+    required String date,
+    required double price,
+  }) async {
+    try {
+      final response = await dio.post(
+        '${SupabaseKeys.listingAvailabilityRest}?on_conflict=listing_id,date',
+        data: {
+          'listing_id': listingId,
+          'date': date,
+          'price_override': price,
+          'is_available': true,
+        },
+      );
+      if (response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          response.statusCode == 204) {
+        return const Right(null);
+      }
+      return const Left('فشل في حفظ سعر الاستثناء.');
+    } on DioException catch (e) {
+      return Left(e.message ?? 'حدث خطأ في الشبكة');
     } catch (e) {
       return Left(e.toString());
     }

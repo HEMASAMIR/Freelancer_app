@@ -16,6 +16,7 @@ import 'package:freelancer/features/account/presentation/account_info.dart';
 import 'package:freelancer/features/account/presentation/security_screen.dart';
 import 'package:freelancer/features/home/presentation/view/home.dart';
 import 'package:freelancer/features/host/presentation/host_listing.dart';
+import 'package:freelancer/features/payment/logic/cubit/payment_cubit.dart';
 import 'package:freelancer/features/search/data/search_model/search_params_model.dart';
 import 'package:freelancer/features/search/logic/search_cubit/cubit/search_cubit.dart';
 import 'package:freelancer/features/search/presentation/view/search_details.dart';
@@ -135,6 +136,7 @@ class AppRouter {
             providers: [
               BlocProvider.value(value: sl<AuthCubit>()),
               BlocProvider(create: (_) => sl<BookingsCubit>()),
+              BlocProvider.value(value: sl<PaymentCubit>()),
             ],
             child: const TripsScreen(),
           ),

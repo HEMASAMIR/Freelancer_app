@@ -48,14 +48,14 @@ class _LoginViewState extends State<LoginView> {
         listener: (context, state) {
           if (state is AuthAdminSuccess) {
             CustomToast.show(context, "Welcome Admin 👑", ToastState.success);
-            Navigator.pushReplacementNamed(context, '/adminDashboard');
+            context.read<AuthCubit>().navigateAfterLogin(context);
           } else if (state is AuthSuccess) {
             CustomToast.show(
               context,
               "Successfully logged into QuickIn! 🚀",
               ToastState.success,
             );
-            Navigator.pushReplacementNamed(context, AppRoutes.home);
+            context.read<AuthCubit>().navigateAfterLogin(context);
           } else if (state is AuthError) {
             CustomToast.show(context, state.message, ToastState.error);
           }

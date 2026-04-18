@@ -69,6 +69,18 @@ class BookingsCubit extends Cubit<BookingsState> {
     );
   }
 
+  Future<void> confirmBooking(String bookingId, String hostId) async {
+    emit(BookingsLoading());
+    final result = await repository.confirmBooking(
+      bookingId: bookingId,
+      hostId: hostId,
+    );
+    result.fold(
+      (error) => emit(BookingsError(error)),
+      (_) => emit(BookingsConfirmed()),
+    );
+  }
+
   Future<void> getUserBookings({required String userId, String? status}) async {
     emit(BookingsLoading());
     final result = await repository.getUserBookings(

@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/constant/constant.dart';
@@ -32,9 +34,14 @@ class WizardStep6Photos extends StatelessWidget {
               return Column(
                 children: [
                   GestureDetector(
-                    onTap: () {
-                      // Mocking file upload to allow progression testing
-                      context.read<ListingFormCubit>().addPhotos(['https://mock.image/path.jpg']);
+                    onTap: () async {
+                      final picker = ImagePicker();
+                      final List<XFile> images = await picker.pickMultiImage();
+                      
+                      if (images.isNotEmpty && context.mounted) {
+                        final paths = images.map((e) => e.path).toList();
+                        context.read<ListingFormCubit>().addPhotos(paths);
+                      }
                     },
                     child: Container(
                       width: double.infinity,
@@ -89,14 +96,34 @@ class WizardStep6Photos extends StatelessWidget {
                       ),
                       itemCount: formState.photoPaths.length,
                       itemBuilder: (context, index) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8.r),
-                            image: const DecorationImage(
-                              image: NetworkImage('https://i.stack.imgur.com/HILmr.png'), // Placeholder
-                              fit: BoxFit.cover,
+                        final path = formState.photoPaths[index];
+                        return Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.r),
+                                image: DecorationImage(
+                                  image: FileImage(File(path)),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
-                          ),
+                            Positioned(
+                              top: 4.h,
+                              right: 4.w,
+                              child: GestureDetector(
+                                onTap: () => context.read<ListingFormCubit>().removePhoto(path),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(Icons.close, size: 14.sp, color: AppColors.primaryRed),
+                                ),
+                              ),
+                            ),
+                          ],
                         );
                       },
                     ),

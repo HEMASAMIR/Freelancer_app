@@ -7,28 +7,47 @@ import 'package:freelancer/features/listing_wizard/logic/cubit/listing_wizard_st
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_form_cubit.dart';
 
 class WizardStep1PropertyType extends StatelessWidget {
-  const WizardStep1PropertyType({super.key});
+  WizardStep1PropertyType({super.key});
 
-  IconData _getIconForType(String typeString) {
-    final t = typeString.toLowerCase();
-    if (t.contains('apartment')) return Icons.apartment;
-    if (t.contains('villa')) return Icons.villa_outlined;
-    if (t.contains('guest')) return Icons.holiday_village_outlined;
-    if (t.contains('house')) return Icons.home_outlined;
-    if (t.contains('hotel')) return Icons.domain;
-    if (t.contains('unit')) return Icons.meeting_room_outlined;
-    return Icons.domain_outlined;
-  }
+  final List<Map<String, dynamic>> _staticItems = [
+    {
+      'name': 'Apartment',
+      'subtitle': 'A rented unit in a\nmulti-unit building',
+      'icon': Icons.domain,
+    },
+    {
+      'name': 'House',
+      'subtitle': 'A standalone\nresidential building',
+      'icon': Icons.home_outlined,
+    },
+    {
+      'name': 'Guest House',
+      'subtitle': 'A separate unit on the\nsame property as the\nmain house',
+      'icon': Icons.holiday_village_outlined,
+    },
+    {
+      'name': 'Hotel',
+      'subtitle': 'A room in a hotel or\nboutique hotel',
+      'icon': Icons.business,
+    },
+    {
+      'name': 'Unit',
+      'subtitle': 'A generic rented unit',
+      'icon': Icons.meeting_room_outlined,
+    },
+    {
+      'name': 'Villa',
+      'subtitle': 'A luxurious residence\noften with a yard',
+      'icon': Icons.villa_outlined,
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ListingWizardCubit, ListingWizardState>(
       builder: (context, wizardState) {
-        if (wizardState is! ListingWizardLookupsLoaded) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final types = wizardState.propertyTypes;
+        // Collect API IDs if available so database doesn't crash on save
+        final List<dynamic> apiTypes = wizardState is ListingWizardLookupsLoaded ? wizardState.propertyTypes : [];
 
         return SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
@@ -56,43 +75,63 @@ class WizardStep1PropertyType extends StatelessWidget {
                       crossAxisCount: 2,
                       crossAxisSpacing: 16.w,
                       mainAxisSpacing: 16.h,
-                      childAspectRatio: 0.85,
+                      childAspectRatio: 0.95,
                     ),
-                    itemCount: types.length,
+                    itemCount: _staticItems.length,
                     itemBuilder: (context, index) {
-                      final item = types[index];
-                      final isSelected = formState.selectedPropertyTypeId == item.id.toString();
+                      final item = _staticItems[index];
+                      final itemName = item['name'] as String;
+                      
+                      // Match with API ID if it exists, otherwise fallback to the string name
+                      final apiMatch = apiTypes.where((t) => t.name.toString().toLowerCase() == itemName.toLowerCase()).firstOrNull;
+                      final String realId = apiMatch != null ? apiMatch.id.toString() : itemName;
+                      
+                      final isSelected = formState.selectedPropertyTypeId == realId;
                       
                       return GestureDetector(
                         onTap: () {
-                          context.read<ListingFormCubit>().setPropertyType(item.id.toString());
+                          context.read<ListingFormCubit>().setPropertyType(realId);
                         },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          padding: EdgeInsets.all(16.w),
+                          padding: EdgeInsets.all(8.w),
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(16.r),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12.r),
                             border: Border.all(
                               color: isSelected ? AppColors.inkBlack : AppColors.dividerGrey.withValues(alpha: 0.5),
                               width: isSelected ? 2.0 : 1.0,
                             ),
                           ),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Icon(
-                                _getIconForType(item.name),
-                                size: 32.sp,
-                                color: AppColors.inkBlack,
+                                item['icon'] as IconData,
+                                size: 36.sp,
+                                color: isSelected ? AppColors.inkBlack : Colors.grey.shade800,
                               ),
-                              const Spacer(),
+                              SizedBox(height: 12.h),
                               Text(
-                                item.name,
+                                itemName,
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.w600,
                                   color: AppColors.inkBlack,
+                                ),
+                              ),
+                              SizedBox(height: 4.h),
+                              Text(
+                                item['subtitle'] as String,
+                                textAlign: TextAlign.center,
+                                maxLines: 3,
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.w400,
+                                  color: AppColors.greyText,
+                                  height: 1.2,
                                 ),
                               ),
                             ],

@@ -32,6 +32,8 @@ class BookingsError extends BookingsState {
 
 class BookingsCancelled extends BookingsState {}
 
+class BookingsConfirmed extends BookingsState {}
+
 class BookingsListLoaded extends BookingsState {
   final List<BookingModel> bookings;
 

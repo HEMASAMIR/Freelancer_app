@@ -53,50 +53,46 @@ class _DashboardOverviewContentState extends State<DashboardOverviewContent> {
 
             BlocBuilder<HostCubit, HostState>(
               builder: (context, state) {
-                int? listingsCount;
-                int? tripsCount;
+                int listingsCount = 0;
+                int tripsCount = 0;
+                double balance = 0.0;
                 bool isLoading = state is HostLoading || state is HostInitial;
                 
                 if (state is HostDashboardLoaded) {
                   listingsCount = state.listingIds.length;
                   tripsCount = state.bookingIds.length;
+                  balance = state.balance;
                 }
 
                 return Column(
                   children: [
                     _buildDashboardCard(
                       title: 'My Listings',
-                      subtitle: isLoading ? 'Loading data...' : 'Manage your ${listingsCount ?? 0} properties',
+                      subtitle: isLoading ? 'Loading...' : 'Manage your $listingsCount properties',
                       icon: Icons.home_outlined,
                       iconColor: Colors.blue,
-                      onTap: () {
-                        if (widget.onViewChanged != null) {
-                          widget.onViewChanged!('My Listings');
-                        } else {
-                          Navigator.pushNamed(context, AppRoutes.adminDashboard);
-                        }
-                      },
+                      onTap: () => widget.onViewChanged?.call('My Listings'),
                     ),
                     _buildDashboardCard(
-                      title: 'My Trips',
-                      subtitle: isLoading ? 'Loading data...' : 'View your ${tripsCount ?? 0} reservations',
+                      title: 'Reservations',
+                      subtitle: isLoading ? 'Loading...' : 'View $tripsCount booking requests',
                       icon: Icons.calendar_today_outlined,
                       iconColor: Colors.green,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.trips),
+                      onTap: () => widget.onViewChanged?.call('Bookings'),
                     ),
                     _buildDashboardCard(
-                      title: 'Wishlists',
-                      subtitle: 'Places you saved',
-                      icon: Icons.favorite_border,
-                      iconColor: Colors.pink,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.wishlists),
+                      title: 'Balance & Earnings',
+                      subtitle: isLoading ? 'Loading...' : 'EGP ${balance.toStringAsFixed(2)} available',
+                      icon: Icons.account_balance_wallet_outlined,
+                      iconColor: Colors.orange,
+                      onTap: () => widget.onViewChanged?.call('Earnings & Balance'),
                     ),
                     _buildDashboardCard(
-                      title: 'Account Settings',
-                      subtitle: 'Profile & verification',
-                      icon: Icons.settings_outlined,
-                      iconColor: Colors.blueGrey,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.account),
+                      title: 'Calendar',
+                      subtitle: 'Block dates & set prices',
+                      icon: Icons.date_range_outlined,
+                      iconColor: Colors.purple,
+                      onTap: () => widget.onViewChanged?.call('Calendar'),
                     ),
                   ],
                 );

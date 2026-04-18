@@ -13,6 +13,10 @@ class ListingWizardInitial extends ListingWizardState {}
 
 class ListingWizardLoading extends ListingWizardState {}
 
+/// Emitted while initial lookup data (property types, lifestyles, etc.) is loading.
+/// The wizard screen stays open; individual steps show their own small spinners.
+class ListingWizardLookupsLoading extends ListingWizardState {}
+
 class ListingWizardLookupsLoaded extends ListingWizardState {
   final List<PropertyTypeModel> propertyTypes;
   final List<LifestyleCategoryModel> lifestyleCategories;

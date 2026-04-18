@@ -14,6 +14,9 @@ import 'package:freelancer/features/listing_wizard/presentation/widgets/wizard_s
 import 'package:freelancer/features/listing_wizard/presentation/widgets/wizard_step_7_pricing.dart';
 import 'package:freelancer/features/listing_wizard/presentation/widgets/wizard_step_8_publish.dart';
 import 'package:freelancer/features/listing_wizard/presentation/view/listing_success_screen.dart';
+import 'package:freelancer/features/admin/admin/presentation/view/identify_screen.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
 
 class ListingWizardScreen extends StatefulWidget {
   const ListingWizardScreen({super.key});
@@ -71,27 +74,27 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
       case 1:
         return formState.selectedLifestyleIds.isNotEmpty;
       case 2:
-        return formState.titleEn.isNotEmpty && 
-               formState.descriptionEn.length >= 20 &&
-               formState.descriptionAr.length >= 20;
+        return (formState.titleEn.isNotEmpty || formState.titleAr.isNotEmpty) &&
+            (formState.descriptionEn.length >= 10 ||
+                formState.descriptionAr.length >= 10);
       case 3:
-        return formState.countryId.isNotEmpty && 
-               formState.stateId.isNotEmpty && 
-               formState.cityId.isNotEmpty && 
-               formState.latitude.isNotEmpty && 
-               formState.address.isNotEmpty;
+        return formState.countryId.isNotEmpty &&
+            formState.stateId.isNotEmpty &&
+            formState.cityId.isNotEmpty &&
+            formState.latitude.isNotEmpty &&
+            formState.address.isNotEmpty;
       case 4:
-        return formState.guests > 0 && 
-               formState.beds > 0 && 
-               formState.bedrooms > 0 && 
-               formState.bathrooms > 0 && 
-               formState.minDuration > 0;
+        return formState.guests > 0 &&
+            formState.beds > 0 &&
+            formState.bedrooms > 0 &&
+            formState.bathrooms > 0 &&
+            formState.minDuration > 0;
       case 5:
         return formState.photoPaths.isNotEmpty;
       case 6:
         return formState.pricePerNight > 0;
       default:
-        return true; 
+        return true;
     }
   }
 
@@ -99,15 +102,48 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
   Widget build(BuildContext context) {
     return BlocListener<ListingWizardCubit, ListingWizardState>(
       listener: (context, state) {
+        // Only block the UI with a dialog during the final PUBLISH step
         if (state is ListingWizardLoading) {
-           showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => const Center(child: CircularProgressIndicator()),
+          );
         } else if (state is ListingWizardSuccess) {
-           Navigator.pop(context); // pop dialog
-           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ListingSuccessScreen()));
+          // Close the loading dialog if open
+          if (Navigator.canPop(context)) Navigator.pop(context);
+          
+          final authState = context.read<AuthCubit>().state;
+          bool isVerified = false;
+          if (authState is AuthAdminSuccess) {
+            isVerified = true;
+          } else if (authState is AuthSuccess) {
+            isVerified = authState.user.userMetadata['is_identity_verified'] == true;
+          }
+
+          if (isVerified) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const ListingSuccessScreen()),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const IdentityVerificationScreen(fromListingWizard: true),
+              ),
+            );
+          }
         } else if (state is ListingWizardError) {
-           Navigator.pop(context); // pop dialog
-           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message)));
+          // Close the loading dialog if open
+          if (Navigator.canPop(context)) Navigator.pop(context);
+          
+          // Show the error message to the user
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+          );
         }
+        // ListingWizardLookupsLoading → ignored here; steps show their own spinners
       },
       child: BlocBuilder<ListingFormCubit, ListingFormState>(
         builder: (context, formState) {
@@ -126,7 +162,7 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
                         _currentPage = index;
                       });
                     },
-                    children: const [
+                    children: [
                       WizardStep1PropertyType(),
                       WizardStep2Lifestyles(),
                       WizardStep3Descriptions(),
@@ -162,7 +198,7 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
   Widget _buildProgressHeader() {
     final stepNumber = _currentPage + 1;
     final stepTitle = _stepTitles[_currentPage];
-    
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
       child: Column(
@@ -212,33 +248,61 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          TextButton(
+          ElevatedButton(
             onPressed: _prevPage,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF4EEED),
+              foregroundColor: AppColors.inkBlack,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+              padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 14.h),
+            ),
             child: Text(
               _currentPage == 0 ? 'Cancel' : 'Back',
               style: TextStyle(
                 fontSize: 16.sp,
-                color: AppColors.inkBlack,
                 fontWeight: FontWeight.w600,
-                decoration: TextDecoration.underline,
               ),
             ),
           ),
+          
+          // Center Indicator (Optional mini badge like in screenshot)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12.r),
+            child: Image.network(
+              'https://flagcdn.com/w80/eg.png',
+              height: 20.h,
+              width: 28.w,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Icon(
+                Icons.flag_outlined,
+                size: 20.r,
+                color: AppColors.primaryRed,
+              ),
+            ),
+          ),
+          
           ElevatedButton(
-            onPressed: _isNextEnabled(formState)
-                ? () {
-                    if (isLastStep) {
-                      _publishListing(formState);
-                    } else {
-                      _nextPage();
-                    }
-                  }
-                : null,
+            onPressed: () {
+              if (!_isValidCurrentPage(formState)) {
+                context.read<ListingFormCubit>().setValidationErrorsVisibility(true);
+                return;
+              }
+              context.read<ListingFormCubit>().setValidationErrorsVisibility(false);
+
+              if (isLastStep) {
+                _publishListing(formState);
+              } else {
+                _nextPage();
+              }
+            },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryRed,
-              disabledBackgroundColor: AppColors.primaryRed.withValues(alpha: 0.3),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+              backgroundColor: const Color(0xFF5A0D1D), // Dark burgundy red
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 14.h),
             ),
             child: Text(
               isLastStep ? 'Publish' : 'Next',
@@ -254,24 +318,73 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
     );
   }
 
+  bool _isValidCurrentPage(ListingFormState state) {
+    if (_currentPage == 0) return state.selectedPropertyTypeId.isNotEmpty;
+    if (_currentPage == 1) return state.selectedLifestyleIds.isNotEmpty;
+    if (_currentPage == 2) {
+      return state.titleEn.length >= 5 &&
+             state.titleAr.length >= 5 &&
+             state.descriptionEn.length >= 10 &&
+             state.descriptionAr.length >= 10;
+    }
+    if (_currentPage == 3) {
+      return state.countryId.isNotEmpty && state.stateId.isNotEmpty && state.cityId.isNotEmpty;
+    }
+    if (_currentPage == 4) return true; // Details are mostly numbers with defaults
+    if (_currentPage == 5) return state.photoPaths.isNotEmpty;
+    if (_currentPage == 6) return state.pricePerNight > 0;
+    if (_currentPage == 7) return true; // Review step
+    return false;
+  }
+
   void _publishListing(ListingFormState formState) {
+    final authState = context.read<AuthCubit>().state;
+    String userId = '';
+    
+    if (authState is AuthSuccess) {
+      userId = authState.user.id;
+    } else if (authState is AuthAdminSuccess) {
+      userId = authState.user.id;
+    }
+
+    if (userId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error: User not authenticated")),
+      );
+      return;
+    }
+
     context.read<ListingWizardCubit>().createCompleteListing(
+      userId: userId,
       listingData: {
-        'title_en': formState.titleEn,
-        'description_en': formState.descriptionEn,
+        'user_id': userId,
+        'title': formState.titleEn,
+        'description': formState.descriptionEn,
         'country_id': formState.countryId,
         'state_id': formState.stateId,
         'city_id': formState.cityId,
         'property_type_id': formState.selectedPropertyTypeId,
-        'latitude': formState.latitude,
-        'longitude': formState.longitude,
+        'lat': double.tryParse(formState.latitude),
+        'lng': double.tryParse(formState.longitude),
         'price_per_night': formState.pricePerNight,
-        'guests': formState.guests,
+        'cleaning_fee': formState.cleaningFee,
+        'max_guests': formState.guests,
         'bedrooms': formState.bedrooms,
+        'beds': formState.beds,
+        'bathrooms': formState.bathrooms,
+        'min_duration': formState.minDuration,
+        'currency': formState.currency,
+        'is_published': false, // Needs admin/identity verification
+        'translations': {
+          'ar': {
+            'title': formState.titleAr,
+            'description': formState.descriptionAr,
+          }
+        },
       },
-      lifestyles: formState.selectedLifestyleIds.map((id) => {'lifestyle_id': id}).toList(),
-      conditions: formState.selectedConditionIds.map((id) => {'condition_id': id}).toList(),
-      images: formState.photoPaths.map((path) => {'path': path}).toList(),
+      photoPaths: formState.photoPaths,
+      lifestyleIds: formState.selectedLifestyleIds,
+      conditionIds: formState.selectedConditionIds,
     );
   }
 }

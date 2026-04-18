@@ -25,6 +25,11 @@ abstract class BookingsRepository {
     required String userId,
   });
 
+  Future<Either<String, Unit>> confirmBooking({
+    required String bookingId,
+    required String hostId,
+  });
+
   Future<Either<String, List<BookingModel>>> getHostBookings({
     required String hostId,
     String? status,

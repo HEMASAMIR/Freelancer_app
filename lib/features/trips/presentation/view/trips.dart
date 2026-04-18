@@ -9,6 +9,10 @@ import 'package:freelancer/features/bookings/logic/cubit/bookings_cubit.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_state.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:freelancer/features/payment/logic/cubit/payment_cubit.dart';
+import 'package:freelancer/features/payment/logic/cubit/payment_state.dart';
 
 class TripsScreen extends StatefulWidget {
   const TripsScreen({super.key});
@@ -36,6 +40,9 @@ class _TripsScreenState extends State<TripsScreen> {
           ? authState.user.id
           : (authState as AuthAdminSuccess).user.id;
       context.read<BookingsCubit>().getUserBookings(userId: userId);
+    } else {
+      // لو مش مسجل دخول، ممكن نـ emit حالة فاضية أو نوجه للـ login
+      debugPrint("User not logged in, cannot load trips.");
     }
   }
 
@@ -83,23 +90,6 @@ class _TripsScreenState extends State<TripsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header (Fixed Drawer Icon) ──────────────────────────
-            Padding(
-              padding: const EdgeInsets.only(left: 16, top: 16),
-              child: InkWell(
-                onTap: () => _scaffoldKey.currentState?.openDrawer(),
-                borderRadius: BorderRadius.circular(30),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.menu, color: AppColors.ink, size: 24),
-                ),
-              ),
-            ),
-            
             // ── Main Content ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -214,7 +204,12 @@ class _TripsScreenState extends State<TripsScreen> {
               child: BlocBuilder<BookingsCubit, BookingsState>(
                 builder: (context, state) {
                   if (state is BookingsLoading) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryBurgundy,
+                        strokeWidth: 2.5,
+                      ),
+                    );
                   }
                   if (state is BookingsError) {
                     return Center(child: Text(state.message));
@@ -227,10 +222,11 @@ class _TripsScreenState extends State<TripsScreen> {
                     return ListView.separated(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       itemCount: filtered.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 12),
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (_, i) => _TripCard(booking: filtered[i]),
                     );
                   }
+                  // BookingsInitial or anything else → show empty state
                   return _EmptyTrips(filter: _selectedFilter);
                 },
               ),
@@ -385,12 +381,18 @@ class _TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final checkIn = booking.checkIn != null
-        ? DateFormat('MMM d, yyyy').format(DateTime.parse(booking.checkIn!))
-        : '-';
-    final checkOut = booking.checkOut != null
-        ? DateFormat('MMM d, yyyy').format(DateTime.parse(booking.checkOut!))
-        : '-';
+    String checkIn = '-';
+    String checkOut = '-';
+    try {
+      if (booking.checkIn != null) {
+        checkIn = DateFormat('MMM d, yyyy').format(DateTime.parse(booking.checkIn!));
+      }
+      if (booking.checkOut != null) {
+        checkOut = DateFormat('MMM d, yyyy').format(DateTime.parse(booking.checkOut!));
+      }
+    } catch (e) {
+      debugPrint("Error parsing booking dates: $e");
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -471,27 +473,69 @@ class _TripCard extends StatelessWidget {
             const SizedBox(height: 12),
             const Divider(height: 1),
             const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () {
-                final authState = context.read<AuthCubit>().state;
-                final userId = authState is AuthSuccess
-                    ? authState.user.id
-                    : (authState as AuthAdminSuccess).user.id;
-                context.read<BookingsCubit>().cancelBooking(
-                  booking.id ?? '',
-                  userId,
-                );
-              },
-              child: Text(
-                'Cancel reservation',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.primaryRed,
-                  decoration: TextDecoration.underline,
-                  decorationColor: AppColors.primaryRed,
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    final authState = context.read<AuthCubit>().state;
+                    final userId = authState is AuthSuccess
+                        ? authState.user.id
+                        : (authState as AuthAdminSuccess).user.id;
+                    context.read<BookingsCubit>().cancelBooking(
+                      booking.id ?? '',
+                      userId,
+                    );
+                  },
+                  child: Text(
+                    'Cancel reservation',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primaryRed,
+                      decoration: TextDecoration.underline,
+                      decorationColor: AppColors.primaryRed,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 16),
+                BlocConsumer<PaymentCubit, PaymentState>(
+                  listener: (context, state) {
+                    if (state is PaymentSuccess) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Receipt uploaded successfully!'), backgroundColor: Colors.green),
+                      );
+                    }
+                    if (state is PaymentError) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                      );
+                    }
+                  },
+                  builder: (context, state) {
+                    return GestureDetector(
+                      onTap: state is PaymentLoading ? null : () async {
+                        final picker = ImagePicker();
+                        final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                        if (image != null && context.mounted) {
+                          context.read<PaymentCubit>().uploadReceipt(
+                            booking.id ?? '',
+                            File(image.path),
+                          );
+                        }
+                      },
+                      child: Text(
+                        state is PaymentLoading ? 'Uploading...' : 'Upload Receipt',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.blue.shade700,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ],
         ],

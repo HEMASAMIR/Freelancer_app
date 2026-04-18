@@ -35,6 +35,9 @@ class ListingFormState extends Equatable {
   final double pricePerNight;
   final double cleaningFee;
 
+  // Validation
+  final bool showValidationErrors;
+
   const ListingFormState({
     this.selectedPropertyTypeId = '',
     this.selectedLifestyleIds = const [],
@@ -59,6 +62,7 @@ class ListingFormState extends Equatable {
     this.currency = 'EGP',
     this.pricePerNight = 0.0,
     this.cleaningFee = 0.0,
+    this.showValidationErrors = false,
   });
 
   ListingFormState copyWith({
@@ -85,6 +89,7 @@ class ListingFormState extends Equatable {
     String? currency,
     double? pricePerNight,
     double? cleaningFee,
+    bool? showValidationErrors,
   }) {
     return ListingFormState(
       selectedPropertyTypeId: selectedPropertyTypeId ?? this.selectedPropertyTypeId,
@@ -110,6 +115,7 @@ class ListingFormState extends Equatable {
       currency: currency ?? this.currency,
       pricePerNight: pricePerNight ?? this.pricePerNight,
       cleaningFee: cleaningFee ?? this.cleaningFee,
+      showValidationErrors: showValidationErrors ?? this.showValidationErrors,
     );
   }
 
@@ -138,11 +144,16 @@ class ListingFormState extends Equatable {
         currency,
         pricePerNight,
         cleaningFee,
+        showValidationErrors,
       ];
 }
 
 class ListingFormCubit extends Cubit<ListingFormState> {
   ListingFormCubit() : super(const ListingFormState());
+
+  void setValidationErrorsVisibility(bool show) {
+    emit(state.copyWith(showValidationErrors: show));
+  }
 
   void setPropertyType(String typeId) {
     emit(state.copyWith(selectedPropertyTypeId: typeId));
@@ -197,6 +208,12 @@ class ListingFormCubit extends Cubit<ListingFormState> {
 
   void addPhotos(List<String> paths) {
     emit(state.copyWith(photoPaths: [...state.photoPaths, ...paths]));
+  }
+
+  void removePhoto(String path) {
+    final current = List<String>.from(state.photoPaths);
+    current.remove(path);
+    emit(state.copyWith(photoPaths: current));
   }
 
   void setDetails({int? guests, int? beds, int? bedrooms, int? bathrooms, int? minDuration}) {

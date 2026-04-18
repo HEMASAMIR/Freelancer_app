@@ -1,22 +1,25 @@
 import 'dart:developer';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/features/auth/data/repos/auth_repo.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
 import 'package:freelancer/features/auth/data/models/user_model.dart';
+import 'package:freelancer/core/services/admin_email_service.dart';
 
-const List<String> _adminEmails = [
-  'admin.aclone@atomicmail.io',
-  'joe@gmail.com',
-  '01055673184hs@gmail.com',
-];
+// Admin emails are now loaded from assets via AdminEmailService
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepo _authRepo;
+  final AdminEmailService _adminService;
 
-  AuthCubit({required AuthRepo authRepo})
-    : _authRepo = authRepo,
-      super(const AuthInitial()) {
+  AuthCubit({
+    required AuthRepo authRepo,
+    required AdminEmailService adminService,
+  }) : _authRepo = authRepo,
+       _adminService = adminService,
+       super(const AuthInitial()) {
     _checkCurrentUser();
   }
 
@@ -126,12 +129,83 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   // ─────────────────────────────────────────────
+  //  Advanced Auth
+  // ─────────────────────────────────────────────
+
+  Future<void> recoverPassword({required String email}) async {
+    emit(const AuthLoading());
+    final result = await _authRepo.recoverPassword(email: email);
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (_) => emit(const AuthRecoverSuccess()),
+    );
+  }
+
+  Future<void> updatePassword({required String newPassword}) async {
+    emit(const AuthLoading());
+    final result = await _authRepo.updatePassword(newPassword: newPassword);
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (_) => emit(const AuthUpdatePasswordSuccess()),
+    );
+  }
+
+  Future<void> enrollMFA() async {
+    emit(const AuthLoading());
+    final result = await _authRepo.enrollMFA();
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (factorData) => emit(AuthMfaEnrolled(factorData)),
+    );
+  }
+
+  Future<void> verifyMFA({
+    required String factorId,
+    required String challengeId,
+    required String code,
+  }) async {
+    emit(const AuthLoading());
+    final result = await _authRepo.verifyMFA(
+      factorId: factorId,
+      challengeId: challengeId,
+      code: code,
+    );
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (_) => emit(const AuthMfaVerified()),
+    );
+  }
+
+  Future<void> refreshToken() async {
+    emit(const AuthLoading());
+    final result = await _authRepo.refreshToken();
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (_) => emit(const AuthTokenRefreshed()),
+    );
+  }
+
+  Future<void> getUserInfo() async {
+    emit(const AuthLoading());
+    final result = await _authRepo.getUserInfo();
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (user) => emit(_resolveSuccess(user)),
+    );
+  }
+
+  // ─────────────────────────────────────────────
   //  Helpers
   // ─────────────────────────────────────────────
 
   AuthState _resolveSuccess(UserModel user) {
     final email = user.email.toLowerCase().trim();
-    final isAdminUser = _adminEmails.contains(email);
+    final isAdminUser = _adminService.isAdmin(email);
+
+    // Update user role based on admin check
+    final updatedUser = user.copyWith(
+      role: isAdminUser ? UserRole.admin : UserRole.user,
+    );
 
     log(
       isAdminUser
@@ -140,7 +214,18 @@ class AuthCubit extends Cubit<AuthState> {
       name: 'AuthCubit',
     );
 
-    return isAdminUser ? AuthAdminSuccess(user) : AuthSuccess(user);
+    return isAdminUser
+        ? AuthAdminSuccess(updatedUser)
+        : AuthSuccess(updatedUser);
+  }
+
+  /// Navigate to the appropriate dashboard after a successful login.
+  void navigateAfterLogin(BuildContext context) {
+    if (state is AuthAdminSuccess) {
+      Navigator.of(context).pushReplacementNamed(AppRoutes.adminDashboard);
+    } else if (state is AuthSuccess) {
+      Navigator.of(context).pushReplacementNamed(AppRoutes.dashboard);
+    }
   }
 
   @override

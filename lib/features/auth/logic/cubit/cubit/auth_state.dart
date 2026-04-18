@@ -54,3 +54,27 @@ class AuthAdminSuccess extends AuthState {
   @override
   List<Object?> get props => [user];
 }
+
+class AuthRecoverSuccess extends AuthState {
+  const AuthRecoverSuccess();
+}
+
+class AuthUpdatePasswordSuccess extends AuthState {
+  const AuthUpdatePasswordSuccess();
+}
+
+class AuthMfaEnrolled extends AuthState {
+  final Map<String, dynamic> factorData;
+  const AuthMfaEnrolled(this.factorData);
+
+  @override
+  List<Object?> get props => [factorData];
+}
+
+class AuthMfaVerified extends AuthState {
+  const AuthMfaVerified();
+}
+
+class AuthTokenRefreshed extends AuthState {
+  const AuthTokenRefreshed();
+}

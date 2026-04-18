@@ -124,6 +124,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                             onPressed: isLoading ? null : _updatePassword,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryBurgundy,
+                              disabledBackgroundColor: AppColors.primaryBurgundy,
                               padding: EdgeInsets.symmetric(vertical: 16.h),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12.r),
@@ -133,7 +134,10 @@ class _SecurityScreenState extends State<SecurityScreen> {
                                 ? SizedBox(
                                     height: 20.h,
                                     width: 20.h,
-                                    child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                    child: const CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
                                   )
                                 : Text(
                                     'Update Password',
@@ -364,6 +368,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
             onPressed: isLoading ? null : () => context.read<SecurityCubit>().enrollMFA(),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryBurgundy,
+              disabledBackgroundColor: AppColors.primaryBurgundy,
               padding: EdgeInsets.symmetric(vertical: 16.h),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
             ),
@@ -371,7 +376,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                 ? SizedBox(
                     height: 20.h,
                     width: 20.h,
-                    child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                   )
                 : Text(
                     'Set up 2FA',

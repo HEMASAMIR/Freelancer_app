@@ -3,6 +3,7 @@ class AppRoutes {
   static const String login = '/login';
   static const String signUp = '/sign-up';
   static const String home = '/home';
+  static const String dashboard = '/home';
   static const String searchResult = '/search-result';
   static const String favourites = '/favourites';
   static const String details = '/details';
@@ -12,8 +13,6 @@ class AppRoutes {
   static const String adminDashboard = '/admin-dashboard';
   static const String adminOverview = '/admin-overview';
   static const String hostDashboard = '/host-dashboard';
-
-  // ✅ الجديدين
   static const String identityVerification = '/identity-verification';
   static const String personalInfo = '/personal-info';
   static const String myListings = '/my-listings';

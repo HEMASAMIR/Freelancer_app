@@ -32,4 +32,17 @@ abstract class HostRepository {
 
   // 10. Get reviews for host's listings
   Future<Either<String, List<HostReviewModel>>> getReviewsForHost(String userId);
+
+  // 11. Update listing settings
+  Future<Either<String, void>> updateListingSettings({
+    required String listingId,
+    required Map<String, dynamic> data,
+  });
+
+  // 12. Upsert price adjustment (availability with price_override)
+  Future<Either<String, void>> upsertPriceAdjustment({
+    required String listingId,
+    required String date,
+    required double price,
+  });
 }

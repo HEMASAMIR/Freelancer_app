@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/core/di/service_locator.dart';
+import 'package:freelancer/features/search/data/search_model/search_params_model.dart';
 import 'package:freelancer/features/search/logic/search_cubit/cubit/search_cubit.dart';
+import 'package:freelancer/features/search/logic/search_cubit/cubit/search_state.dart';
+import 'package:freelancer/features/search/presentation/view/search_result_screen.dart';
+import 'package:freelancer/features/search/presentation/widget/property_listing_card.dart';
 import 'location_tag_item.dart';
 import 'package:freelancer/features/home/presentation/widget/best_offers_banner.dart';
-import 'package:freelancer/features/home/presentation/widget/custom_card.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_her_widget.dart';
-import 'package:freelancer/features/search/presentation/view/search_result_screen.dart';
-import 'package:freelancer/features/search/data/search_model/search_params_model.dart';
 
 class HomescreenBody extends StatefulWidget {
   const HomescreenBody({super.key});
@@ -19,31 +21,32 @@ class HomescreenBody extends StatefulWidget {
 }
 
 class _HomescreenBodyState extends State<HomescreenBody> {
-  String selectedCategory = "Best Offers";
+  String _selectedCategory = 'Best Offers';
 
   final List<String> categories = [
-    "Best Offers",
-    "Marakia",
-    "Main Office",
-    "Cairo",
+    'Best Offers',
+    'Marakia',
+    'Main Office',
+    'Cairo',
   ];
 
-  void _onCategoryTap(String city) {
-    setState(() => selectedCategory = city);
+  @override
+  void initState() {
+    super.initState();
+    // Load default listings on first open
+    _fetchListings(_selectedCategory);
+  }
 
-    final params = city == "Best Offers"
+  void _fetchListings(String cat) {
+    final params = cat == 'Best Offers'
         ? SearchParamsModel(bestOffer: true)
-        : SearchParamsModel(location: city);
+        : SearchParamsModel(location: cat);
+    context.read<SearchCubit>().getListings(params: params);
+  }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BlocProvider(
-          create: (context) => sl<SearchCubit>()..getListings(params: params),
-          child: SearchResultScreen(params: params),
-        ),
-      ),
-    );
+  void _onCategoryTap(String city) {
+    setState(() => _selectedCategory = city);
+    _fetchListings(city);
   }
 
   @override
@@ -60,7 +63,8 @@ class _HomescreenBodyState extends State<HomescreenBody> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 24.h),
-              // Categories Row
+
+              // ── Category chips ────────────────────────────────────
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
@@ -70,7 +74,7 @@ class _HomescreenBodyState extends State<HomescreenBody> {
                       padding: EdgeInsets.only(right: 10.w),
                       child: LocationTagItem(
                         title: city,
-                        isSelected: selectedCategory == city,
+                        isSelected: _selectedCategory == city,
                         onTap: () => _onCategoryTap(city),
                       ),
                     );
@@ -78,18 +82,88 @@ class _HomescreenBodyState extends State<HomescreenBody> {
                 ),
               ),
               SizedBox(height: 24.h),
-              // Featured Property
-              const PropertyCard(
-                title: "Featured Property",
-                location: "Cairo, Egypt",
-                price: "1000",
-                imageUrl:
-                    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1000",
-                rating: 4.5,
-                guests: 1,
-                bedrooms: 1,
-                baths: 1,
+
+              // ── Section title ─────────────────────────────────────
+              Text(
+                _selectedCategory == 'Best Offers'
+                    ? 'Top picks for you'
+                    : 'Listings in $_selectedCategory',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.inkBlack,
+                ),
               ),
+              SizedBox(height: 16.h),
+
+              // ── Live listings from API ─────────────────────────────
+              BlocBuilder<SearchCubit, SearchState>(
+                builder: (context, state) {
+                  if (state is SearchLoading) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                            color: AppColors.primaryBurgundy, strokeWidth: 2.5),
+                      ),
+                    );
+                  }
+                  if (state is SearchError) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: Text(state.message,
+                            style: const TextStyle(color: AppColors.greyText)),
+                      ),
+                    );
+                  }
+                  if (state is SearchSuccess) {
+                    if (state.listings.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 40),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(Icons.home_outlined,
+                                  size: 40,
+                                  color:
+                                      AppColors.greyText.withValues(alpha: 0.4)),
+                              const SizedBox(height: 12),
+                              Text(
+                                'No listings found',
+                                style: TextStyle(
+                                    fontSize: 15.sp, color: AppColors.greyText),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return Column(
+                      children: state.listings
+                          .take(5) // show first 5 on home
+                          .map((listing) => PropertyListingCard(
+                                listing: listing,
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => BlocProvider(
+                                      create: (_) => sl<SearchCubit>()
+                                        ..getListingDetails(
+                                            id: listing.id?.toString() ?? ''),
+                                      child: SearchResultScreen(
+                                          params: SearchParamsModel()),
+                                    ),
+                                  ),
+                                ),
+                              ))
+                          .toList(),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+
               SizedBox(height: 40.h),
               const CustomFooter(),
               SizedBox(height: 30.h),

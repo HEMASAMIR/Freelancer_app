@@ -1,14 +1,18 @@
 import 'package:equatable/equatable.dart';
 
+enum UserRole { user, admin }
+
 class UserModel extends Equatable {
   final String id;
   final String email;
   final Map<String, dynamic> userMetadata;
+  final UserRole role;
 
   const UserModel({
     required this.id,
     required this.email,
     required this.userMetadata,
+    this.role = UserRole.user,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -16,6 +20,21 @@ class UserModel extends Equatable {
       id: json['id'] ?? '',
       email: json['email'] ?? '',
       userMetadata: json['user_metadata'] ?? {},
+      role: json['role'] == 'admin' ? UserRole.admin : UserRole.user,
+    );
+  }
+
+  UserModel copyWith({
+    String? id,
+    String? email,
+    Map<String, dynamic>? userMetadata,
+    UserRole? role,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      userMetadata: userMetadata ?? this.userMetadata,
+      role: role ?? this.role,
     );
   }
 
@@ -24,11 +43,12 @@ class UserModel extends Equatable {
       'id': id,
       'email': email,
       'user_metadata': userMetadata,
+      'role': role == UserRole.admin ? 'admin' : 'user',
     };
   }
 
   @override
-  List<Object?> get props => [id, email, userMetadata];
+  List<Object?> get props => [id, email, userMetadata, role];
 }
 
 class UserSession extends Equatable {

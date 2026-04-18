@@ -49,7 +49,10 @@ class _SideDrawerState extends State<SideDrawer> {
         _showLoginDialog(context);
       } else if (item == 'Help Center') {
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const HelpCenter()));
-      } else if (item == 'Settings' || item == 'Notifications') {
+      } else if (item == 'Settings') {
+        // Navigate to the Account Screen on the Settings Tab (index 2)
+        Navigator.of(context).pushNamed(AppRoutes.account, arguments: 2);
+      } else if (item == 'Notifications') {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("$item coming soon!"),
@@ -100,6 +103,8 @@ class _SideDrawerState extends State<SideDrawer> {
       case 'My Listings':
       case 'All Listings':
       case 'Create New':
+      case 'Calendar':
+      case 'Host Reviews':
         return AppRoutes.adminDashboard;
       default:
         return null;
@@ -244,8 +249,20 @@ class _SideDrawerState extends State<SideDrawer> {
           mode,
         ),
         _buildNavigationItem(
+          'Calendar',
+          Icons.date_range_outlined,
+          context,
+          mode,
+        ),
+        _buildNavigationItem(
           'Earnings & Balance',
           Icons.account_balance_wallet_outlined,
+          context,
+          mode,
+        ),
+        _buildNavigationItem(
+          'Host Reviews',
+          Icons.rate_review_outlined,
           context,
           mode,
         ),
