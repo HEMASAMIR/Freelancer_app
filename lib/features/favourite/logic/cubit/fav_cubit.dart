@@ -88,16 +88,24 @@ class FavCubit extends Cubit<FavState> {
 
   // تحميل الـ Wishlists فقط
   Future<void> loadWishlists() async {
+    // نحتفظ بالحالة السابقة إذا كانت FavLoaded عشان مانكسرش الـ UI
+    final previousState = state;
+    emit(FavLoading());
     try {
       final wishlists = await _repository.getWishlists();
-      if (state is FavLoaded) {
-        final currentState = state as FavLoaded;
-        emit(currentState.copyWith(wishlists: wishlists));
+      if (previousState is FavLoaded) {
+        emit(previousState.copyWith(wishlists: wishlists));
       } else {
-        emit(FavLoaded(favorites: [], favoriteIds: [], wishlists: wishlists));
+        emit(FavLoaded(favorites: const [], favoriteIds: const [], wishlists: wishlists));
       }
     } catch (e) {
-      emit(const FavError("Failed to load wishlists"));
+      debugPrint("loadWishlists error: $e");
+      // نرجع للحالة السابقة بدل ما نكسر الـ UI
+      if (previousState is FavLoaded) {
+        emit(previousState);
+      } else {
+        emit(FavLoaded(favorites: const [], favoriteIds: const [], wishlists: const []));
+      }
     }
   }
 

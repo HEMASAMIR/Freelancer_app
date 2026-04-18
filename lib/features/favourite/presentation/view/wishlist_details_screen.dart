@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/favourite/data/models/wishlist_model.dart';
-import 'package:freelancer/features/search/presentation/view/search_details.dart';
 import 'package:freelancer/features/search/presentation/widget/property_listing_card.dart';
 
 class WishlistDetailsScreen extends StatefulWidget {
@@ -48,11 +48,10 @@ class _WishlistDetailsScreenState extends State<WishlistDetailsScreen> {
                 return PropertyListingCard(
                   listing: item,
                   onTap: () {
-                    Navigator.push(
+                    Navigator.pushNamed(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => SearchDetails(listing: item),
-                      ),
+                      AppRoutes.details,
+                      arguments: item,
                     );
                   },
                 );
