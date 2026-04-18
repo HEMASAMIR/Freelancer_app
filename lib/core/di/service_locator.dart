@@ -80,6 +80,9 @@ import 'package:freelancer/features/admin/data/admin_repo/admin_management_repo.
 import 'package:freelancer/features/admin/data/admin_repo_impl/admin_management_repo_impl.dart';
 import 'package:freelancer/features/admin/logic/admin_management_cubit.dart';
 
+// Identity Verification
+import 'package:freelancer/features/identity_verification/logic/identity_verification_cubit.dart';
+
 final sl = GetIt.instance;
 
 Future<void> setupServiceLocator() async {
@@ -253,6 +256,9 @@ Future<void> setupServiceLocator() async {
     () => AdminManagementRepositoryImpl(dio: sl<Dio>()),
   );
   sl.registerFactory<AdminManagementCubit>(
-    () => AdminManagementCubit(sl<AdminManagementRepository>()),
+    () => AdminManagementCubit(sl<AdminManagementRepository>(), sl<SupabaseClient>()),
+  );
+  sl.registerFactory<IdentityVerificationCubit>(
+    () => IdentityVerificationCubit(sl<AuthRepo>(), sl<AuthCubit>()),
   );
 }

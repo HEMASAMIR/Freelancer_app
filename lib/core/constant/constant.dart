@@ -49,6 +49,9 @@ class SupabaseKeys {
 
   // Custom conditions (pending approval)
   static const String customConditionsRest = 'custom_listing_conditions';
+
+  // Wallet
+  static const String withdrawalRequestsRest = 'withdrawal_requests';
 }
 
 class AppColors {

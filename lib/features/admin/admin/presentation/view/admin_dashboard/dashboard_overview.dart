@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/shared_helper/app_color.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
-import 'package:freelancer/features/host/logic/cubit/host_cubit.dart';
-import 'package:freelancer/features/host/logic/cubit/host_state.dart';
+import 'package:freelancer/features/admin/logic/admin_management_cubit.dart';
+import 'package:freelancer/features/admin/logic/admin_management_state.dart';
 
 class DashboardOverviewContent extends StatefulWidget {
   final Function(String)? onViewChanged;
@@ -14,17 +11,16 @@ class DashboardOverviewContent extends StatefulWidget {
   const DashboardOverviewContent({super.key, this.onViewChanged});
 
   @override
-  State<DashboardOverviewContent> createState() => _DashboardOverviewContentState();
+  State<DashboardOverviewContent> createState() =>
+      _DashboardOverviewContentState();
 }
 
 class _DashboardOverviewContentState extends State<DashboardOverviewContent> {
   @override
   void initState() {
     super.initState();
-    final authState = context.read<AuthCubit>().state;
-    if (authState is AuthAdminSuccess) {
-      context.read<HostCubit>().getHostOverview(authState.user.id);
-    }
+    // Load real stats from Supabase
+    context.read<AdminManagementCubit>().loadDashboardStats();
   }
 
   @override
@@ -37,62 +33,103 @@ class _DashboardOverviewContentState extends State<DashboardOverviewContent> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Dashboard',
+              'Dashboard Overview',
               style: TextStyle(
-                fontSize: 24.sp,
+                fontSize: 22.sp,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: 6.h),
             Text(
-              'Welcome back! Here\'s an overview of your account.',
-              style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600),
+              'Welcome to the admin dashboard. Here\'s what is happening on your platform.',
+              style:
+                  TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
             ),
-            SizedBox(height: 32.h),
+            SizedBox(height: 28.h),
 
-            BlocBuilder<HostCubit, HostState>(
+            // ── Stats Cards ────────────────────────────────────────────
+            BlocBuilder<AdminManagementCubit, AdminManagementState>(
               builder: (context, state) {
-                int listingsCount = 0;
-                int tripsCount = 0;
-                double balance = 0.0;
-                bool isLoading = state is HostLoading || state is HostInitial;
-                
-                if (state is HostDashboardLoaded) {
-                  listingsCount = state.listingIds.length;
-                  tripsCount = state.bookingIds.length;
-                  balance = state.balance;
+                int totalListings = 0;
+                int totalUsers = 0;
+                int bookingsThisMonth = 0;
+                int pendingApprovals = 0;
+                final isLoading = state is AdminManagementLoading ||
+                    state is AdminManagementInitial;
+
+                if (state is AdminDashboardStatsLoaded) {
+                  totalListings = state.totalListings;
+                  totalUsers = state.totalUsers;
+                  bookingsThisMonth = state.bookingsThisMonth;
+                  pendingApprovals = state.pendingApprovals;
                 }
 
                 return Column(
                   children: [
-                    _buildDashboardCard(
-                      title: 'My Listings',
-                      subtitle: isLoading ? 'Loading...' : 'Manage your $listingsCount properties',
-                      icon: Icons.home_outlined,
-                      iconColor: Colors.blue,
-                      onTap: () => widget.onViewChanged?.call('My Listings'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _statCard(
+                            title: 'Total Listings',
+                            value: totalListings,
+                            icon: Icons.home_work_outlined,
+                            iconBg: const Color(0xFFEBF3FF),
+                            iconColor: const Color(0xFF2563EB),
+                            linkLabel: 'Active listings on the platform',
+                            isLoading: isLoading,
+                            onTap: () =>
+                                widget.onViewChanged?.call('Listings'),
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: _statCard(
+                            title: 'Total Users',
+                            value: totalUsers,
+                            icon: Icons.people_outline,
+                            iconBg: const Color(0xFFF0FDF4),
+                            iconColor: const Color(0xFF16A34A),
+                            linkLabel: 'Registered users',
+                            isLoading: isLoading,
+                            onTap: () =>
+                                widget.onViewChanged?.call('Fans'),
+                          ),
+                        ),
+                      ],
                     ),
-                    _buildDashboardCard(
-                      title: 'Reservations',
-                      subtitle: isLoading ? 'Loading...' : 'View $tripsCount booking requests',
-                      icon: Icons.calendar_today_outlined,
-                      iconColor: Colors.green,
-                      onTap: () => widget.onViewChanged?.call('Bookings'),
-                    ),
-                    _buildDashboardCard(
-                      title: 'Balance & Earnings',
-                      subtitle: isLoading ? 'Loading...' : 'EGP ${balance.toStringAsFixed(2)} available',
-                      icon: Icons.account_balance_wallet_outlined,
-                      iconColor: Colors.orange,
-                      onTap: () => widget.onViewChanged?.call('Earnings & Balance'),
-                    ),
-                    _buildDashboardCard(
-                      title: 'Calendar',
-                      subtitle: 'Block dates & set prices',
-                      icon: Icons.date_range_outlined,
-                      iconColor: Colors.purple,
-                      onTap: () => widget.onViewChanged?.call('Calendar'),
+                    SizedBox(height: 12.h),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _statCard(
+                            title: 'Bookings This Month',
+                            value: bookingsThisMonth,
+                            icon: Icons.calendar_month_outlined,
+                            iconBg: const Color(0xFFFFF7ED),
+                            iconColor: const Color(0xFFEA580C),
+                            linkLabel: 'New bookings this month',
+                            isLoading: isLoading,
+                            onTap: () =>
+                                widget.onViewChanged?.call('Bookings'),
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: _statCard(
+                            title: 'Pending Approvals',
+                            value: pendingApprovals,
+                            icon: Icons.pending_actions_outlined,
+                            iconBg: const Color(0xFFFDF4FF),
+                            iconColor: const Color(0xFF9333EA),
+                            linkLabel: 'Items awaiting review',
+                            isLoading: isLoading,
+                            onTap: () =>
+                                widget.onViewChanged?.call('Approvals'),
+                            isAlert: pendingApprovals > 0,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 );
@@ -101,7 +138,52 @@ class _DashboardOverviewContentState extends State<DashboardOverviewContent> {
 
             SizedBox(height: 24.h),
 
-            _buildBecomeHostCard(context),
+            // ── Quick Actions ──────────────────────────────────────────
+            Text(
+              'Quick Actions',
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            SizedBox(height: 12.h),
+
+            _quickAction(
+              'All Listings',
+              Icons.maps_home_work_outlined,
+              Colors.blue,
+              'View and manage all properties',
+              () => widget.onViewChanged?.call('Listings'),
+            ),
+            _quickAction(
+              'Bookings',
+              Icons.calendar_today_outlined,
+              Colors.green,
+              'Review all booking requests',
+              () => widget.onViewChanged?.call('Bookings'),
+            ),
+            _quickAction(
+              'Approvals',
+              Icons.approval_outlined,
+              Colors.orange,
+              'Review pending approvals',
+              () => widget.onViewChanged?.call('Approvals'),
+            ),
+            _quickAction(
+              'Financials',
+              Icons.account_balance_outlined,
+              Colors.purple,
+              'View earnings & financial reports',
+              () => widget.onViewChanged?.call('Financials'),
+            ),
+            _quickAction(
+              'Staff',
+              Icons.manage_accounts_outlined,
+              Colors.teal,
+              'Manage admin staff accounts',
+              () => widget.onViewChanged?.call('Staff'),
+            ),
 
             SizedBox(height: 40.h),
 
@@ -117,95 +199,141 @@ class _DashboardOverviewContentState extends State<DashboardOverviewContent> {
     );
   }
 
-  Widget _buildDashboardCard({
+  Widget _statCard({
     required String title,
-    required String subtitle,
+    required int value,
     required IconData icon,
+    required Color iconBg,
     required Color iconColor,
+    required String linkLabel,
+    required bool isLoading,
     required VoidCallback onTap,
+    bool isAlert = false,
   }) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 16.h),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-        leading: Icon(icon, color: iconColor, size: 28.sp),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+          border: isAlert
+              ? Border.all(color: Colors.orange.shade300, width: 1.5)
+              : Border.all(color: Colors.grey.shade100, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade500),
-        ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          size: 14.sp,
-          color: Colors.grey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: Icon(icon, size: 20.sp, color: iconColor),
+                ),
+                if (isAlert)
+                  Icon(Icons.info_outline,
+                      size: 16.sp, color: Colors.orange.shade400),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            isLoading
+                ? Container(
+                    width: 40.w,
+                    height: 28.h,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                  )
+                : Text(
+                    value.toString(),
+                    style: TextStyle(
+                      fontSize: 26.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+            SizedBox(height: 4.h),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            SizedBox(height: 2.h),
+            Text(
+              linkLabel,
+              style:
+                  TextStyle(fontSize: 10.sp, color: Colors.grey.shade500),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildBecomeHostCard(BuildContext context) {
+  Widget _quickAction(
+    String title,
+    IconData icon,
+    Color color,
+    String subtitle,
+    VoidCallback onTap,
+  ) {
     return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(24.w),
+      margin: EdgeInsets.only(bottom: 10.h),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F7),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Become a Host',
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'Earn extra income by sharing your space with travelers.',
-            style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade700),
-          ),
-          SizedBox(height: 16.h),
-          ElevatedButton(
-            // ← يروح لشاشة Identity Verification
-            onPressed: () =>
-                Navigator.pushNamed(context, AppRoutes.identityVerification),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.maroon,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.home_work, size: 18.sp),
-                SizedBox(width: 8.w),
-                const Text('List Your Property'),
-              ],
-            ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
+      ),
+      child: ListTile(
+        onTap: onTap,
+        contentPadding:
+            EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+        leading: Container(
+          padding: EdgeInsets.all(8.w),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          child: Icon(icon, color: color, size: 20.sp),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style:
+              TextStyle(fontSize: 11.sp, color: Colors.grey.shade500),
+        ),
+        trailing: Icon(Icons.arrow_forward_ios_rounded,
+            size: 12.sp, color: Colors.grey.shade400),
       ),
     );
   }

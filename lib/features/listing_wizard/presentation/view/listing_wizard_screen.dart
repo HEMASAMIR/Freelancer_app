@@ -45,6 +45,27 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
   void initState() {
     super.initState();
     context.read<ListingWizardCubit>().fetchInitialLookups();
+    // ── Identity gate: must be verified before starting the wizard ──
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final authState = context.read<AuthCubit>().state;
+      bool isVerified = false;
+      if (authState is AuthAdminSuccess) {
+        isVerified = true; // Admins are always allowed
+      } else if (authState is AuthSuccess) {
+        isVerified =
+            authState.user.userMetadata['is_identity_verified'] == true;
+      }
+      if (!isVerified) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                const IdentityVerificationScreen(fromListingWizard: true),
+          ),
+        );
+      }
+    });
   }
 
   void _nextPage() {
@@ -102,48 +123,31 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
   Widget build(BuildContext context) {
     return BlocListener<ListingWizardCubit, ListingWizardState>(
       listener: (context, state) {
-        // Only block the UI with a dialog during the final PUBLISH step
         if (state is ListingWizardLoading) {
           showDialog(
             context: context,
             barrierDismissible: false,
-            builder: (_) => const Center(child: CircularProgressIndicator()),
+            builder: (_) =>
+                const Center(child: CircularProgressIndicator()),
           );
         } else if (state is ListingWizardSuccess) {
           // Close the loading dialog if open
           if (Navigator.canPop(context)) Navigator.pop(context);
-          
-          final authState = context.read<AuthCubit>().state;
-          bool isVerified = false;
-          if (authState is AuthAdminSuccess) {
-            isVerified = true;
-          } else if (authState is AuthSuccess) {
-            isVerified = authState.user.userMetadata['is_identity_verified'] == true;
-          }
-
-          if (isVerified) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const ListingSuccessScreen()),
-            );
-          } else {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const IdentityVerificationScreen(fromListingWizard: true),
-              ),
-            );
-          }
+          // Always go to success — listing saved as draft (is_published: false)
+          // Admin will review and approve it
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (_) => const ListingSuccessScreen()),
+          );
         } else if (state is ListingWizardError) {
-          // Close the loading dialog if open
           if (Navigator.canPop(context)) Navigator.pop(context);
-          
-          // Show the error message to the user
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red),
           );
         }
-        // ListingWizardLookupsLoading → ignored here; steps show their own spinners
       },
       child: BlocBuilder<ListingFormCubit, ListingFormState>(
         builder: (context, formState) {

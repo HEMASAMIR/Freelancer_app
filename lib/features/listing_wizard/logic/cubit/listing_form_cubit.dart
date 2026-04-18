@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:freelancer/features/listing_wizard/data/models/wizard_models.dart';
@@ -29,6 +30,8 @@ class ListingFormState extends Equatable {
 
   // Step 6: Photos
   final List<String> photoPaths;
+  /// Web-only: keyed by path, stores raw bytes for display via MemoryImage
+  final Map<String, Uint8List> photoBytes;
 
   // Step 7: Pricing
   final String currency;
@@ -59,6 +62,7 @@ class ListingFormState extends Equatable {
     this.bathrooms = 1,
     this.minDuration = 1,
     this.photoPaths = const [],
+    this.photoBytes = const {},
     this.currency = 'EGP',
     this.pricePerNight = 0.0,
     this.cleaningFee = 0.0,
@@ -86,6 +90,7 @@ class ListingFormState extends Equatable {
     int? bathrooms,
     int? minDuration,
     List<String>? photoPaths,
+    Map<String, Uint8List>? photoBytes,
     String? currency,
     double? pricePerNight,
     double? cleaningFee,
@@ -112,6 +117,7 @@ class ListingFormState extends Equatable {
       bathrooms: bathrooms ?? this.bathrooms,
       minDuration: minDuration ?? this.minDuration,
       photoPaths: photoPaths ?? this.photoPaths,
+      photoBytes: photoBytes ?? this.photoBytes,
       currency: currency ?? this.currency,
       pricePerNight: pricePerNight ?? this.pricePerNight,
       cleaningFee: cleaningFee ?? this.cleaningFee,
@@ -141,6 +147,7 @@ class ListingFormState extends Equatable {
         bathrooms,
         minDuration,
         photoPaths,
+        photoBytes,
         currency,
         pricePerNight,
         cleaningFee,
@@ -206,14 +213,18 @@ class ListingFormCubit extends Cubit<ListingFormState> {
     ));
   }
 
-  void addPhotos(List<String> paths) {
-    emit(state.copyWith(photoPaths: [...state.photoPaths, ...paths]));
+  void addPhotos(List<String> paths, {Map<String, Uint8List> bytes = const {}}) {
+    final newBytes = Map<String, Uint8List>.from(state.photoBytes)..addAll(bytes);
+    emit(state.copyWith(
+      photoPaths: [...state.photoPaths, ...paths],
+      photoBytes: newBytes,
+    ));
   }
 
   void removePhoto(String path) {
-    final current = List<String>.from(state.photoPaths);
-    current.remove(path);
-    emit(state.copyWith(photoPaths: current));
+    final current = List<String>.from(state.photoPaths)..remove(path);
+    final bytes = Map<String, Uint8List>.from(state.photoBytes)..remove(path);
+    emit(state.copyWith(photoPaths: current, photoBytes: bytes));
   }
 
   void setDetails({int? guests, int? beds, int? bedrooms, int? bathrooms, int? minDuration}) {

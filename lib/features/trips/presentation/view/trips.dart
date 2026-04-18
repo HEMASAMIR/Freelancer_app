@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
@@ -263,61 +264,70 @@ class _EmptyTrips extends StatelessWidget {
       physics: const BouncingScrollPhysics(),
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(40),
+            padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 32),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(24.r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   config['icon'] as IconData,
-                  size: 56,
-                  color: AppColors.sub.withValues(alpha: 0.4),
+                  size: 64.sp,
+                  color: config['iconColor'] as Color? ?? AppColors.sub.withValues(alpha: 0.3),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 Text(
                   config['title'] as String,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                  style: TextStyle(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.bold,
                     color: AppColors.ink,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   config['subtitle'] as String,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.sub.withValues(alpha: 0.6),
+                    fontSize: 14.sp,
+                    color: Colors.grey.shade600,
+                    height: 1.5,
                   ),
                 ),
 
-                // ✅ الزرار بيظهر بس لو مش History
                 if (config['buttonLabel'] != null) ...[
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   SizedBox(
                     width: double.infinity,
+                    height: 52.h,
                     child: ElevatedButton(
                       onPressed: () =>
                           Navigator.of(context).pushNamed(AppRoutes.searchResult),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryRed,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                       ),
                       child: Text(
                         config['buttonLabel'] as String,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16.sp,
                         ),
                       ),
                     ),
@@ -335,23 +345,26 @@ class _EmptyTrips extends StatelessWidget {
     switch (filter) {
       case 'Pending':
         return {
-          'icon': Icons.access_time_rounded,
+          'icon': Icons.access_time_filled_rounded,
+          'iconColor': const Color(0xFF2563EB), // Blue to match screenshot
           'title': 'No pending requests',
           'subtitle':
               'Your booking requests that are awaiting host approval will appear here',
-          'buttonLabel': 'Browse listings', // ✅ زرار مختلف
+          'buttonLabel': 'Browse listings',
         };
       case 'History':
         return {
           'icon': Icons.history_rounded,
+          'iconColor': Colors.grey.shade400,
           'title': 'No past trips',
           'subtitle': 'Your completed and cancelled trips will appear here',
-          'buttonLabel': null, // ✅ مفيش زرار
+          'buttonLabel': null,
         };
       case 'Upcoming':
       default:
         return {
           'icon': Icons.calendar_month_outlined,
+          'iconColor': Colors.grey.shade400,
           'title': 'No upcoming trips',
           'subtitle': 'Time to plan your next adventure',
           'buttonLabel': 'Start searching',

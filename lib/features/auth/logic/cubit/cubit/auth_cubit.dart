@@ -186,12 +186,10 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> getUserInfo() async {
-    emit(const AuthLoading());
-    final result = await _authRepo.getUserInfo();
-    result.fold(
-      (failure) => emit(AuthError(failure.message)),
-      (user) => emit(_resolveSuccess(user)),
-    );
+    final user = _authRepo.getCurrentUser();
+    if (user != null) {
+      emit(_resolveSuccess(user));
+    }
   }
 
   // ─────────────────────────────────────────────

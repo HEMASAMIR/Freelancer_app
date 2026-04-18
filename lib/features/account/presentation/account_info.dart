@@ -520,101 +520,198 @@ class VerificationTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!isAdmin) {
-      return ListView(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
-        children: [
-          Container(
-            padding: EdgeInsets.all(24.w),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16.r)),
-            child: Column(
-              children: [
-                Icon(Icons.security, size: 48.sp, color: Colors.grey.shade400),
-                SizedBox(height: 16.h),
-                Text("Identity Verification", style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
-                SizedBox(height: 8.h),
-                Text("Please verify your identity to access full features.", textAlign: TextAlign.center, style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600)),
-              ],
-            ),
-          )
-        ],
-      );
-    }
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, state) {
+        String status = 'Not verified';
+        bool isPending = false;
+        bool isVerified = false;
+        bool isEmailVerified = true; // Supabase users usually have verified emails if they log in
 
-    return ListView(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
-      children: [
-        Container(
-          padding: EdgeInsets.all(20.w),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16.r)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        if (state is AuthAdminSuccess) {
+          isVerified = true;
+          status = 'Internal Account';
+        } else if (state is AuthSuccess) {
+          final userData = state.user.userMetadata;
+          final identityStatus = userData['identity_status'] as String? ?? 'none';
+          isVerified = userData['is_identity_verified'] == true;
+          isPending = identityStatus == 'pending';
+          
+          if (isVerified) {
+            status = 'Identity Verified';
+          } else if (isPending) {
+            status = 'Verification Pending';
+          }
+        }
+
+        return ListView(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+          children: [
+            // Status Card
+            Container(
+              padding: EdgeInsets.all(20.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   Container(
-                     padding: EdgeInsets.all(10.w),
-                     decoration: BoxDecoration(color: const Color(0xFFF9F5FF), shape: BoxShape.circle),
-                     child: Icon(Icons.shield_outlined, color: const Color(0xFF7A00F0), size: 24.sp),
-                   ),
-                   SizedBox(width: 16.w),
-                   Expanded(
-                     child: Column(
-                       crossAxisAlignment: CrossAxisAlignment.start,
-                       children: [
-                         Wrap(
-                           crossAxisAlignment: WrapCrossAlignment.center,
-                           spacing: 8.w,
-                           runSpacing: 4.h,
-                           children: [
-                             Text('Internal Account', style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600, color: Colors.black87)),
-                             Container(
-                               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                               decoration: BoxDecoration(color: const Color(0xFF7A00F0), borderRadius: BorderRadius.circular(12.r)),
-                               child: Text('Current Verification Method', style: TextStyle(fontSize: 10.sp, color: Colors.white, fontWeight: FontWeight.w600)),
-                             )
-                           ],
-                         ),
-                         SizedBox(height: 8.h),
-                         Text(
-                           'As a staff member, your account is automatically verified for all actions.',
-                           style: TextStyle(fontSize: 13.sp, color: const Color(0xFF7A00F0), height: 1.4),
-                         ),
-                       ],
-                     ),
-                   )
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Identity', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+                          Text('Verification', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                        decoration: BoxDecoration(
+                          color: isVerified 
+                              ? Colors.green.shade50 
+                              : (isPending ? const Color(0xFFFFF9E6) : const Color(0xFFFEECEB)),
+                          borderRadius: BorderRadius.circular(20.r),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isPending) 
+                              Icon(Icons.access_time_rounded, size: 14.sp, color: const Color(0xFFB45309)),
+                            if (isVerified)
+                              Icon(Icons.verified, size: 14.sp, color: Colors.green.shade700),
+                            if (!isVerified && !isPending)
+                              Icon(Icons.error_outline, size: 14.sp, color: Colors.red.shade700),
+                            SizedBox(width: 4.w),
+                            Text(
+                              status,
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w700,
+                                color: isVerified 
+                                    ? Colors.green.shade700 
+                                    : (isPending ? const Color(0xFFB45309) : Colors.red.shade700),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (isPending) ...[
+                    SizedBox(height: 16.h),
+                    Text(
+                      'Your documents are being reviewed (1-2 business days)',
+                      style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+                    ),
+                  ],
                 ],
               ),
-              SizedBox(height: 24.h),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+
+            SizedBox(height: 24.h),
+            Text(
+              'Verification Requirements',
+              style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              'Complete all steps to become fully verified',
+              style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade500),
+            ),
+            SizedBox(height: 16.h),
+
+            // Requirements List
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: Column(
                 children: [
-                   Container(
-                     padding: EdgeInsets.all(10.w),
-                     decoration: BoxDecoration(color: const Color(0xFFF9F5FF), shape: BoxShape.circle),
-                     child: Icon(Icons.check_circle_outline, color: const Color(0xFF7A00F0), size: 24.sp),
-                   ),
-                   SizedBox(width: 16.w),
-                   Expanded(
-                     child: Column(
-                       crossAxisAlignment: CrossAxisAlignment.start,
-                       children: [
-                         Text('Verification Bypassed', style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600, color: Colors.black87)),
-                         SizedBox(height: 8.h),
-                         Text(
-                           'You can list properties and make bookings without identity verification.',
-                           style: TextStyle(fontSize: 13.sp, color: const Color(0xFF7A00F0), height: 1.4),
-                         ),
-                       ],
-                     ),
-                   )
+                  _RequirementItem(
+                    title: 'Email Verification',
+                    subtitle: 'Your email is verified',
+                    isComplete: isEmailVerified,
+                  ),
+                  Divider(height: 1, color: Colors.grey.shade100, indent: 56.w),
+                  _RequirementItem(
+                    title: 'Identity Documents',
+                    subtitle: isVerified 
+                        ? 'Documents approved' 
+                        : (isPending ? 'Under review' : 'Government ID required'),
+                    isComplete: isVerified,
+                    isPending: isPending,
+                    onTap: (!isVerified && !isPending) ? () {
+                      Navigator.pushNamed(context, AppRoutes.identityVerification);
+                    } : null,
+                  ),
                 ],
-              )
+              ),
+            ),
+            
+            if (!isVerified && !isPending) ...[
+              SizedBox(height: 32.h),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRoutes.identityVerification);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryRed,
+                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                  elevation: 0,
+                ),
+                child: Text('Get Verified', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16.sp)),
+              ),
             ],
-          ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _RequirementItem extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool isComplete;
+  final bool isPending;
+  final VoidCallback? onTap;
+
+  const _RequirementItem({
+    required this.title,
+    required this.subtitle,
+    required this.isComplete,
+    this.isPending = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      contentPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+      leading: Container(
+        padding: EdgeInsets.all(8.w),
+        decoration: BoxDecoration(
+          color: isComplete 
+              ? Colors.green.shade50 
+              : (isPending ? const Color(0xFFFFF9E6) : Colors.grey.shade50),
+          shape: BoxShape.circle,
         ),
-      ],
+        child: Icon(
+          isComplete ? Icons.check : (isPending ? Icons.access_time_rounded : Icons.person_outline),
+          size: 20.sp,
+          color: isComplete 
+              ? Colors.green.shade600 
+              : (isPending ? const Color(0xFFB45309) : Colors.grey.shade400),
+        ),
+      ),
+      title: Text(title, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade500)),
+      trailing: onTap != null ? Icon(Icons.chevron_right, size: 20.sp, color: Colors.grey.shade400) : null,
     );
   }
 }

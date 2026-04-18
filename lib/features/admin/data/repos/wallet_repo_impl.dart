@@ -100,7 +100,7 @@ class WalletRepositoryImpl implements WalletRepository {
   }) async {
     try {
       final res = await dio.post(
-        'withdrawal_requests',
+        SupabaseKeys.withdrawalRequestsRest,
         data: {
           'host_id': hostId,
           'amount': amount,

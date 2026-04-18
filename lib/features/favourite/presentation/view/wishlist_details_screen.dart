@@ -66,66 +66,106 @@ class _WishlistDetailsScreenState extends State<WishlistDetailsScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.arrow_back_ios, size: 14.sp, color: Colors.black),
-              SizedBox(width: 4.w),
-              Text(
-                "Back to wishlists",
-                style: TextStyle(fontSize: 14.sp, decoration: TextDecoration.underline),
-              ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            widget.wishlist.name,
-            style: TextStyle(fontSize: 32.sp, fontWeight: FontWeight.w700),
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            "0 listings saved",
-            style: TextStyle(fontSize: 16.sp, color: Colors.grey[700]),
-          ),
-          SizedBox(height: 32.h),
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(vertical: 60.h),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.grey[300]!,
-                style: BorderStyle.solid, // Using solid as a fallback if dashed is complex
-              ),
-            ),
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "This wishlist is empty",
-                  style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
-                ),
-                SizedBox(height: 12.h),
-                InkWell(
+                GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: Text(
-                    "Discover places to stay",
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF710E1F),
-                      decoration: TextDecoration.underline,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.arrow_back_ios, size: 12.sp, color: Colors.black),
+                      SizedBox(width: 4.w),
+                      Text(
+                        "Back to wishlists",
+                        style: TextStyle(
+                          fontSize: 14.sp, 
+                          fontWeight: FontWeight.w500,
+                          decoration: TextDecoration.underline
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 24.h),
+                Text(
+                  widget.wishlist.name,
+                  style: TextStyle(fontSize: 32.sp, fontWeight: FontWeight.bold, color: Colors.black),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  "0 listings saved",
+                  style: TextStyle(fontSize: 15.sp, color: Colors.grey.shade600),
+                ),
+                SizedBox(height: 32.h),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(vertical: 64.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(
+                      color: Colors.grey.shade200,
+                      width: 1.5,
                     ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        "This wishlist is empty",
+                        style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(height: 12.h),
+                      InkWell(
+                        onTap: () => Navigator.pop(context),
+                        child: Text(
+                          "Discover places to stay",
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF710E1F),
+                            decoration: TextDecoration.underline,
+                            decorationColor: const Color(0xFF710E1F),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+        // Footer
+        Padding(
+          padding: EdgeInsets.only(bottom: 24.h, top: 12.h),
+          child: Column(
+            children: [
+              Text(
+                '© 2026 QuickIn, Inc. · Terms · Sitemap · Privacy',
+                style: TextStyle(fontSize: 10.sp, color: Colors.grey.shade500),
+              ),
+              SizedBox(height: 8.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.public, size: 14.sp, color: Colors.grey.shade600),
+                  SizedBox(width: 4.w),
+                  Text(
+                    'English (US)  EGP',
+                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
