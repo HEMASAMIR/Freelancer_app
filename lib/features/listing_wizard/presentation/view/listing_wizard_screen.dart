@@ -338,37 +338,75 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
       return;
     }
 
+    final lat = _parseCoordinate(formState.latitude);
+    final lng = _parseCoordinate(formState.longitude);
+
+    final listingPayload = <String, dynamic>{
+      'user_id': userId,
+      'title': formState.titleEn,
+      'description': formState.descriptionEn,
+      'location': formState.address,
+      'google_maps_link': formState.googleMapsLink,
+      'country_id': formState.countryId,
+      'state_id': formState.stateId,
+      'city_id': formState.cityId,
+      'property_type_id': formState.selectedPropertyTypeId,
+      'price_per_night': formState.pricePerNight,
+      'cleaning_fee': formState.cleaningFee,
+      'max_guests': formState.guests,
+      'bedrooms': formState.bedrooms,
+      'beds': formState.beds,
+      'bathrooms': formState.bathrooms,
+      'min_nights': formState.minDuration,
+      'currency': formState.currency,
+      'is_published': false, // Needs admin/identity verification
+      'translations': {
+        'ar': {
+          'title': formState.titleAr,
+          'description': formState.descriptionAr,
+        }
+      },
+    };
+
+    if (lat != null && lng != null) {
+      listingPayload['location_geo'] = 'POINT($lng $lat)';
+    }
+
     context.read<ListingWizardCubit>().createCompleteListing(
       userId: userId,
-      listingData: {
-        'user_id': userId,
-        'title': formState.titleEn,
-        'description': formState.descriptionEn,
-        'country_id': formState.countryId,
-        'state_id': formState.stateId,
-        'city_id': formState.cityId,
-        'property_type_id': formState.selectedPropertyTypeId,
-        'lat': double.tryParse(formState.latitude),
-        'lng': double.tryParse(formState.longitude),
-        'price_per_night': formState.pricePerNight,
-        'cleaning_fee': formState.cleaningFee,
-        'max_guests': formState.guests,
-        'bedrooms': formState.bedrooms,
-        'beds': formState.beds,
-        'bathrooms': formState.bathrooms,
-        'min_duration': formState.minDuration,
-        'currency': formState.currency,
-        'is_published': false, // Needs admin/identity verification
-        'translations': {
-          'ar': {
-            'title': formState.titleAr,
-            'description': formState.descriptionAr,
-          }
-        },
-      },
+      listingData: listingPayload,
       photoPaths: formState.photoPaths,
       lifestyleIds: formState.selectedLifestyleIds,
       conditionIds: formState.selectedConditionIds,
     );
+  }
+
+  double? _parseCoordinate(String rawValue) {
+    if (rawValue.trim().isEmpty) return null;
+
+    final arabicIndicDigits = {
+      '٠': '0',
+      '١': '1',
+      '٢': '2',
+      '٣': '3',
+      '٤': '4',
+      '٥': '5',
+      '٦': '6',
+      '٧': '7',
+      '٨': '8',
+      '٩': '9',
+    };
+
+    var normalized = rawValue.trim();
+    arabicIndicDigits.forEach((k, v) {
+      normalized = normalized.replaceAll(k, v);
+    });
+
+    normalized = normalized
+        .replaceAll('٫', '.')
+        .replaceAll('،', '.')
+        .replaceAll(',', '.');
+
+    return double.tryParse(normalized);
   }
 }

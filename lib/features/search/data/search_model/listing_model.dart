@@ -7,9 +7,9 @@ class ListingModel {
   final String? description;
   final double? pricePerNight;
   final String? location;
-  final String? city;
-  final String? state;
-  final String? country;
+  final String? cityId;
+  final String? stateId;
+  final String? countryId;
   final int? maxGuests;
   final int? bedrooms;
   final int? beds;
@@ -21,8 +21,10 @@ class ListingModel {
   final String? currency;
   final String? cancellationPolicy;
   final String? listingCode;
+  final int? minNights;
   final double? lat;
   final double? lng;
+  final String? locationGeo;
   final String? googleMapsLink;
   final double? displayPrice;
   final DateTime? createdAt;
@@ -30,7 +32,6 @@ class ListingModel {
   final PropertyTypeModel? propertyType;
   final List<ListingImage>? images;
   final List<LifestyleModel>? lifestyles;
-  final String? hostId;
   final Map<String, dynamic>? translations;
 
   ListingModel({
@@ -40,9 +41,9 @@ class ListingModel {
     this.description,
     this.pricePerNight,
     this.location,
-    this.city,
-    this.state,
-    this.country,
+    this.cityId,
+    this.stateId,
+    this.countryId,
     this.maxGuests,
     this.bedrooms,
     this.beds,
@@ -54,18 +55,31 @@ class ListingModel {
     this.currency,
     this.cancellationPolicy,
     this.listingCode,
+    this.minNights,
     this.createdAt,
     this.lat,
     this.lng,
+    this.locationGeo,
     this.googleMapsLink,
     this.displayPrice,
     this.host,
     this.propertyType,
     this.images,
     this.lifestyles,
-    this.hostId,
     this.translations,
   });
+
+  @Deprecated('Use cityId')
+  String? get city => cityId;
+
+  @Deprecated('Use stateId')
+  String? get state => stateId;
+
+  @Deprecated('Use countryId')
+  String? get country => countryId;
+
+  @Deprecated('Use userId')
+  String? get hostId => userId;
 
   // ✅ ميثود الـ copyWith عشان تخلي شغلك Dynamic 100%
   ListingModel copyWith({
@@ -75,9 +89,9 @@ class ListingModel {
     String? description,
     double? pricePerNight,
     String? location,
-    String? city,
-    String? state,
-    String? country,
+    String? cityId,
+    String? stateId,
+    String? countryId,
     int? maxGuests,
     int? bedrooms,
     int? beds,
@@ -89,8 +103,10 @@ class ListingModel {
     String? currency,
     String? cancellationPolicy,
     String? listingCode,
+    int? minNights,
     double? lat,
     double? lng,
+    String? locationGeo,
     String? googleMapsLink,
     double? displayPrice,
     DateTime? createdAt,
@@ -98,7 +114,6 @@ class ListingModel {
     PropertyTypeModel? propertyType,
     List<ListingImage>? images,
     List<LifestyleModel>? lifestyles,
-    String? hostId,
     Map<String, dynamic>? translations,
   }) {
     return ListingModel(
@@ -108,9 +123,9 @@ class ListingModel {
       description: description ?? this.description,
       pricePerNight: pricePerNight ?? this.pricePerNight,
       location: location ?? this.location,
-      city: city ?? this.city,
-      state: state ?? this.state,
-      country: country ?? this.country,
+      cityId: cityId ?? this.cityId,
+      stateId: stateId ?? this.stateId,
+      countryId: countryId ?? this.countryId,
       maxGuests: maxGuests ?? this.maxGuests,
       bedrooms: bedrooms ?? this.bedrooms,
       beds: beds ?? this.beds,
@@ -122,8 +137,10 @@ class ListingModel {
       currency: currency ?? this.currency,
       cancellationPolicy: cancellationPolicy ?? this.cancellationPolicy,
       listingCode: listingCode ?? this.listingCode,
+      minNights: minNights ?? this.minNights,
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
+      locationGeo: locationGeo ?? this.locationGeo,
       googleMapsLink: googleMapsLink ?? this.googleMapsLink,
       displayPrice: displayPrice ?? this.displayPrice,
       createdAt: createdAt ?? this.createdAt,
@@ -131,23 +148,24 @@ class ListingModel {
       propertyType: propertyType ?? this.propertyType,
       images: images ?? this.images,
       lifestyles: lifestyles ?? this.lifestyles,
-      hostId: hostId ?? this.hostId,
       translations: translations ?? this.translations,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final locationGeoValue =
+        (lat != null && lng != null) ? 'POINT($lng $lat)' : locationGeo;
+
+    final json = <String, dynamic>{
       'id': id,
-      'user_id': userId ?? hostId,
-      'host_id': hostId ?? userId,
+      'user_id': userId,
       'title': title,
       'description': description,
       'price_per_night': pricePerNight,
       'location': location,
-      'city': city,
-      'state': state,
-      'country': country,
+      'city_id': cityId,
+      'state_id': stateId,
+      'country_id': countryId,
       'max_guests': maxGuests,
       'bedrooms': bedrooms,
       'beds': beds,
@@ -159,10 +177,14 @@ class ListingModel {
       'currency': currency,
       'cancellation_policy': cancellationPolicy,
       'listing_code': listingCode,
+      'min_nights': minNights,
       'google_maps_link': googleMapsLink,
-      'lat': lat,
-      'lng': lng,
+      'location_geo': locationGeoValue,
+      'translations': translations,
     };
+
+    json.removeWhere((key, value) => value == null);
+    return json;
   }
 
   // الـ Logic بتاع استخراج الإحداثيات من اللينك
@@ -196,8 +218,45 @@ class ListingModel {
     return null;
   }
 
+  static Map<String, double?> _parsePoint(String? pointText) {
+    if (pointText == null || pointText.trim().isEmpty) {
+      return {'lat': null, 'lng': null};
+    }
+
+    final pointRegex = RegExp(r'POINT\s*\(([-0-9.]+)\s+([-0-9.]+)\)');
+    final match = pointRegex.firstMatch(pointText.trim());
+    if (match == null || match.groupCount < 2) {
+      return {'lat': null, 'lng': null};
+    }
+
+    final lng = double.tryParse(match.group(1)!);
+    final lat = double.tryParse(match.group(2)!);
+    return {'lat': lat, 'lng': lng};
+  }
+
+  static String? _asPointText(dynamic value) {
+    if (value is String) return value;
+
+    if (value is Map && value['type'] == 'Point' && value['coordinates'] is List) {
+      final coords = value['coordinates'] as List;
+      if (coords.length >= 2) {
+        final lng = (coords[0] as num?)?.toDouble();
+        final lat = (coords[1] as num?)?.toDouble();
+        if (lat != null && lng != null) {
+          return 'POINT($lng $lat)';
+        }
+      }
+    }
+
+    return null;
+  }
+
   factory ListingModel.fromJson(Map<String, dynamic> json) {
-    var arTranslation = json['translations']?['ar'];
+    final arTranslation = json['translations']?['ar'];
+    final locationGeoText = _asPointText(json['location_geo']);
+    final parsedPoint = _parsePoint(locationGeoText);
+    final parsedLat = parsedPoint['lat'];
+    final parsedLng = parsedPoint['lng'];
 
     return ListingModel(
       id: json['id'],
@@ -206,9 +265,9 @@ class ListingModel {
       description: arTranslation?['description'] ?? json['description'],
       pricePerNight: (json['price_per_night'] as num?)?.toDouble(),
       location: json['location'],
-      city: json['city'],
-      state: json['state'],
-      country: json['country'],
+      cityId: json['city_id']?.toString(),
+      stateId: json['state_id']?.toString(),
+      countryId: json['country_id']?.toString(),
       maxGuests: json['max_guests'],
       bedrooms: json['bedrooms'],
       beds: json['beds'],
@@ -220,14 +279,18 @@ class ListingModel {
       currency: json['currency'] ?? 'EGP',
       cancellationPolicy: json['cancellation_policy'],
       listingCode: json['listing_code'],
+        minNights: json['min_nights'],
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
       googleMapsLink: json['google_maps_link'],
+        locationGeo: locationGeoText,
       lat:
+          parsedLat ??
           (json['lat'] as num?)?.toDouble() ??
           _parseLat(json['google_maps_link']),
       lng:
+          parsedLng ??
           (json['lng'] as num?)?.toDouble() ??
           _parseLng(json['google_maps_link']),
       displayPrice: (json['display_price'] as num?)?.toDouble(),
@@ -248,7 +311,6 @@ class ListingModel {
           ?.map((i) => LifestyleModel.fromJson(i))
           .toList(),
       translations: json['translations'],
-      hostId: json['host_id'] ?? json['user_id'],
     );
   }
 }
