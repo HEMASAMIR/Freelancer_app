@@ -7,6 +7,7 @@ import 'package:freelancer/features/admin/logic/host_listings_cubit.dart';
 import 'package:freelancer/features/admin/logic/host_listings_state.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 import 'package:freelancer/features/host/logic/cubit/host_cubit.dart';
 import 'package:freelancer/features/host/presentation/listing_management_screen.dart';
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_form_cubit.dart';
@@ -54,79 +55,103 @@ class _HostListingsViewState extends State<HostListingsView> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Your listings',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-              color: AppColors.ink,
-              letterSpacing: -1.0,
+    return Scaffold(
+      backgroundColor: AppColors.backgroundCream,
+      drawer: const SideDrawer(),
+      appBar: AppBar(
+        backgroundColor: AppColors.backgroundCream,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: AppColors.ink),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        actions: [
+          Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.ink),
+              onPressed: () => Navigator.of(ctx).pop(),
+              tooltip: 'Back',
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Manage your properties and keep track of reservations.',
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.sub.withValues(alpha: 0.8),
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(child: _buildFilterDropdown()),
-              const SizedBox(width: 12),
-              _buildAddListingButton(),
-            ],
-          ),
-          const SizedBox(height: 32),
-          BlocBuilder<HostListingsCubit, HostListingsState>(
-            builder: (context, state) {
-              if (state is HostListingsLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state is HostListingsLoaded) {
-                if (state.listings.isEmpty) return _buildEmptyState();
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 1,
-                    mainAxisSpacing: 16,
-                    mainAxisExtent: 220.h,
-                  ),
-                  itemCount: state.listings.length,
-                  itemBuilder: (context, index) {
-                    final listing = state.listings[index];
-                    return _HostListingCard(
-                      listing: listing,
-                      onViewDetails: () => widget.onShowDetails(listing),
-                      onManage: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => BlocProvider(
-                            create: (_) => sl<HostCubit>(),
-                            child: ListingManagementScreen(listing: listing),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }
-              if (state is HostListingsError) {
-                return Center(child: Text(state.message));
-              }
-              return _buildEmptyState();
-            },
           ),
         ],
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Your listings',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink,
+                letterSpacing: -1.0,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Manage your properties and keep track of reservations.',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppColors.sub.withValues(alpha: 0.8),
+                height: 1.2,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(child: _buildFilterDropdown()),
+                const SizedBox(width: 12),
+                _buildAddListingButton(),
+              ],
+            ),
+            const SizedBox(height: 32),
+            BlocBuilder<HostListingsCubit, HostListingsState>(
+              builder: (context, state) {
+                if (state is HostListingsLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (state is HostListingsLoaded) {
+                  if (state.listings.isEmpty) return _buildEmptyState();
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 1,
+                      mainAxisSpacing: 16,
+                      mainAxisExtent: 220.h,
+                    ),
+                    itemCount: state.listings.length,
+                    itemBuilder: (context, index) {
+                      final listing = state.listings[index];
+                      return _HostListingCard(
+                        listing: listing,
+                        onViewDetails: () => widget.onShowDetails(listing),
+                        onManage: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BlocProvider(
+                              create: (_) => sl<HostCubit>(),
+                              child: ListingManagementScreen(listing: listing),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
+                if (state is HostListingsError) {
+                  return Center(child: Text(state.message));
+                }
+                return _buildEmptyState();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

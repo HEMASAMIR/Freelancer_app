@@ -39,9 +39,25 @@ class AuthCubit extends Cubit<AuthState> {
   //  Init
   // ─────────────────────────────────────────────
 
-  void _checkCurrentUser() {
+  Future<void> _checkCurrentUser() async {
+    // أولاً جرب تحمل من الـ cache المحلي
     final user = _authRepo.getCurrentUser();
-    if (user != null) emit(_resolveSuccess(user));
+    if (user != null) {
+      emit(_resolveSuccess(user));
+      return;
+    }
+    // لو مفيش cached user، جرب تعمل token refresh
+    final result = await _authRepo.refreshToken();
+    result.fold(
+      (_) {
+        // فشل الـ refresh → مش موجود في السيشن
+      },
+      (_) async {
+        // الـ refresh نجح → نجيب بيانات اليوزر من الـ prefs المحدثة
+        final refreshedUser = _authRepo.getCurrentUser();
+        if (refreshedUser != null) emit(_resolveSuccess(refreshedUser));
+      },
+    );
   }
 
   // ─────────────────────────────────────────────

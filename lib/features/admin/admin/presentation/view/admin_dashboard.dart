@@ -43,6 +43,7 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<AdminManagementCubit>(
@@ -86,6 +87,7 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
             },
           ),
         ),
+
         body: SafeArea(
           child: _buildContent(_currentView),
         ),

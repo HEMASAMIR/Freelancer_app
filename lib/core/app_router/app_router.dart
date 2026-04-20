@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/app_router/routes.dart';
+import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/features/admin/admin/presentation/view/admin_dashboard.dart';
+import 'package:freelancer/features/admin/admin/presentation/view/earrnings_balance.dart';
 import 'package:freelancer/features/admin/admin/presentation/view/identify_screen.dart';
 import 'package:freelancer/features/admin/logic/admin_management_cubit.dart';
+import 'package:freelancer/features/admin/logic/wallet_cubit.dart';
 import 'package:freelancer/features/host/logic/cubit/host_cubit.dart';
 import 'package:freelancer/features/admin/logic/host_listings_cubit.dart';
+import 'package:freelancer/features/account/logic/cubit/account_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
 import 'package:freelancer/features/auth/view/presentation/view/sign_up_view.dart';
@@ -16,6 +20,7 @@ import 'package:freelancer/features/favourite/presentation/view/wishlist_screen.
 import 'package:freelancer/features/account/presentation/account_info.dart';
 import 'package:freelancer/features/account/presentation/security_screen.dart';
 import 'package:freelancer/features/home/presentation/view/home.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 import 'package:freelancer/features/host/presentation/host_listing.dart';
 import 'package:freelancer/features/identity_verification/logic/identity_verification_cubit.dart';
 import 'package:freelancer/features/payment/logic/cubit/payment_cubit.dart';
@@ -27,7 +32,6 @@ import 'package:freelancer/features/search/presentation/view/search_result_scree
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/trips/presentation/view/trips.dart';
-import 'package:freelancer/features/admin/logic/wallet_cubit.dart';
 import 'package:freelancer/features/account/logic/security_cubit.dart';
 
 // ✅ الشاشتين الجديدتين
@@ -61,6 +65,7 @@ class AppRouter {
             providers: [
               BlocProvider.value(value: sl<AuthCubit>()),
               BlocProvider.value(value: sl<FavCubit>()..loadFavorites()),
+              BlocProvider.value(value: sl<BookingsCubit>()),
             ],
             child: const HomeScreen(),
           ),
@@ -139,7 +144,7 @@ class AppRouter {
           builder: (_) => MultiBlocProvider(
             providers: [
               BlocProvider.value(value: sl<AuthCubit>()),
-              BlocProvider(create: (_) => sl<BookingsCubit>()),
+              BlocProvider.value(value: sl<BookingsCubit>()),
               BlocProvider.value(value: sl<PaymentCubit>()),
             ],
             child: const TripsScreen(),
@@ -186,8 +191,11 @@ class AppRouter {
       case AppRoutes.account:
         final _ = settings.arguments as int? ?? 0;
         return MaterialPageRoute(
-          builder: (_) => BlocProvider.value(
-            value: sl<AuthCubit>(),
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: sl<AuthCubit>()),
+              BlocProvider(create: (_) => sl<AccountCubit>()),
+            ],
             child: AccountScreen(),
           ),
         );
@@ -198,6 +206,58 @@ class AppRouter {
             child: HostListingsView(onShowDetails: (ListingModel p1) {}),
           ),
         );
+      // ✅ Host Dashboard — صفحة الإيرادات والمعاملات للـ Host/User العادي
+      case AppRoutes.hostDashboard:
+        return MaterialPageRoute(
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: sl<AuthCubit>()),
+              BlocProvider.value(value: sl<WalletCubit>()),
+            ],
+            child: Scaffold(
+              backgroundColor: AppColors.backgroundCream,
+              drawer: const SideDrawer(),
+              appBar: AppBar(
+                backgroundColor: AppColors.backgroundCream,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                leading: Builder(
+                  builder: (ctx) => IconButton(
+                    icon: const Icon(Icons.menu_rounded, color: AppColors.ink),
+                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+                  ),
+                ),
+                actions: [
+                  Builder(
+                    builder: (ctx) => IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: AppColors.ink,
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      tooltip: 'Back',
+                    ),
+                  ),
+                ],
+                title: const Text(
+                  'Overview',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ),
+              body: const SafeArea(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  child: EarningsBalanceView(),
+                ),
+              ),
+            ),
+          ),
+        );
+
       default:
         return _errorRoute();
     }

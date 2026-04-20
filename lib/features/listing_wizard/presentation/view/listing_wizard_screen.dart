@@ -17,6 +17,8 @@ import 'package:freelancer/features/listing_wizard/presentation/view/listing_suc
 import 'package:freelancer/features/admin/admin/presentation/view/identify_screen.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/core/di/service_locator.dart';
+import 'package:freelancer/features/identity_verification/logic/identity_verification_cubit.dart';
 
 class ListingWizardScreen extends StatefulWidget {
   const ListingWizardScreen({super.key});
@@ -60,8 +62,10 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) =>
-                const IdentityVerificationScreen(fromListingWizard: true),
+            builder: (_) => BlocProvider(
+              create: (_) => sl<IdentityVerificationCubit>(),
+              child: const IdentityVerificationScreen(fromListingWizard: true),
+            ),
           ),
         );
       }

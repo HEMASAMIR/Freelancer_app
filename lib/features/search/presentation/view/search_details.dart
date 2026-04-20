@@ -514,8 +514,15 @@ class _BookingCardState extends State<_BookingCard> {
                       } else {
                         setState(() => isLoading = true);
                         try {
+                          final authCubit = context.read<AuthCubit>();
                           final bookingCubit = context.read<BookingsCubit>();
-                          final authState = context.read<AuthCubit>().state;
+
+                          // نجرب نرجع الـ session لو لسه مش اتحملت
+                          if (!authCubit.isAuthenticated) {
+                            await authCubit.getUserInfo();
+                          }
+
+                          final authState = authCubit.state;
 
                           if (authState is! AuthSuccess &&
                               authState is! AuthAdminSuccess) {

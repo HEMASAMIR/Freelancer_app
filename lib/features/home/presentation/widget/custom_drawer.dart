@@ -25,57 +25,63 @@ class _SideDrawerState extends State<SideDrawer> {
   void _select(String item, BuildContext context, DrawerMode mode) {
     setState(() => _selected = item);
 
-    // 1. اقفل الدرور الأول
-    Navigator.of(context).pop();
+    final navigator = Navigator.of(context);
+    final authCubit = context.read<AuthCubit>();
+    final messenger = ScaffoldMessenger.of(context);
 
-    // 2. معالجة خاصة لـ Host Your Home
+    navigator.pop();
+
     if (item == 'Host Your Home') {
-      final state = context.read<AuthCubit>().state;
+      final state = authCubit.state;
       if (state is AuthSuccess || state is AuthAdminSuccess) {
-        Navigator.of(context).pushNamed(AppRoutes.hostDashboard);
-      } else {
-        // ... SnackBar code
+        navigator.pushNamed(AppRoutes.hostDashboard);
       }
       return;
     }
 
-    // 3. معالجة الـ Overview وبقية العناصر
-    // بنستخدم Future.delayed بسيط عشان نضمن إن الـ pop خلص والـ context جاهز للـ push
     Future.delayed(Duration.zero, () {
-      if (!context.mounted) return;
       if (item == 'Log out' || item == 'Logout') {
-        context.read<AuthCubit>().signOut();
+        authCubit.signOut();
       } else if (item == 'Log in') {
-        _showLoginDialog(context);
+        if (context.mounted) _showLoginDialog(context);
       } else if (item == 'Help Center') {
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const HelpCenter()));
+        navigator.push(MaterialPageRoute(builder: (_) => const HelpCenter()));
       } else if (item == 'Settings') {
-        // Navigate to the Account Screen on the Settings Tab (index 2)
-        Navigator.of(context).pushNamed(AppRoutes.account, arguments: 2);
+        navigator.pushNamed(AppRoutes.account, arguments: 2);
       } else if (item == 'Notifications') {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
             content: Text("$item coming soon!"),
             backgroundColor: Colors.blueGrey,
           ),
         );
-      } else if (widget.onItemSelected != null) {
+      } else if (widget.onItemSelected != null &&
+          item != 'Dashboard' &&
+          item != 'Overview' &&
+          item != 'Personal Info' &&
+          item != 'Trips' &&
+          item != 'Wishlists' &&
+          item != 'Bookings' &&
+          item != 'Account') {
         widget.onItemSelected!(item);
       } else {
         final route = _getRouteForItem(item, mode);
         if (route != null) {
-          // تأكد إن AppRoutes.adminDashboard هو المسار لـ AdminOverviewScreen
-          if (route == AppRoutes.adminDashboard || route == AppRoutes.adminOverview) {
-            Navigator.of(context).pushNamed(route, arguments: item);
+          if (route == AppRoutes.adminDashboard ||
+              route == AppRoutes.adminOverview) {
+            navigator.pushNamedAndRemoveUntil(
+              route,
+              (r) => false,
+              arguments: item,
+            );
           } else {
-            Navigator.of(context).pushNamed(route);
+            navigator.pushNamed(route);
           }
         }
       }
     });
   }
 
-  // ميثود إظهار شاشة تسجيل الدخول كـ Dialog
   void _showLoginDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -87,10 +93,17 @@ class _SideDrawerState extends State<SideDrawer> {
   }
 
   String? _getRouteForItem(String item, DrawerMode mode) {
-    if (item == 'Overview') {
-      return AppRoutes.adminOverview;
-    }
     switch (item) {
+      case 'Overview':
+      case 'Earnings & Balance':
+        // الـ admin يروح للـ Admin Dashboard الأسود
+        // الـ user العادي/host يروح لصفحة الإيرادات (EarningsBalanceView)
+        return mode == DrawerMode.admin
+            ? AppRoutes.adminDashboard
+            : AppRoutes.hostDashboard;
+      case 'Dashboard':
+        // Dashboard بيروح للـ admin panel بس للـ admin account
+        return mode == DrawerMode.admin ? AppRoutes.adminDashboard : null;
       case 'Personal Info':
       case 'Account':
         return AppRoutes.account;
@@ -99,13 +112,14 @@ class _SideDrawerState extends State<SideDrawer> {
         return AppRoutes.trips;
       case 'Wishlists':
         return AppRoutes.wishlists;
-      case 'Earnings & Balance':
       case 'My Listings':
       case 'All Listings':
       case 'Create New':
+        return AppRoutes.myListings;
       case 'Calendar':
       case 'Host Reviews':
-        return AppRoutes.adminDashboard;
+        // لم يتم تنفيذهم بعد، نمنع فتح لوحة التحكم الخاطئة
+        return null;
       default:
         return null;
     }
@@ -221,17 +235,9 @@ class _SideDrawerState extends State<SideDrawer> {
       _buildSectionHeader('Guest', context, mode),
       _buildNavigationItem('Trips', Icons.flight_takeoff, context, mode),
       _buildNavigationItem('Wishlists', Icons.favorite_border, context, mode),
-      SizedBox(height: 16.h),
-      _buildSectionHeader('Hosting', context, mode),
-      _buildNavigationItem(
-        'Host Your Home',
-        Icons.dashboard_customize_outlined,
-        context,
-        mode,
-      ),
-      if (mode == DrawerMode.admin) ...[
+      if (mode != DrawerMode.home) ...[
         SizedBox(height: 16.h),
-        _buildSectionHeader('Admin Tools', context, mode),
+        _buildSectionHeader('Host', context, mode),
         _buildExpandableNavigationItem(
           'My Listings',
           Icons.maps_home_work_outlined,
@@ -248,21 +254,10 @@ class _SideDrawerState extends State<SideDrawer> {
           context,
           mode,
         ),
-        _buildNavigationItem(
-          'Calendar',
-          Icons.date_range_outlined,
-          context,
-          mode,
-        ),
+
         _buildNavigationItem(
           'Earnings & Balance',
           Icons.account_balance_wallet_outlined,
-          context,
-          mode,
-        ),
-        _buildNavigationItem(
-          'Host Reviews',
-          Icons.rate_review_outlined,
           context,
           mode,
         ),
@@ -434,11 +429,16 @@ class _SideDrawerState extends State<SideDrawer> {
           ),
         ),
         const PopupMenuDivider(),
+
         PopupMenuItem(
           value: 'Personal Info',
           child: Row(
             children: [
-              Icon(Icons.person_outline, size: 20.sp, color: Colors.grey.shade700),
+              Icon(
+                Icons.person_outline,
+                size: 20.sp,
+                color: Colors.grey.shade700,
+              ),
               SizedBox(width: 12.w),
               Text('Personal Info', style: TextStyle(fontSize: 14.sp)),
             ],
@@ -448,7 +448,11 @@ class _SideDrawerState extends State<SideDrawer> {
           value: 'Settings',
           child: Row(
             children: [
-              Icon(Icons.settings_outlined, size: 20.sp, color: Colors.grey.shade700),
+              Icon(
+                Icons.settings_outlined,
+                size: 20.sp,
+                color: Colors.grey.shade700,
+              ),
               SizedBox(width: 12.w),
               Text('Settings', style: TextStyle(fontSize: 14.sp)),
             ],
@@ -458,7 +462,11 @@ class _SideDrawerState extends State<SideDrawer> {
           value: 'Notifications',
           child: Row(
             children: [
-              Icon(Icons.notifications_outlined, size: 20.sp, color: Colors.grey.shade700),
+              Icon(
+                Icons.notifications_outlined,
+                size: 20.sp,
+                color: Colors.grey.shade700,
+              ),
               SizedBox(width: 12.w),
               Text('Notifications', style: TextStyle(fontSize: 14.sp)),
             ],
@@ -468,7 +476,11 @@ class _SideDrawerState extends State<SideDrawer> {
           value: 'Help Center',
           child: Row(
             children: [
-              Icon(Icons.help_outline, size: 20.sp, color: Colors.grey.shade700),
+              Icon(
+                Icons.help_outline,
+                size: 20.sp,
+                color: Colors.grey.shade700,
+              ),
               SizedBox(width: 12.w),
               Text('Help Center', style: TextStyle(fontSize: 14.sp)),
             ],
@@ -534,7 +546,11 @@ class _SideDrawerState extends State<SideDrawer> {
                 ],
               ),
             ),
-            Icon(Icons.unfold_more_outlined, size: 20.sp, color: Colors.grey.shade600),
+            Icon(
+              Icons.unfold_more_outlined,
+              size: 20.sp,
+              color: Colors.grey.shade600,
+            ),
           ],
         ),
       ),

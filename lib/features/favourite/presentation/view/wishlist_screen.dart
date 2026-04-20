@@ -4,6 +4,7 @@ import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/favourite/data/models/wishlist_model.dart';
 import 'package:freelancer/features/favourite/presentation/view/wishlist_details_screen.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 
 class WishlistsScreen extends StatefulWidget {
   const WishlistsScreen({super.key});
@@ -71,42 +72,56 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F0EA),
+      drawer: const SideDrawer(),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF5F0EA),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: AppColors.ink),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        actions: [
+          if (Navigator.of(context).canPop())
+            IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.ink),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+        ],
+        title: const Text(
+          'Wishlists',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.ink,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ──
+            // ── Header subtitle + add button ──
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Wishlists',
+                  BlocBuilder<FavCubit, FavState>(
+                    builder: (context, state) {
+                      final count = state is FavLoaded
+                          ? state.wishlists.length
+                          : 0;
+                      return Text(
+                        '$count list${count == 1 ? '' : 's'} available',
                         style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.ink,
+                          fontSize: 14,
+                          color: AppColors.sub.withValues(alpha: 0.7),
                         ),
-                      ),
-                      BlocBuilder<FavCubit, FavState>(
-                        builder: (context, state) {
-                          final count = state is FavLoaded
-                              ? state.wishlists.length
-                              : 0;
-                          return Text(
-                            '$count list${count == 1 ? '' : 's'} available',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.sub.withValues(alpha: 0.7),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+                      );
+                    },
                   ),
                   GestureDetector(
                     onTap: _showCreateDialog,

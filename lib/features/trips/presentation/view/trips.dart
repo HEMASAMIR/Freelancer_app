@@ -87,13 +87,39 @@ class _TripsScreenState extends State<TripsScreen> {
       key: _scaffoldKey,
       backgroundColor: const Color(0xFFF5F0EA),
       drawer: const SideDrawer(),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF5F0EA),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: AppColors.ink),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        actions: [
+          if (Navigator.of(context).canPop())
+            IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.ink),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+        ],
+        title: const Text(
+          'Trips',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.ink,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Main Content ──────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

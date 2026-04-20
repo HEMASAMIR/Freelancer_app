@@ -16,6 +16,7 @@ class FavCubit extends Cubit<FavState> {
 
   // 1. تحميل المفضلات (العامة للمقارنة السريعة)
   Future<void> loadFavorites() async {
+    final previousState = state;
     emit(FavLoading());
     try {
       final favoriteIds = await _repository.getFavorites();
@@ -50,7 +51,12 @@ class FavCubit extends Cubit<FavState> {
       );
     } catch (e) {
       debugPrint("Error loading favorites: $e");
-      emit(const FavError("Failed to load favorites"));
+      // نرجع للحالة السابقة عشان مانكسرش الـ UI
+      if (previousState is FavLoaded) {
+        emit(previousState);
+      } else {
+        emit(const FavLoaded(favorites: [], favoriteIds: [], wishlists: []));
+      }
     }
   }
 

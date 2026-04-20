@@ -202,129 +202,180 @@ class _BalanceCard extends StatelessWidget {
   }
 }
 
-class _TransactionTable extends StatelessWidget {
+class _TransactionTable extends StatefulWidget {
   final List<Map<String, dynamic>> history;
   const _TransactionTable({required this.history});
 
   @override
-  Widget build(BuildContext context) {
-    if (history.isEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.receipt_long_outlined,
-              size: 48,
-              color: AppColors.sub,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'No results.',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '0 row(s) total.',
-              style: TextStyle(fontSize: 12, color: AppColors.sub),
-            ),
-          ],
-        ),
-      );
-    }
+  State<_TransactionTable> createState() => _TransactionTableState();
+}
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.3)),
-      ),
-      child: ListView.separated(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: history.length,
-        separatorBuilder: (_, _) =>
-            Divider(color: AppColors.dividerGrey.withValues(alpha: 0.3), height: 1),
-        itemBuilder: (context, index) {
-          final tx = history[index];
-          // Repo returns: subtotal, status, created_at, listing:{title,user_id}
-          final status = tx['status'] ?? 'pending';
-          final isCredit = status == 'confirmed' || status == 'completed';
-          final subtotal = (tx['subtotal'] as num?)?.toDouble() ?? 0.0;
-          final listingTitle = (tx['listing'] is Map)
-              ? tx['listing']['title'] as String? ?? 'Booking'
-              : 'Booking';
-          final shortId = (tx['id'] as String? ?? '--------').substring(0, 8);
-          final date = tx['created_at'] != null
-              ? DateFormat('MMM d, yyyy').format(DateTime.parse(tx['created_at']))
-              : '-';
-          return ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 8,
+class _TransactionTableState extends State<_TransactionTable> {
+  final TextEditingController _searchCtrl = TextEditingController();
+  final int _rowsPerPage = 10;
+  int _currentPage = 1;
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // فلترة بسيطة
+    final filteredHistory = widget.history.where((tx) {
+      final query = _searchCtrl.text.toLowerCase();
+      if (query.isEmpty) return true;
+      final desc = (tx['listing'] is Map ? tx['listing']['title'] : 'Booking').toString().toLowerCase();
+      final status = (tx['status'] ?? 'pending').toString().toLowerCase();
+      return desc.contains(query) || status.contains(query);
+    }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Search Box
+        TextField(
+          controller: _searchCtrl,
+          onChanged: (val) => setState(() => _currentPage = 1),
+          decoration: InputDecoration(
+            hintText: 'Search by description...',
+            hintStyle: TextStyle(fontSize: 14, color: AppColors.sub),
+            fillColor: Colors.white,
+            filled: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.dividerGrey.withValues(alpha: 0.3)),
             ),
-            leading: CircleAvatar(
-              backgroundColor: isCredit
-                  ? Colors.green.shade50
-                  : Colors.orange.shade50,
-              child: Icon(
-                isCredit ? Icons.arrow_downward : Icons.hourglass_top,
-                color: isCredit ? Colors.green : Colors.orange,
-                size: 20,
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.blue),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Table Container
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  headingRowColor: WidgetStateProperty.all(Colors.white),
+                  dataRowColor: WidgetStateProperty.all(Colors.white),
+                  dividerThickness: 1,
+                  columnSpacing: 32,
+                  columns: const [
+                    DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Description', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Balance After', style: TextStyle(fontWeight: FontWeight.bold))),
+                  ],
+                  rows: filteredHistory.isEmpty
+                      ? []
+                      : filteredHistory.map((tx) {
+                          final status = tx['status'] ?? 'pending';
+                          final isCredit = status == 'confirmed' || status == 'completed';
+                          final subtotal = (tx['subtotal'] as num?)?.toDouble() ?? 0.0;
+                          final listingTitle = (tx['listing'] is Map)
+                              ? tx['listing']['title'] as String? ?? 'Booking'
+                              : 'Booking';
+                          final date = tx['created_at'] != null
+                              ? DateFormat('MMM d, yyyy').format(DateTime.parse(tx['created_at']))
+                              : '-';
+
+                          return DataRow(cells: [
+                            DataCell(Text(date, style: const TextStyle(fontSize: 13))),
+                            DataCell(
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: isCredit ? Colors.green.shade50 : Colors.orange.shade50,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  status.toString().toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: isCredit ? Colors.green : Colors.orange,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            DataCell(Text('EGP ${subtotal.toStringAsFixed(0)}', style: const TextStyle(fontSize: 13))),
+                            DataCell(Text(listingTitle, style: const TextStyle(fontSize: 13))),
+                            DataCell(Text('-', style: TextStyle(fontSize: 13, color: AppColors.sub))),
+                          ]);
+                        }).toList(),
+                ),
               ),
-            ),
-            title: Text(
-              listingTitle,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Text(
-              '#$shortId  ·  $date',
-              style: TextStyle(color: AppColors.sub, fontSize: 12),
-            ),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  'EGP ${subtotal.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isCredit ? Colors.green : Colors.orange,
-                    fontSize: 14,
-                  ),
-                ),
+              if (filteredHistory.isEmpty)
                 Container(
-                  margin: const EdgeInsets.only(top: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 32),
                   decoration: BoxDecoration(
-                    color: isCredit ? Colors.green.shade50 : Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(6),
+                    border: Border(top: BorderSide(color: AppColors.dividerGrey.withValues(alpha: 0.3))),
                   ),
-                  child: Text(
-                    status,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: isCredit ? Colors.green : Colors.orange,
-                    ),
+                  child: const Text('No results.', textAlign: TextAlign.center, style: TextStyle(color: Colors.black87)),
+                ),
+              // Footer Pagination
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: AppColors.dividerGrey.withValues(alpha: 0.3))),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text('${filteredHistory.length} row(s) total.', style: TextStyle(fontSize: 12, color: AppColors.sub)),
+                      const SizedBox(width: 16),
+                      Text('Rows per page:', style: TextStyle(fontSize: 12, color: AppColors.sub)),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.3)),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            Text('$_rowsPerPage', style: const TextStyle(fontSize: 12)),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.keyboard_arrow_down, size: 16),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text('Page $_currentPage of ${filteredHistory.isEmpty ? 0 : 1}', style: TextStyle(fontSize: 12, color: AppColors.sub)),
+                      const SizedBox(width: 8),
+                      Icon(Icons.chevron_left, size: 20, color: AppColors.dividerGrey),
+                      const SizedBox(width: 8),
+                      Icon(Icons.chevron_right, size: 20, color: AppColors.dividerGrey),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          );
-        },
-      ),
+              )
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
+
 
 class _WithdrawalForm extends StatelessWidget {
   final double maxAmount;
@@ -404,31 +455,66 @@ class _WithdrawalForm extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: maxAmount > 0
-                  ? () {
-                      final amount =
-                          double.tryParse(amountController.text) ?? 0.0;
-                      if (amount <= 0 || amount > maxAmount) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Invalid amount')),
-                        );
-                        return;
-                      }
-                      final authState = context.read<AuthCubit>().state;
-                      final userId = authState is AuthAdminSuccess
-                          ? authState.user.id
-                          : authState is AuthSuccess ? authState.user.id : null;
-                      if (userId != null) {
-                        context.read<WalletCubit>().requestWithdrawal(
-                          hostId: userId,
-                          amount: amount,
-                          method: withdrawalMethod,
-                        );
-                      }
-                    }
-                  : null,
+              onPressed: () {
+                if (maxAmount <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Your available balance is 0 EGP. Cannot request payout.'),
+                      backgroundColor: AppColors.primaryRed,
+                    ),
+                  );
+                  return;
+                }
+                final amountText = amountController.text.trim();
+                if (amountText.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter an amount to withdraw.'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  return;
+                }
+                final amount = double.tryParse(amountText) ?? 0.0;
+                if (amount <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a valid amount greater than 0.'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  return;
+                }
+                if (amount > maxAmount) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Amount exceeds your available balance of EGP ${maxAmount.toStringAsFixed(2)}.'),
+                      backgroundColor: AppColors.primaryRed,
+                    ),
+                  );
+                  return;
+                }
+                final authState = context.read<AuthCubit>().state;
+                final userId = authState is AuthAdminSuccess
+                    ? authState.user.id
+                    : authState is AuthSuccess ? authState.user.id : null;
+                if (userId != null) {
+                  context.read<WalletCubit>().requestWithdrawal(
+                    hostId: userId,
+                    amount: amount,
+                    method: withdrawalMethod,
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Payout requested successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  amountController.clear();
+                }
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xffb07c7c),
+                backgroundColor: AppColors.ink,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -439,6 +525,7 @@ class _WithdrawalForm extends StatelessWidget {
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
               ),
             ),

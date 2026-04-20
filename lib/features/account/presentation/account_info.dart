@@ -8,6 +8,7 @@ import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/features/account/logic/cubit/account_cubit.dart';
 import 'package:freelancer/features/account/logic/cubit/account_state.dart';
 import 'package:freelancer/features/account/data/models/account_models.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 
 class AccountScreen extends StatefulWidget {
   final int initialTabIndex;
@@ -57,6 +58,33 @@ class _AccountScreenState extends State<AccountScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundCream,
+      drawer: const SideDrawer(),
+      appBar: AppBar(
+        backgroundColor: AppColors.backgroundCream,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu_rounded, color: AppColors.ink),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        actions: [
+          if (Navigator.of(context).canPop())
+            IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.ink),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+        ],
+        title: const Text(
+          'Account',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.ink,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, state) {

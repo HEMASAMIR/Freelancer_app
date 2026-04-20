@@ -21,7 +21,11 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
   @override
   void initState() {
     super.initState();
-    context.read<FavCubit>().loadWishlists();
+    // نحمل الـ wishlists بس لو مش عندنا بيانات بالفعل
+    final cubit = context.read<FavCubit>();
+    if (cubit.state is! FavLoaded) {
+      cubit.loadWishlists();
+    }
   }
 
   @override
@@ -77,7 +81,15 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
                 );
               }
 
-              // FavInitial أو FavError - نبين الـ empty state بدل SizedBox
+              // FavLoading - نعرض loading indicator بدل ما نبين empty state غلط
+              if (state is FavLoading) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              // FavInitial أو FavError - نبين الـ empty state
               return _buildNoWishlists();
             },
           ),
@@ -117,38 +129,155 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
   }
 
   Widget _buildWishlistItem(WishlistModel wishlist) {
-    return ListTile(
-      onTap: _isSubmitting
-          ? null
-          : () async {
-              setState(() => _isSubmitting = true);
-              final success = await context.read<FavCubit>().toggleFavorite(
-                widget.listing,
-                wishlistId: wishlist.id,
-              );
+    final isSaved = context.read<FavCubit>().state is FavLoaded
+        ? (context.read<FavCubit>().state as FavLoaded)
+            .favoriteIds
+            .contains(widget.listing.id.toString())
+        : false;
 
-              if (!mounted) return;
-              setState(() => _isSubmitting = false);
-
-              if (success) {
-                _showSuccessToast(context, 'Saved to ${wishlist.name}');
-                Navigator.pop(context);
-              } else {
-                _showErrorToast(_extractErrorMessage());
-              }
-            },
-      leading: Container(
-        padding: const EdgeInsets.all(8),
+    return Dismissible(
+      key: Key('wishlist_${wishlist.id}'),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        // تأكيد الحذف
+        return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Delete Wishlist'),
+            content: Text('Delete "${wishlist.name}"? This can\'t be undone.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade700,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        );
+      },
+      onDismissed: (_) {
+        context.read<FavCubit>().deleteWishlist(wishlist.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${wishlist.name} deleted'),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: EdgeInsets.only(right: 20.w),
+        margin: EdgeInsets.symmetric(vertical: 4.h),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
+          color: Colors.red.shade600,
+          borderRadius: BorderRadius.circular(12.r),
         ),
-        child: const Icon(Icons.favorite, color: Colors.red),
+        child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 28),
       ),
-      title: Text(wishlist.name),
-      subtitle: const Text(
-        "SAVED",
-        style: TextStyle(fontSize: 10, color: Colors.grey),
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+        onTap: _isSubmitting
+            ? null
+            : () async {
+                setState(() => _isSubmitting = true);
+                final success = await context.read<FavCubit>().toggleFavorite(
+                  widget.listing,
+                  wishlistId: wishlist.id,
+                );
+
+                if (!mounted) return;
+                setState(() => _isSubmitting = false);
+
+                if (success) {
+                  final nowSaved = context.read<FavCubit>().state is FavLoaded
+                      ? (context.read<FavCubit>().state as FavLoaded)
+                          .favoriteIds
+                          .contains(widget.listing.id.toString())
+                      : false;
+                  if (nowSaved) {
+                    _showSuccessToast(context, 'Saved to ${wishlist.name}');
+                    Navigator.pop(context);
+                  } else {
+                    _showSuccessToast(context, 'Removed from ${wishlist.name}');
+                  }
+                } else {
+                  _showErrorToast(_extractErrorMessage());
+                }
+              },
+        leading: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isSaved ? Colors.red.shade50 : Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            isSaved ? Icons.favorite : Icons.favorite_border,
+            color: isSaved ? Colors.red : Colors.grey,
+          ),
+        ),
+        title: Text(
+          wishlist.name,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          isSaved ? '✓ Saved' : 'Tap to save',
+          style: TextStyle(
+            fontSize: 10,
+            color: isSaved ? Colors.green.shade700 : Colors.grey,
+            fontWeight: isSaved ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Swipe hint icon
+            Icon(Icons.swipe_left_outlined, size: 14.sp, color: Colors.grey.shade400),
+            SizedBox(width: 4.w),
+            // Delete button
+            IconButton(
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    title: const Text('Delete Wishlist'),
+                    content: Text('Delete "${wishlist.name}"?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade700,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true && mounted) {
+                  context.read<FavCubit>().deleteWishlist(wishlist.id);
+                }
+              },
+              icon: Icon(Icons.delete_outline, size: 18.sp, color: Colors.grey.shade400),
+              tooltip: 'Delete wishlist',
+            ),
+          ],
+        ),
       ),
     );
   }
