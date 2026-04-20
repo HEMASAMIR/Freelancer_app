@@ -13,7 +13,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_cubit.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:freelancer/core/app_router/routes.dart';
+import 'package:freelancer/core/widgets/login_required_sheet.dart';
 
 const Color airbnbMaroon = Color(0xFF710E1F);
 const Color airbnbBg = Color(0xFFF7F3F0);
@@ -156,7 +159,9 @@ class _TopInfoSection extends StatelessWidget {
                 icon: Icons.ios_share,
                 label: "Share",
                 onTap: () {
-                  // يمكن إضافة مشاركة الرابط هنا لاحقاً
+                  final String link = 'https://quickin.com/listing/${listing.id}';
+                  // ignore: deprecated_member_use
+                  Share.share('Check out this amazing property on QuickIn: ${listing.title}\n$link');
                 },
               ),
               SizedBox(width: 20.w),
@@ -170,6 +175,12 @@ class _TopInfoSection extends StatelessWidget {
                     label: isFav ? "Saved" : "Save",
                     iconColor: isFav ? Colors.red : Colors.black,
                     onTap: () {
+                      final authState = context.read<AuthCubit>().state;
+                      final isLoggedIn = authState is AuthSuccess || authState is AuthAdminSuccess;
+                      if (!isLoggedIn) {
+                        showLoginRequiredSheet(context);
+                        return;
+                      }
                       showModalBottomSheet(
                         context: context,
                         isScrollControlled: true,
@@ -526,26 +537,29 @@ class _BookingCardState extends State<_BookingCard> {
 
                           if (authState is! AuthSuccess &&
                               authState is! AuthAdminSuccess) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Please log in first to book"),
-                                backgroundColor: airbnbMaroon,
-                              ),
-                            );
                             setState(() => isLoading = false);
+                            if (!context.mounted) return;
+                            await showLoginRequiredSheet(
+                              context,
+                              title: 'Log in to book',
+                              subtitle: 'You need to be logged in to\nrequest a booking.',
+                              icon: Icons.calendar_month_rounded,
+                            );
                             return;
                           }
 
-                          final bool isVerified = authState is AuthAdminSuccess || 
+                          final bool isVerified = authState is AuthAdminSuccess ||
                             (authState is AuthSuccess && authState.user.userMetadata['is_identity_verified'] == true);
 
                           if (!isVerified) {
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text("Identity verification required to book"),
                                 backgroundColor: airbnbMaroon,
                               ),
                             );
+                            if (!context.mounted) return;
                             Navigator.pushNamed(context, AppRoutes.identityVerification);
                             setState(() => isLoading = false);
                             return;

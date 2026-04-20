@@ -12,4 +12,6 @@ abstract class FavoriteRepository {
   Future<List<String>> getWishlistItems(String wishlistId);
   Future<Either<Failure, Unit>> deleteWishlist(String wishlistId);
   Future<List<ListingModel>> getListingsByIds(List<String> ids);
+  
+  bool get hasUser;
 }

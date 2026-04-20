@@ -13,6 +13,9 @@ class FakeFavRepository implements FavoriteRepository {
   final List<WishlistModel> stubWishlists = [];
 
   @override
+  bool get hasUser => true;
+
+  @override
   Future<List<String>> getFavorites() async {
     if (failMode) throw Exception('Get Favorites Failed');
     return stubFavIds;

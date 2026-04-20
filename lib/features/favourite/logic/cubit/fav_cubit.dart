@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:freelancer/features/favourite/data/fav_repos/fav_repo.dart';
 import 'package:freelancer/features/favourite/data/models/wishlist_model.dart';
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'fav_state.dart';
 
@@ -13,6 +14,9 @@ class FavCubit extends Cubit<FavState> {
   final List<ListingModel> _cachedFavModels = [];
 
   FavCubit(this._repository) : super(FavInitial());
+
+  /// Helper – is the user currently signed in?
+  bool get _isLoggedIn => _repository.hasUser;
 
   // 1. تحميل المفضلات (العامة للمقارنة السريعة)
   Future<void> loadFavorites() async {
@@ -39,8 +43,8 @@ class FavCubit extends Cubit<FavState> {
           .where((element) => favoriteIds.contains(element.id.toString()))
           .toList();
 
-      // تحميل الـ Wishlists بالمرة
-      final wishlists = await _repository.getWishlists();
+      // تحميل الـ Wishlists بالمرة (فقط لو اليوزر مسجل)
+      final wishlists = _isLoggedIn ? await _repository.getWishlists() : <WishlistModel>[];
 
       emit(
         FavLoaded(
@@ -100,6 +104,13 @@ class FavCubit extends Cubit<FavState> {
   Future<void> loadWishlists() async {
     // نحتفظ بالحالة السابقة إذا كانت FavLoaded عشان مانكسرش الـ UI
     final previousState = state;
+    // لو guest مرجعش حاجة فاضية من غير تحميل
+    if (!_isLoggedIn) {
+      if (previousState is! FavLoaded) {
+        emit(const FavLoaded(favorites: [], favoriteIds: [], wishlists: []));
+      }
+      return;
+    }
     emit(FavLoading());
     try {
       final wishlists = await _repository.getWishlists();
@@ -123,6 +134,11 @@ class FavCubit extends Cubit<FavState> {
     String name, {
     ListingModel? listingToSave,
   }) async {
+    // لو guest، مابنعملش حاجة
+    if (!_isLoggedIn) {
+      debugPrint('[FavCubit] createWishlist skipped – user not logged in');
+      return false;
+    }
     final result = await _repository.createWishlist(name);
     return await result.fold(
       (failure) {
@@ -155,6 +171,7 @@ class FavCubit extends Cubit<FavState> {
   }
 
   Future<void> deleteWishlist(String wishlistId) async {
+    if (!_isLoggedIn) return;
     final result = await _repository.deleteWishlist(wishlistId);
     result.fold((failure) => emit(FavError(failure.message)), (_) {
       loadWishlists();
@@ -165,6 +182,12 @@ class FavCubit extends Cubit<FavState> {
     ListingModel property, {
     String? wishlistId,
   }) async {
+    // لو الـ user مش مسجل دخول، نرجع false بدون ما نعمل FavError
+    if (!_isLoggedIn) {
+      debugPrint('[FavCubit] toggleFavorite skipped – user not logged in');
+      return false;
+    }
+
     final String id = property.id.toString();
 
     if (!_cachedFavModels.any((element) => element.id == property.id)) {
@@ -192,3 +215,4 @@ class FavCubit extends Cubit<FavState> {
     return false;
   }
 }
+

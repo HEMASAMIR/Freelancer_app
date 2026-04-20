@@ -62,6 +62,9 @@ class FavoriteRepositoryImpl implements FavoriteRepository {
     return _extractUserIdFromAccessToken();
   }
 
+  @override
+  bool get hasUser => _currentUserId() != null;
+
   Dio _restDio() {
     final token = _prefs.getString('supabase_access_token');
     return Dio(

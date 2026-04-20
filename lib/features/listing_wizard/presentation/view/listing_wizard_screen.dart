@@ -14,11 +14,8 @@ import 'package:freelancer/features/listing_wizard/presentation/widgets/wizard_s
 import 'package:freelancer/features/listing_wizard/presentation/widgets/wizard_step_7_pricing.dart';
 import 'package:freelancer/features/listing_wizard/presentation/widgets/wizard_step_8_publish.dart';
 import 'package:freelancer/features/listing_wizard/presentation/view/listing_success_screen.dart';
-import 'package:freelancer/features/admin/admin/presentation/view/identify_screen.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
-import 'package:freelancer/core/di/service_locator.dart';
-import 'package:freelancer/features/identity_verification/logic/identity_verification_cubit.dart';
 
 class ListingWizardScreen extends StatefulWidget {
   const ListingWizardScreen({super.key});
@@ -47,29 +44,8 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
   void initState() {
     super.initState();
     context.read<ListingWizardCubit>().fetchInitialLookups();
-    // ── Identity gate: must be verified before starting the wizard ──
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final authState = context.read<AuthCubit>().state;
-      bool isVerified = false;
-      if (authState is AuthAdminSuccess) {
-        isVerified = true; // Admins are always allowed
-      } else if (authState is AuthSuccess) {
-        isVerified =
-            authState.user.userMetadata['is_identity_verified'] == true;
-      }
-      if (!isVerified) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => BlocProvider(
-              create: (_) => sl<IdentityVerificationCubit>(),
-              child: const IdentityVerificationScreen(fromListingWizard: true),
-            ),
-          ),
-        );
-      }
-    });
+    // Identity verification check removed as requested
+    // Users can now directly access the 9-step wizard
   }
 
   void _nextPage() {

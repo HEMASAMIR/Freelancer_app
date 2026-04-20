@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:freelancer/core/constant/constant.dart';
+import 'package:freelancer/core/widgets/login_required_sheet.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/favourite/presentation/widget/wishlist_bottom_sheet.dart';
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
 
 class PropertyListingCard extends StatelessWidget {
   final ListingModel listing;
@@ -85,6 +88,12 @@ class PropertyListingCard extends StatelessWidget {
                             ),
                           ),
                           onPressed: () {
+                            final authState = context.read<AuthCubit>().state;
+                            final isLoggedIn = authState is AuthSuccess || authState is AuthAdminSuccess;
+                            if (!isLoggedIn) {
+                              showLoginRequiredSheet(context);
+                              return;
+                            }
                             showModalBottomSheet(
                               context: context,
                               isScrollControlled: true,
