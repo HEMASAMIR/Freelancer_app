@@ -26,7 +26,14 @@ class BookingsRepositoryImpl implements BookingsRepository {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return Right(response.data == true);
+        // API returns: [{has_conflict: false, conflict_reason: null}]
+        final data = response.data;
+        if (data is List && data.isNotEmpty) {
+          final hasConflict = data.first['has_conflict'] as bool? ?? true;
+          return Right(!hasConflict); // available = no conflict
+        }
+        // fallback: if API returns true/false directly
+        return Right(data == true);
       }
       return const Left("فشل في التحقق من التوافر");
     } on DioException catch (e) {

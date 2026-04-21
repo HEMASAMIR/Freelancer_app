@@ -11,6 +11,11 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/core/network/auth_interceptor.dart';
 
+// Comments & Q&A
+import 'package:freelancer/features/comments/data/repos/comments_repo.dart';
+import 'package:freelancer/features/comments/data/repos/comments_repo_impl.dart';
+import 'package:freelancer/features/comments/logic/cubit/comments_cubit.dart';
+
 // Auth
 import 'package:freelancer/features/auth/data/repos/auth_repo.dart';
 import 'package:freelancer/features/auth/data/repos/auth_repo_impl.dart';
@@ -263,5 +268,13 @@ Future<void> setupServiceLocator() async {
   );
   sl.registerFactory<IdentityVerificationCubit>(
     () => IdentityVerificationCubit(sl<AuthRepo>(), sl<AuthCubit>()),
+  );
+
+  // --- Comments & Q&A Feature ---
+  sl.registerLazySingleton<CommentsRepository>(
+    () => CommentsRepositoryImpl(dio: sl<Dio>()),
+  );
+  sl.registerFactory<CommentsCubit>(
+    () => CommentsCubit(sl<CommentsRepository>()),
   );
 }

@@ -333,26 +333,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         break;
 
       case 'manage_listings':
-        {
-          final authState = context.read<AuthCubit>().state;
-          if (authState is AuthAdminSuccess) {
-            // الادمن فقط يدخل لإدارة اللسينجز
-            Navigator.pushNamed(context, AppRoutes.adminDashboard);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Admin access only'),
-                backgroundColor: AppColors.maroon,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                margin: EdgeInsets.all(16.w),
-              ),
-            );
-          }
-          break;
-        }
+        Navigator.pushNamed(context, AppRoutes.myListings);
+        break;
 
       case 'logout':
         context.read<AuthCubit>().signOut();

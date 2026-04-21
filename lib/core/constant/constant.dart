@@ -52,6 +52,9 @@ class SupabaseKeys {
 
   // Wallet
   static const String withdrawalRequestsRest = 'withdrawal_requests';
+
+  // Comments & Q&A
+  static const String listingCommentsRest = 'listing_comments';
 }
 
 class AppColors {

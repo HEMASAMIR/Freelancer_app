@@ -33,6 +33,7 @@ import 'package:freelancer/features/search/data/search_model/listing_model.dart'
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/trips/presentation/view/trips.dart';
 import 'package:freelancer/features/account/logic/security_cubit.dart';
+import 'package:freelancer/features/bookings/presentation/view/confirm_booking_screen.dart';
 
 // ✅ الشاشتين الجديدتين
 // import 'package:freelancer/features/account/presentation/view/personal_info_screen.dart'; // ← عدّل المسار حسب مشروعك
@@ -201,9 +202,14 @@ class AppRouter {
         );
       case AppRoutes.myListings:
         return MaterialPageRoute(
-          builder: (_) => BlocProvider.value(
-            value: sl<HostListingsCubit>(),
-            child: HostListingsView(onShowDetails: (ListingModel p1) {}),
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: sl<AuthCubit>()),
+              BlocProvider.value(value: sl<HostListingsCubit>()),
+            ],
+            child: HostListingsView(
+              onShowDetails: (listing) {},
+            ),
           ),
         );
       // ✅ Host Dashboard — صفحة الإيرادات والمعاملات للـ Host/User العادي
@@ -255,6 +261,19 @@ class AppRouter {
                 ),
               ),
             ),
+          ),
+        );
+
+      case AppRoutes.confirmBooking:
+        final cbArgs = settings.arguments;
+        if (cbArgs is! ConfirmBookingArgs) return _errorRoute();
+        return MaterialPageRoute(
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: sl<AuthCubit>()),
+              BlocProvider.value(value: sl<BookingsCubit>()),
+            ],
+            child: ConfirmBookingScreen(args: cbArgs),
           ),
         );
 

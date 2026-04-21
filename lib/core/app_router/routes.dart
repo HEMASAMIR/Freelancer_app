@@ -18,4 +18,5 @@ class AppRoutes {
   static const String myListings = '/my-listings';
   static const String security = '/security';
   static const String userDashboard = '/userDashboard';
+  static const String confirmBooking = '/confirm-booking';
 }

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:freelancer/core/constant/constant.dart';
 
 class AuthInterceptor extends Interceptor {
@@ -13,13 +14,16 @@ class AuthInterceptor extends Interceptor {
     // Always attach anonKey to apikey header
     options.headers['apikey'] = SupabaseKeys.supabaseAnonKey;
 
-    // Retrieve JWT from local storage
-    final String? accessToken = sharedPreferences.getString('supabase_access_token');
-    
+    // 1️⃣ Try live session from Supabase client (always fresh / auto-refreshed)
+    String? accessToken = Supabase.instance.client.auth.currentSession?.accessToken;
+
+    // 2️⃣ Fallback to SharedPreferences (for startup before Supabase is ready)
+    accessToken ??= sharedPreferences.getString('supabase_access_token');
+
     if (accessToken != null && accessToken.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $accessToken';
     } else {
-      // Fallback to anon key for anonymous/public requests
+      // Public / anonymous request
       options.headers['Authorization'] = 'Bearer ${SupabaseKeys.supabaseAnonKey}';
     }
 

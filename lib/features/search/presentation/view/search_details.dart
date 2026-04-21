@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:freelancer/core/di/service_locator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/utils/widgets/custom_app_bar.dart';
-import 'package:freelancer/features/bookings/logic/cubit/bookings_state.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
@@ -17,6 +17,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/widgets/login_required_sheet.dart';
+import 'package:freelancer/features/bookings/presentation/view/confirm_booking_screen.dart';
+import 'package:freelancer/features/comments/logic/cubit/comments_cubit.dart';
+import 'package:freelancer/features/comments/presentation/widget/comments_section.dart';
 
 const Color airbnbMaroon = Color(0xFF710E1F);
 const Color airbnbBg = Color(0xFFF7F3F0);
@@ -72,6 +75,13 @@ class SearchDetails extends StatelessWidget {
                       // قسم المراجعات اللي كان ممسوح رجعناه هنا بشكل أشيك
                       _ReviewsDetailedSection(listing: listing),
                       const _CustomDivider(),
+                      // Comments & Q&A
+                      _CommentsHeader(),
+                      SizedBox(height: 12.h),
+                      BlocProvider(
+                        create: (_) => sl<CommentsCubit>(),
+                        child: CommentsSection(listingId: listing.id ?? ''),
+                      ),
                       _BookingCard(listing: listing),
                       SizedBox(height: 40.h),
                       const CustomFooter(),
@@ -225,6 +235,23 @@ class _ReviewsDetailedSection extends StatelessWidget {
         Text(
           "Be the first to review this place!",
           style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+        ),
+      ],
+    );
+  }
+}
+
+// Comments Header
+class _CommentsHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(Icons.chat_bubble_outline_rounded, size: 20.sp),
+        SizedBox(width: 8.w),
+        Text(
+          'Comments & Q&A',
+          style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -548,27 +575,11 @@ class _BookingCardState extends State<_BookingCard> {
                             return;
                           }
 
-                          final bool isVerified = authState is AuthAdminSuccess ||
-                            (authState is AuthSuccess && authState.user.userMetadata['is_identity_verified'] == true);
-
-                          if (!isVerified) {
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Identity verification required to book"),
-                                backgroundColor: airbnbMaroon,
-                              ),
-                            );
-                            if (!context.mounted) return;
-                            Navigator.pushNamed(context, AppRoutes.identityVerification);
-                            setState(() => isLoading = false);
-                            return;
-                          }
-
                           final userId = authState is AuthSuccess
                               ? authState.user.id
                               : (authState as AuthAdminSuccess).user.id;
 
+                          // Check availability first
                           final bool isAvailable =
                               await bookingCubit.checkAvailability(
                             widget.listing.id!,
@@ -576,47 +587,7 @@ class _BookingCardState extends State<_BookingCard> {
                             selectedDateRange!.end.toIso8601String(),
                           );
 
-                          if (isAvailable) {
-                            final commission =
-                                await bookingCubit.getCommissionRate();
-                            final days = selectedDateRange!.duration.inDays;
-                            final subtotal = (widget.listing.pricePerNight ?? 0) *
-                                (days > 0 ? days : 1);
-
-                            final isSuccess = await bookingCubit.createBooking(
-                              listingId: widget.listing.id!,
-                              userId: userId,
-                              checkIn: selectedDateRange!.start.toIso8601String(),
-                              checkOut: selectedDateRange!.end.toIso8601String(),
-                              guests: guestsCount,
-                              subtotal: subtotal,
-                              commissionRateId: commission?['id'],
-                            );
-
-                            if (context.mounted) {
-                              if (isSuccess) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("Booking created successfully!"),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                                Navigator.pushNamed(context, AppRoutes.trips);
-                              } else {
-                                final state = bookingCubit.state;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      state is BookingsError
-                                          ? state.message
-                                          : "Booking failed. Please try again.",
-                                    ),
-                                    backgroundColor: airbnbMaroon,
-                                  ),
-                                );
-                              }
-                            }
-                          } else {
+                          if (!isAvailable) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -624,6 +595,47 @@ class _BookingCardState extends State<_BookingCard> {
                                     "Selected dates are not available.",
                                   ),
                                   backgroundColor: airbnbMaroon,
+                                ),
+                              );
+                            }
+                          } else {
+                            final commission =
+                                await bookingCubit.getCommissionRate();
+                            final int days =
+                                selectedDateRange!.duration.inDays > 0
+                                    ? selectedDateRange!.duration.inDays
+                                    : 1;
+
+                            // Calculate pricing
+                            double subtotal = 0;
+                            for (int i = 0; i < days; i++) {
+                              final d = selectedDateRange!.start
+                                  .add(Duration(days: i));
+                              final isWeekend =
+                                  d.weekday == DateTime.friday ||
+                                  d.weekday == DateTime.saturday;
+                              subtotal += isWeekend
+                                  ? (widget.listing.pricePerNight ?? 0) * 1.15
+                                  : (widget.listing.pricePerNight ?? 0)
+                                      .toDouble();
+                            }
+                            final double serviceFee = subtotal * 0.10;
+                            final double total = subtotal + serviceFee;
+
+                            if (context.mounted) {
+                              // Navigate to Confirm Booking Screen
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.confirmBooking,
+                                arguments: ConfirmBookingArgs(
+                                  listing: widget.listing,
+                                  dateRange: selectedDateRange!,
+                                  guests: guestsCount,
+                                  subtotal: subtotal,
+                                  serviceFee: serviceFee,
+                                  total: total,
+                                  userId: userId,
+                                  commissionRateId: commission?['id'],
                                 ),
                               );
                             }
