@@ -282,16 +282,40 @@ class _TransactionTableState extends State<_TransactionTable> {
                   ],
                   rows: filteredHistory.isEmpty
                       ? []
-                      : filteredHistory.map((tx) {
-                          final status = tx['status'] ?? 'pending';
+                      : List<DataRow>.generate(filteredHistory.length, (index) {
+                          // Calculate running balance (from oldest to newest)
+                          // Since list is descending, index 0 is newest. So running balance up to index i
+                          // is total available balance minus all newer transactions.
+                          
+                          // First, sum all subtotal for this logic
+                          // For a more accurate "Balance After", we simply accumulate subtotals backwards
+                          
+                          final currentTx = filteredHistory[index];
+                          final status = currentTx['status'] ?? 'pending';
                           final isCredit = status == 'confirmed' || status == 'completed';
-                          final subtotal = (tx['subtotal'] as num?)?.toDouble() ?? 0.0;
-                          final listingTitle = (tx['listing'] is Map)
-                              ? tx['listing']['title'] as String? ?? 'Booking'
-                              : 'Booking';
-                          final date = tx['created_at'] != null
-                              ? DateFormat('MMM d, yyyy').format(DateTime.parse(tx['created_at']))
+                          final subtotal = (currentTx['subtotal'] as num?)?.toDouble() ?? 0.0;
+                          final listingTitle = (currentTx['listing'] is Map)
+                              ? currentTx['listing']['title'] as String? ?? 'Listing'
+                              : 'Listing';
+                          
+                          final date = currentTx['created_at'] != null
+                              ? DateFormat('MMM d, yyyy').format(DateTime.parse(currentTx['created_at']))
                               : '-';
+
+                          final description = 'Payment for $listingTitle';
+                          
+                          // Calculate balance after:
+                          // If we don't have the absolute global balance at time of tx, we can estimate running sum of just these txs
+                          // or leave it as '-' if it's pending. Let's do a simple running sum of shown items for demonstration:
+                          double runningBalance = 0.0;
+                          for(int i = filteredHistory.length - 1; i >= index; i--) {
+                            final st = filteredHistory[i]['status'];
+                            if (st == 'confirmed' || st == 'completed') {
+                              runningBalance += (filteredHistory[i]['subtotal'] as num?)?.toDouble() ?? 0.0;
+                            }
+                          }
+                          
+                          final balanceAfterStr = isCredit ? 'EGP ${runningBalance.toStringAsFixed(0)}' : 'Pending';
 
                           return DataRow(cells: [
                             DataCell(Text(date, style: const TextStyle(fontSize: 13))),
@@ -313,10 +337,10 @@ class _TransactionTableState extends State<_TransactionTable> {
                               ),
                             ),
                             DataCell(Text('EGP ${subtotal.toStringAsFixed(0)}', style: const TextStyle(fontSize: 13))),
-                            DataCell(Text(listingTitle, style: const TextStyle(fontSize: 13))),
-                            DataCell(Text('-', style: TextStyle(fontSize: 13, color: AppColors.sub))),
+                            DataCell(Text(description, style: const TextStyle(fontSize: 13))),
+                            DataCell(Text(balanceAfterStr, style: TextStyle(fontSize: 13, color: AppColors.sub, fontWeight: FontWeight.w500))),
                           ]);
-                        }).toList(),
+                        }),
                 ),
               ),
               if (filteredHistory.isEmpty)

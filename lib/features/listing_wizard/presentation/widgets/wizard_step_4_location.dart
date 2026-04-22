@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/constant/constant.dart';
@@ -61,13 +62,15 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
   }
 
   void _updateMapUrl(double lat, double lng) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
     final url =
-        'https://staticmap.openstreetmap.de/staticmap.php'
-        '?center=$lat,$lng'
-        '&zoom=14'
-        '&size=600x300'
-        '&maptype=mapnik'
-        '&markers=$lat,$lng,red-pushpin';
+        'https://static-maps.yandex.ru/1.x/'
+        '?lang=en_US'
+        '&ll=$lng,$lat'
+        '&z=14'
+        '&l=map'
+        '&size=600,300'
+        '&_t=$timestamp'; // bypass cache
     if (mounted) {
       setState(() {
         _mapImageUrl = url;
@@ -212,43 +215,56 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
                             ],
                           ),
                         )
-                      : Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.network(
-                              _mapImageUrl,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    color: AppColors.primaryRed,
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
+                      : GestureDetector(
+                          onTap: () async {
+                            final lat = double.tryParse(_latController.text.trim());
+                            final lng = double.tryParse(_lngController.text.trim());
+                            if (lat != null && lng != null) {
+                              final gmapsUrl = 'https://maps.google.com/?q=$lat,$lng';
+                              if (await canLaunchUrl(Uri.parse(gmapsUrl))) {
+                                await launchUrl(Uri.parse(gmapsUrl), mode: LaunchMode.externalApplication);
+                              }
+                            }
+                          },
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.network(
+                                _mapImageUrl,
+                                key: ValueKey(_mapImageUrl),
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Center(
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.primaryRed,
+                                      value: loadingProgress.expectedTotalBytes != null
+                                          ? loadingProgress.cumulativeBytesLoaded /
+                                              loadingProgress.expectedTotalBytes!
+                                          : null,
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) => Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.broken_image_outlined, size: 36.sp, color: AppColors.greyText),
+                                      SizedBox(height: 8.h),
+                                      Text('Map preview unavailable', style: TextStyle(fontSize: 12.sp, color: AppColors.greyText)),
+                                    ],
                                   ),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) => Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.broken_image_outlined, size: 36.sp, color: AppColors.greyText),
-                                    SizedBox(height: 8.h),
-                                    Text('Map preview unavailable', style: TextStyle(fontSize: 12.sp, color: AppColors.greyText)),
-                                  ],
                                 ),
                               ),
-                            ),
-                            // Pin overlay at center
-                            Align(
-                              alignment: Alignment.center,
-                              child: Icon(Icons.location_on, size: 40.sp, color: AppColors.primaryRed, shadows: [
-                                Shadow(blurRadius: 8, color: Colors.black38),
-                              ]),
-                            ),
-                          ],
+                              // Pin overlay at center
+                              Align(
+                                alignment: Alignment.center,
+                                child: Icon(Icons.location_on, size: 40.sp, color: AppColors.primaryRed, shadows: const [
+                                  Shadow(blurRadius: 8, color: Colors.black38),
+                                ]),
+                              ),
+                            ],
+                          ),
                         ),
                 ),
               ),

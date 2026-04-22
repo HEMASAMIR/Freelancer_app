@@ -763,6 +763,8 @@ class SettingsTab extends StatelessWidget {
         _buildSettingCard(Icons.payment_outlined, 'Payments & Payouts', 'Review payments, payouts, and taxes', onTap: () {
           if (onViewChanged != null) {
             onViewChanged!('Earnings & Balance');
+          } else {
+            Navigator.pushNamed(context, AppRoutes.hostDashboard);
           }
         }),
         SizedBox(height: 16.h),
