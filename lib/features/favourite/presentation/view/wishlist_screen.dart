@@ -157,7 +157,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 1,
-                            childAspectRatio: 1.4,
+                            childAspectRatio: 1.2,
                             mainAxisSpacing: 16,
                           ),
                       itemCount: state.wishlists.length,
@@ -264,6 +264,7 @@ class _WishlistCard extends StatelessWidget {
         );
       },
       child: Container(
+        clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
           color: const Color(0xFFF0EBE3),
           borderRadius: BorderRadius.circular(20),
@@ -322,6 +323,8 @@ class _WishlistCard extends StatelessWidget {
                 children: [
                   Text(
                     wishlist.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -330,6 +333,8 @@ class _WishlistCard extends StatelessWidget {
                   ),
                   const Text(
                     'Saved listings',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 13, color: AppColors.sub),
                   ),
                 ],

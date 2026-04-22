@@ -260,6 +260,7 @@ class AppRouter {
                   child: EarningsBalanceView(),
                 ),
               ),
+              bottomNavigationBar: _buildGlobalFooter(),
             ),
           ),
         );
@@ -290,4 +291,82 @@ class AppRouter {
       ),
     );
   }
+
+  static Widget _buildGlobalFooter() {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFF6F1E6),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Divider(color: AppColors.dividerGrey, height: 1),
+          const SizedBox(height: 16),
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 24,
+            runSpacing: 12,
+            children: [
+              Text(
+                '© 2026 QuickIn, Inc.',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.ink.withValues(alpha: 0.7),
+                ),
+              ),
+              _footerTextButton('Terms'),
+              const Text('·', style: TextStyle(color: AppColors.greyText)),
+              _footerTextButton('Sitemap'),
+              const Text('·', style: TextStyle(color: AppColors.greyText)),
+              _footerTextButton('Privacy'),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  'https://flagcdn.com/w40/eg.png',
+                  height: 24,
+                  width: 24,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.public, size: 24, color: AppColors.greyText),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                '\$ EGP',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.ink,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+
+  static Widget _footerTextButton(String text) {
+    return InkWell(
+      onTap: () {},
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: AppColors.ink.withValues(alpha: 0.7),
+        ),
+      ),
+    );
+  }
 }
+

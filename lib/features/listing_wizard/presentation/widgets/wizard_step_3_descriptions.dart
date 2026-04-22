@@ -10,7 +10,8 @@ class WizardStep3Descriptions extends StatefulWidget {
   const WizardStep3Descriptions({super.key});
 
   @override
-  State<WizardStep3Descriptions> createState() => _WizardStep3DescriptionsState();
+  State<WizardStep3Descriptions> createState() =>
+      _WizardStep3DescriptionsState();
 }
 
 class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
@@ -36,13 +37,13 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
 
   void _updateForm() {
     context.read<ListingFormCubit>().setTitles(
-          en: _titleEnController.text,
-          ar: _titleArController.text,
-        );
+      en: _titleEnController.text,
+      ar: _titleArController.text,
+    );
     context.read<ListingFormCubit>().setDescriptions(
-          en: _descEnController.text,
-          ar: _descArController.text,
-        );
+      en: _descEnController.text,
+      ar: _descArController.text,
+    );
   }
 
   @override
@@ -115,7 +116,7 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
               );
             },
           ),
-          
+
           _buildConditionsSection(),
         ],
       ),
@@ -151,7 +152,10 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
             style: TextStyle(fontSize: 15.sp, color: AppColors.inkBlack),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(fontSize: 15.sp, color: AppColors.greyText.withValues(alpha: 0.5)),
+              hintStyle: TextStyle(
+                fontSize: 15.sp,
+                color: AppColors.greyText.withValues(alpha: 0.5),
+              ),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
@@ -175,7 +179,11 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
             padding: EdgeInsets.only(top: 8.h),
             child: Text(
               errorMsg,
-              style: TextStyle(fontSize: 13.sp, color: AppColors.primaryRed, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: AppColors.primaryRed,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         SizedBox(height: 24.h),
@@ -187,7 +195,7 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
     return BlocBuilder<ListingWizardCubit, ListingWizardState>(
       builder: (context, wizardState) {
         if (wizardState is! ListingWizardLookupsLoaded) {
-          return const SizedBox.shrink(); 
+          return const SizedBox.shrink();
         }
 
         return Column(
@@ -195,15 +203,25 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
           children: [
             Text(
               'Listing Conditions / House Rules',
-              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.inkBlack),
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.inkBlack,
+              ),
             ),
             SizedBox(height: 8.h),
             BlocBuilder<ListingFormCubit, ListingFormState>(
               builder: (context, formState) {
                 return GestureDetector(
-                  onTap: () => _showConditionsSheet(context, wizardState.listingConditions),
+                  onTap: () => _showConditionsSheet(
+                    context,
+                    wizardState.listingConditions,
+                  ),
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 14.h,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       border: Border.all(color: AppColors.dividerGrey),
@@ -212,17 +230,35 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          formState.selectedConditionIds.isEmpty
-                              ? 'Select conditions or type to create...'
-                              : '${formState.selectedConditionIds.length} Conditions Selected',
-                          style: TextStyle(
-                            fontSize: 15.sp,
-                            color: formState.selectedConditionIds.isEmpty ? AppColors.greyText.withValues(alpha: 0.5) : AppColors.inkBlack,
-                            fontWeight: formState.selectedConditionIds.isEmpty ? FontWeight.w400 : FontWeight.w600,
+                        // 1. تغليف النص بـ Expanded لمنع التجاوز
+                        Expanded(
+                          child: Text(
+                            formState.selectedConditionIds.isEmpty
+                                ? 'Select conditions or type to create...'
+                                : '${formState.selectedConditionIds.length} Conditions Selected',
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              color: formState.selectedConditionIds.isEmpty
+                                  ? AppColors.greyText.withValues(alpha: 0.5)
+                                  : AppColors.inkBlack,
+                              fontWeight: formState.selectedConditionIds.isEmpty
+                                  ? FontWeight.w400
+                                  : FontWeight.w600,
+                            ),
+                            // 2. إضافة هذه الخصائص للتعامل مع النصوص الطويلة
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Icon(Icons.keyboard_arrow_down, color: AppColors.greyText),
+
+                        // مسافة بسيطة بين النص والأيقونة
+                        SizedBox(width: 8.w),
+
+                        // 3. الأيقونة ستبقى في مكانها في جهة اليمين
+                        Icon(
+                          Icons.keyboard_arrow_down,
+                          color: AppColors.greyText,
+                        ),
                       ],
                     ),
                   ),
@@ -241,7 +277,10 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
     );
   }
 
-  void _showConditionsSheet(BuildContext context, List<dynamic> conditionsList) {
+  void _showConditionsSheet(
+    BuildContext context,
+    List<dynamic> conditionsList,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -257,13 +296,21 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
           maxChildSize: 0.95,
           builder: (_, scrollController) {
             return BlocProvider.value(
-              value: context.read<ListingFormCubit>(), // Pass the cubit to modal scope
+              value: context
+                  .read<ListingFormCubit>(), // Pass the cubit to modal scope
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(height: 16.h),
                   Center(
-                    child: Container(width: 40.w, height: 4.h, decoration: BoxDecoration(color: AppColors.dividerGrey, borderRadius: BorderRadius.circular(2.r))),
+                    child: Container(
+                      width: 40.w,
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: AppColors.dividerGrey,
+                        borderRadius: BorderRadius.circular(2.r),
+                      ),
+                    ),
                   ),
                   SizedBox(height: 24.h),
                   Padding(
@@ -274,7 +321,10 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
                         prefixIcon: const Icon(Icons.search),
                         filled: true,
                         fillColor: Colors.white,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide.none),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
                   ),
@@ -287,16 +337,42 @@ class _WizardStep3DescriptionsState extends State<WizardStep3Descriptions> {
                           itemCount: conditionsList.length,
                           itemBuilder: (context, index) {
                             final condition = conditionsList[index];
-                            final isSelected = formState.selectedConditionIds.contains(condition.id.toString());
+                            final isSelected = formState.selectedConditionIds
+                                .contains(condition.id.toString());
 
                             return ListTile(
-                              contentPadding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
-                              tileColor: isSelected ? Colors.white : Colors.transparent,
-                              title: Text(condition.name, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600, color: AppColors.inkBlack)),
-                              subtitle: Text(condition.description ?? '', style: TextStyle(fontSize: 13.sp, color: AppColors.greyText)),
-                              trailing: isSelected ? const Icon(Icons.check, color: AppColors.inkBlack) : null,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 24.w,
+                                vertical: 8.h,
+                              ),
+                              tileColor: isSelected
+                                  ? Colors.white
+                                  : Colors.transparent,
+                              title: Text(
+                                condition.name,
+                                style: TextStyle(
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.inkBlack,
+                                ),
+                              ),
+                              subtitle: Text(
+                                condition.description ?? '',
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: AppColors.greyText,
+                                ),
+                              ),
+                              trailing: isSelected
+                                  ? const Icon(
+                                      Icons.check,
+                                      color: AppColors.inkBlack,
+                                    )
+                                  : null,
                               onTap: () {
-                                context.read<ListingFormCubit>().toggleCondition(condition.id.toString());
+                                context
+                                    .read<ListingFormCubit>()
+                                    .toggleCondition(condition.id.toString());
                               },
                             );
                           },

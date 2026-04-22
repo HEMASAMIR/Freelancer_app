@@ -270,8 +270,7 @@ class _CommentsSectionState extends State<CommentsSection> {
             SizedBox(width: 6.w),
             Expanded(
               child: Text(
-                'Warning: You agree to receive an email if someone replies to this post. '
-                'Comments will be deleted if they contain offensive content.',
+                'Warning: Sharing phone numbers or contact information in comments will result in an immediate account ban.',
                 style: TextStyle(
                   fontSize: 10.sp,
                   color: Colors.grey.shade500,

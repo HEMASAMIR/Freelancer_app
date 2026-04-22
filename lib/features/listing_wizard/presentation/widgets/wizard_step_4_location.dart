@@ -20,6 +20,10 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
   late TextEditingController _lngController;
   late TextEditingController _addressController;
 
+  String _mapImageUrl = '';
+  static const double _defaultLat = 30.0444;
+  static const double _defaultLng = 31.2357;
+
   @override
   void initState() {
     super.initState();
@@ -30,9 +34,12 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
     _addressController = TextEditingController(text: formState.address);
 
     _mapLinkController.addListener(_updateForm);
-    _latController.addListener(_updateForm);
-    _lngController.addListener(_updateForm);
+    _latController.addListener(_onCoordsChanged);
+    _lngController.addListener(_onCoordsChanged);
     _addressController.addListener(_updateForm);
+
+    // Build initial map URL
+    _updateMapUrl(_defaultLat, _defaultLng);
   }
 
   void _updateForm() {
@@ -42,6 +49,30 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
           lng: _lngController.text,
           address: _addressController.text,
         );
+  }
+
+  void _onCoordsChanged() {
+    _updateForm();
+    final lat = double.tryParse(_latController.text.trim());
+    final lng = double.tryParse(_lngController.text.trim());
+    if (lat != null && lng != null) {
+      _updateMapUrl(lat, lng);
+    }
+  }
+
+  void _updateMapUrl(double lat, double lng) {
+    final url =
+        'https://staticmap.openstreetmap.de/staticmap.php'
+        '?center=$lat,$lng'
+        '&zoom=14'
+        '&size=600x300'
+        '&maptype=mapnik'
+        '&markers=$lat,$lng,red-pushpin';
+    if (mounted) {
+      setState(() {
+        _mapImageUrl = url;
+      });
+    }
   }
 
   @override
@@ -160,23 +191,65 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
 
               SizedBox(height: 32.h),
 
-              // ─── Map Placeholder ───
-              Container(
-                height: 180.h,
-                width: double.infinity,
-                decoration: BoxDecoration(
+              // ─── Dynamic Map Preview ───
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16.r),
+                child: Container(
+                  height: 180.h,
+                  width: double.infinity,
                   color: AppColors.dividerGrey,
-                  borderRadius: BorderRadius.circular(16.r),
-                  image: const DecorationImage(
-                    image: NetworkImage('https://i.stack.imgur.com/HILmr.png'), // generic map placeholder
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Icon(Icons.location_on, size: 40.sp, color: AppColors.primaryRed),
-                  ],
+                  child: _mapImageUrl.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.map_outlined, size: 40.sp, color: AppColors.greyText),
+                              SizedBox(height: 8.h),
+                              Text(
+                                'Select a location to preview map',
+                                style: TextStyle(fontSize: 13.sp, color: AppColors.greyText),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.network(
+                              _mapImageUrl,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.primaryRed,
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) => Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.broken_image_outlined, size: 36.sp, color: AppColors.greyText),
+                                    SizedBox(height: 8.h),
+                                    Text('Map preview unavailable', style: TextStyle(fontSize: 12.sp, color: AppColors.greyText)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // Pin overlay at center
+                            Align(
+                              alignment: Alignment.center,
+                              child: Icon(Icons.location_on, size: 40.sp, color: AppColors.primaryRed, shadows: [
+                                Shadow(blurRadius: 8, color: Colors.black38),
+                              ]),
+                            ),
+                          ],
+                        ),
                 ),
               ),
               SizedBox(height: 32.h),

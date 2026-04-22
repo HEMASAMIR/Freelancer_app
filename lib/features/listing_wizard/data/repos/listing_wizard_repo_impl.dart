@@ -97,25 +97,38 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
     }
   }
 
+  /// Returns the current user's Bearer token (always fresh from Supabase session)
+  Options _authOptions() {
+    final token = supabase.auth.currentSession?.accessToken;
+    if (token == null || token.isEmpty) {
+      debugPrint('⚠️ No active Supabase session — request will likely fail RLS');
+    }
+    return Options(
+      headers: {
+        'Authorization': 'Bearer ${token ?? ''}',
+        'apikey': SupabaseKeys.supabaseAnonKey,
+        'Prefer': 'return=representation',
+      },
+    );
+  }
+
   @override
   Future<Either<String, ListingModel>> createPrimaryListing(Map<String, dynamic> listingData) async {
     try {
       final response = await dio.post(
         SupabaseKeys.listingsRest,
         data: listingData,
-        queryParameters: {'select': '*'}, // To return the created item
-        options: Options(headers: {'Prefer': 'return=representation'}),
+        queryParameters: {'select': '*'},
+        options: _authOptions(),
       );
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final List data = response.data;
-        if (data.isNotEmpty) {
-          return Right(ListingModel.fromJson(data.first));
-        }
+        if (data.isNotEmpty) return Right(ListingModel.fromJson(data.first));
       }
-      return const Left("فشل في إنشاء العقار الأساسي.");
+      return const Left('فشل في إنشاء العقار الأساسي.');
     } on DioException catch (e) {
-      return Left(e.message ?? "حدث خطأ في الشبكة");
+      debugPrint('❌ Dio Error creating listing: ${e.response?.data} | ${e.message}');
+      return Left(e.response?.data?['message'] ?? e.message ?? 'حدث خطأ في الشبكة');
     } catch (e) {
       return Left(e.toString());
     }
@@ -123,17 +136,17 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
 
   @override
   Future<Either<String, void>> bulkLinkImages(List<Map<String, dynamic>> imagesData) async {
-    return _postBulk(SupabaseKeys.listingImagesRest, imagesData, "فشل في ربط الصور.");
+    return _postBulk(SupabaseKeys.listingImagesRest, imagesData, 'فشل في ربط الصور.');
   }
 
   @override
   Future<Either<String, void>> bulkLinkLifestyleTags(List<Map<String, dynamic>> tagsData) async {
-    return _postBulk(SupabaseKeys.listingLifestylesRest, tagsData, "فشل في ربط فئات نمط الحياة.");
+    return _postBulk(SupabaseKeys.listingLifestylesRest, tagsData, 'فشل في ربط فئات نمط الحياة.');
   }
 
   @override
   Future<Either<String, void>> bulkLinkConditions(List<Map<String, dynamic>> conditionsData) async {
-    return _postBulk(SupabaseKeys.listingConditionAssignmentsRest, conditionsData, "فشل في ربط الشروط.");
+    return _postBulk(SupabaseKeys.listingConditionAssignmentsRest, conditionsData, 'فشل في ربط الشروط.');
   }
 
   // Helper method for GET requests that return lists
@@ -181,15 +194,16 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
       final response = await dio.post(
         endpoint,
         data: data,
+        options: _authOptions(),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204) {
         return const Right(null);
       }
       return Left(errorMessage);
     } on DioException catch (e) {
-      debugPrint("❌ Dio Error posting to $endpoint: ${e.message}");
-      return Left(e.message ?? "حدث خطأ في الشبكة");
+      debugPrint("❌ Dio Error posting to $endpoint: ${e.response?.data} | ${e.message}");
+      return Left(e.response?.data?['message'] ?? e.message ?? "حدث خطأ في الشبكة");
     } catch (e) {
       debugPrint("❌ Unexpected Error posting to $endpoint: $e");
       return Left("خطأ غير متوقع: ${e.toString()}");
