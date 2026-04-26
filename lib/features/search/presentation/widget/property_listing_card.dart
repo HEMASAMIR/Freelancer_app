@@ -8,6 +8,7 @@ import 'package:freelancer/features/favourite/presentation/widget/wishlist_botto
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:shimmer/shimmer.dart';
 
 class PropertyListingCard extends StatelessWidget {
   final ListingModel listing;
@@ -48,8 +49,21 @@ class PropertyListingCard extends StatelessWidget {
                     height: 280.h,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Shimmer.fromColors(
+                        baseColor: Colors.grey[300]!,
+                        highlightColor: Colors.grey[100]!,
+                        child: Container(
+                          height: 280.h,
+                          width: double.infinity,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
                     errorBuilder: (context, error, stackTrace) => Container(
                       height: 280.h,
+                      width: double.infinity,
                       color: Colors.grey[200],
                       child: const Icon(Icons.broken_image, color: Colors.grey),
                     ),

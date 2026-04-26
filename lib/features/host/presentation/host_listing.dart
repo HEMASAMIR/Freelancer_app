@@ -14,6 +14,7 @@ import 'package:freelancer/features/listing_wizard/logic/cubit/listing_form_cubi
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_wizard_cubit.dart';
 import 'package:freelancer/features/listing_wizard/presentation/view/listing_wizard_screen.dart';
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
+import 'package:shimmer/shimmer.dart';
 
 class HostListingsView extends StatefulWidget {
   final Function(ListingModel) onShowDetails;
@@ -348,8 +349,21 @@ class _HostListingCard extends StatelessWidget {
                     height: 120,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Shimmer.fromColors(
+                        baseColor: Colors.grey[300]!,
+                        highlightColor: Colors.grey[100]!,
+                        child: Container(
+                          height: 120,
+                          width: double.infinity,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
                     errorBuilder: (_, __, ___) => Container(
                       height: 120,
+                      width: double.infinity,
                       color: Colors.grey.shade200,
                       child: const Icon(Icons.home_outlined,
                           size: 40, color: Colors.grey),
@@ -357,6 +371,7 @@ class _HostListingCard extends StatelessWidget {
                   )
                 : Container(
                     height: 120,
+                    width: double.infinity,
                     color: Colors.grey.shade200,
                     child: const Icon(Icons.home_outlined,
                         size: 40, color: Colors.grey),
