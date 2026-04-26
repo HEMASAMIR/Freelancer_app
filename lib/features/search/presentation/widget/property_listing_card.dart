@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/core/widgets/login_required_sheet.dart';

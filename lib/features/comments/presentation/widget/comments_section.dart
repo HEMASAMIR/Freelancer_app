@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -413,7 +414,7 @@ class _CommentTile extends StatelessWidget {
                 radius: 16.r,
                 backgroundColor: _maroon.withValues(alpha: 0.1),
                 backgroundImage: comment.authorAvatar != null
-                    ? NetworkImage(comment.authorAvatar!)
+                    ? CachedNetworkImageProvider(comment.authorAvatar!)
                     : null,
                 child: comment.authorAvatar == null
                     ? Text(

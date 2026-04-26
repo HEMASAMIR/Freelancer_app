@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -24,7 +25,7 @@ class PropertyMapSection extends StatelessWidget {
             color: Colors.blue[50],
             borderRadius: BorderRadius.circular(15.r),
             image: const DecorationImage(
-              image: NetworkImage(
+              image: CachedNetworkImageProvider(
                 'https://static-maps.yandex.ru/1.x/?lang=en_US&ll=31.2357,30.0444&z=12&l=map&size=450,450',
               ),
               fit: BoxFit.cover,

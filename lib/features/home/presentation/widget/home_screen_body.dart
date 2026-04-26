@@ -24,8 +24,8 @@ class _HomescreenBodyState extends State<HomescreenBody> {
 
   final List<String> categories = [
     'Best Offers',
-    'Marakia',
     'Main Office',
+    'Marakia',
     'Cairo',
   ];
 
@@ -103,7 +103,9 @@ class _HomescreenBodyState extends State<HomescreenBody> {
                       padding: EdgeInsets.symmetric(vertical: 40),
                       child: Center(
                         child: CircularProgressIndicator(
-                            color: AppColors.primaryBurgundy, strokeWidth: 2.5),
+                          color: AppColors.primaryBurgundy,
+                          strokeWidth: 2.5,
+                        ),
                       ),
                     );
                   }
@@ -111,8 +113,10 @@ class _HomescreenBodyState extends State<HomescreenBody> {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 24),
                       child: Center(
-                        child: Text(state.message,
-                            style: const TextStyle(color: AppColors.greyText)),
+                        child: Text(
+                          state.message,
+                          style: const TextStyle(color: AppColors.greyText),
+                        ),
                       ),
                     );
                   }
@@ -123,15 +127,20 @@ class _HomescreenBodyState extends State<HomescreenBody> {
                         child: Center(
                           child: Column(
                             children: [
-                              Icon(Icons.home_outlined,
-                                  size: 40,
-                                  color:
-                                      AppColors.greyText.withValues(alpha: 0.4)),
+                              Icon(
+                                Icons.home_outlined,
+                                size: 40,
+                                color: AppColors.greyText.withValues(
+                                  alpha: 0.4,
+                                ),
+                              ),
                               const SizedBox(height: 12),
                               Text(
                                 'No listings found',
                                 style: TextStyle(
-                                    fontSize: 15.sp, color: AppColors.greyText),
+                                  fontSize: 15.sp,
+                                  color: AppColors.greyText,
+                                ),
                               ),
                             ],
                           ),
@@ -141,14 +150,16 @@ class _HomescreenBodyState extends State<HomescreenBody> {
                     return Column(
                       children: state.listings
                           .take(5) // show first 5 on home
-                          .map((listing) => PropertyListingCard(
-                                listing: listing,
-                                onTap: () => Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.details,
-                                  arguments: listing,
-                                ),
-                              ))
+                          .map(
+                            (listing) => PropertyListingCard(
+                              listing: listing,
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                AppRoutes.details,
+                                arguments: listing,
+                              ),
+                            ),
+                          )
                           .toList(),
                     );
                   }

@@ -36,6 +36,7 @@ dependencies:
   dotted_border: ^3.1.0
   image_picker: ^1.2.1
   share_plus: ^13.0.0
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:
@@ -47,6 +48,8 @@ dev_dependencies:
 
 
   flutter_lints: ^6.0.0
+  image: ^4.8.0
+  flutter_native_splash: ^2.4.7
 
 
 flutter:
@@ -60,10 +63,10 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/logo.jpeg"
+  image_path: "assets/images/logo_padded.png"
   min_sdk_android: 21
   adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: "assets/images/logo.jpeg"
+  adaptive_icon_foreground: "assets/images/logo_padded.png"
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
@@ -89,3 +92,10 @@ flutter_launcher_icons:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: "assets/images/splash_padded.png"
+  android_12:
+    image: "assets/images/splash_padded.png"
+    icon_background_color: "#ffffff"

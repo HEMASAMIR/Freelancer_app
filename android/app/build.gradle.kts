@@ -44,5 +44,10 @@ configurations.all {
         force("androidx.core:core-ktx:1.15.0")
         force("androidx.activity:activity:1.9.3")
         force("androidx.activity:activity-ktx:1.9.3")
+
+        force("org.jetbrains.kotlin:kotlin-stdlib:2.1.0")
+        force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.0")
+        force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.0")
+        force("org.jetbrains.kotlin:kotlin-stdlib-common:2.1.0")
     }
 }

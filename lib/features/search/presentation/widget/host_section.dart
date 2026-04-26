@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -20,7 +21,7 @@ class HostSection extends StatelessWidget {
         CircleAvatar(
           radius: 28.r,
           backgroundColor: Colors.grey[200],
-          backgroundImage: selfieUrl != null ? NetworkImage(selfieUrl!) : null,
+          backgroundImage: selfieUrl != null ? CachedNetworkImageProvider(selfieUrl!) : null,
           child: selfieUrl == null
               ? const Icon(Icons.person, color: Colors.grey)
               : null,

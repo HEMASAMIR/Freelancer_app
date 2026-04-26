@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -13,7 +14,7 @@ class HeroWidget extends StatelessWidget {
           height: 480.h,
           decoration: const BoxDecoration(
             image: DecorationImage(
-              image: NetworkImage(
+              image: CachedNetworkImageProvider(
                 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=1000',
               ),
               fit: BoxFit.cover,
