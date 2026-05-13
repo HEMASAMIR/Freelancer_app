@@ -11,7 +11,6 @@ class SupabaseKeys {
   static const String adminApiBaseUrl = '$supabaseUrl/api/admin/';
   static const String authBaseUrl = '$supabaseUrl/auth/v1/';
 
-
   static const String searchRpc = 'rpc/search_listings';
   static const String listingsRest = 'listings';
   static const String wishlists = 'wishlists';
@@ -31,7 +30,15 @@ class SupabaseKeys {
   static const String cities = 'cities';
   static const String listingImagesRest = 'listing_images';
   static const String listingLifestylesRest = 'listing_lifestyles';
-  static const String listingConditionAssignmentsRest = 'listing_condition_assignments';
+  static const String listingConditionAssignmentsRest =
+      'listing_condition_assignments';
+  // ✅ Google Sign-In — Web OAuth 2.0 Client ID (من Supabase Dashboard)
+  static const String googleWebClientId =
+      '406585059291-hhcggf23qmpqu31hj1ji6kqdcjq7p16r.apps.googleusercontent.com'; // ← حط هنا الـ Web Client ID من Google Cloud Console
+
+  // ⚠️ iOS Client ID (عشان تسجيل الدخول ميضربش على الآيفون)
+  static const String googleIosClientId =
+      '1039435735806-don87npm4uboeng645918r85f99i0ivm.apps.googleusercontent.com'; // ← حط الـ iOS Client ID هنا من Google Cloud Console
 
   // Host Management endpoints
   static const String userBalanceRpc = 'rpc/get_user_balance';
@@ -67,7 +74,7 @@ class AppColors {
   static const Color dividerGrey = Color(0xFFDDDDDD);
   static const Color inkBlack = Color(0xFF222222);
   static const Color selectedBg = Color(0xFFF5ECEC);
-  
+
   // Aliases for compatibility with legacy code
   static const Color sub = greyText;
   static const Color grey = greyText;
@@ -82,3 +89,8 @@ class AppColors {
   static const Color iconRed = Color(0xFFF44336);
   static const Color iconGrey = Color(0xFF9E9E9E);
 }
+/**
+ * 81:F1:72:AF:AA:AD:66:F6:6F:B0:72:12:77:56:58:3E:E3:BF:29:7A
+ * 81:F1:72:AF:AA:AD:66:F6:6F:B0:72:12:77:56:58:3E:E3:BF:29:7A
+ * B8:1C:C8:E2:87:B7:CD:AD:3C:33:6A:D1:96:D1:B4:C4:66:20:42:AC
+ */

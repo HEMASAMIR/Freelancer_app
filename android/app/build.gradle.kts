@@ -2,14 +2,16 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
+    // id("com.google.gms.google-services") // ← شغّله بعد ما تحط google-services.json الحقيقي
 }
 
 android {
-    namespace = "com.example.freelancer"
+    namespace = "com.ejabatech.quickin"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -19,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.freelancer"
+        applicationId = "com.ejabatech.quickin"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -50,4 +52,8 @@ configurations.all {
         force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.0")
         force("org.jetbrains.kotlin:kotlin-stdlib-common:2.1.0")
     }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
 }

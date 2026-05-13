@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/shared_helper/app_color.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
-import 'package:freelancer/features/auth/view/presentation/view/help_center.dart';
+import 'package:freelancer/core/utils/widgets/elegant_toast.dart';
 
 enum DrawerMode { home, user, admin }
 
@@ -27,14 +27,29 @@ class _SideDrawerState extends State<SideDrawer> {
 
     final navigator = Navigator.of(context);
     final authCubit = context.read<AuthCubit>();
-    final messenger = ScaffoldMessenger.of(context);
 
     navigator.pop();
+
+    if (item != 'Log out' && item != 'Logout') {
+      ElegantToast.show(
+        context,
+        'Opening $item...',
+        icon: Icons.auto_awesome_mosaic_rounded,
+      );
+    } else {
+      ElegantToast.show(
+        context,
+        'Logging out...',
+        icon: Icons.logout_rounded,
+      );
+    }
 
     if (item == 'Host Your Home') {
       final state = authCubit.state;
       if (state is AuthSuccess || state is AuthAdminSuccess) {
         navigator.pushNamed(AppRoutes.hostDashboard);
+      } else {
+        if (context.mounted) _showLoginDialog(context);
       }
       return;
     }
@@ -42,19 +57,15 @@ class _SideDrawerState extends State<SideDrawer> {
     Future.delayed(Duration.zero, () {
       if (item == 'Log out' || item == 'Logout') {
         authCubit.signOut();
+        navigator.pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
       } else if (item == 'Log in') {
         if (context.mounted) _showLoginDialog(context);
-      } else if (item == 'Help Center') {
-        navigator.push(MaterialPageRoute(builder: (_) => const HelpCenter()));
+      } else if (item == 'Sign up') {
+        navigator.pushNamed(AppRoutes.signUp);
       } else if (item == 'Settings') {
         navigator.pushNamed(AppRoutes.account, arguments: 2);
       } else if (item == 'Notifications') {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text("$item coming soon!"),
-            backgroundColor: Colors.blueGrey,
-          ),
-        );
+        navigator.pushNamed(AppRoutes.notifications);
       } else if (widget.onItemSelected != null &&
           item != 'Dashboard' &&
           item != 'Overview' &&
@@ -127,7 +138,7 @@ class _SideDrawerState extends State<SideDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthCubit, AuthState>(
+    return BlocBuilder<AuthCubit, AuthCubitState>(
       builder: (context, state) {
         DrawerMode mode = DrawerMode.home;
         dynamic currentUser;
@@ -188,13 +199,16 @@ class _SideDrawerState extends State<SideDrawer> {
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: AppColors.ink,
                   height: 1.1,
                 ),
               ),
               Text(
                 'Your Dashboard',
-                style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: AppColors.sub,
+                ),
               ),
             ],
           ),
@@ -208,12 +222,12 @@ class _SideDrawerState extends State<SideDrawer> {
       return [
         _buildSectionHeader('Welcome', context, mode),
         _buildNavigationItem('Log in', Icons.login, context, mode),
-        _buildNavigationItem('Sign up', Icons.app_registration, context, mode),
-        SizedBox(height: 16.h),
+        _buildNavigationItem('Sign up', Icons.grid_view_outlined, context, mode),
+        SizedBox(height: 24.h),
         _buildSectionHeader('Be a Host', context, mode),
         _buildNavigationItem(
           'Host Your Home',
-          Icons.home_work_outlined,
+          Icons.house_outlined,
           context,
           mode,
         ),
@@ -277,7 +291,7 @@ class _SideDrawerState extends State<SideDrawer> {
         style: TextStyle(
           fontSize: 12.sp,
           fontWeight: FontWeight.bold,
-          color: Colors.grey.shade600,
+          color: AppColors.sub,
         ),
       ),
     );
@@ -303,13 +317,13 @@ class _SideDrawerState extends State<SideDrawer> {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20.sp, color: Colors.black87),
+            Icon(icon, size: 20.sp, color: AppColors.ink),
             SizedBox(width: 16.w),
             Text(
               title,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: Colors.black87,
+                color: AppColors.ink,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),
             ),
@@ -472,20 +486,6 @@ class _SideDrawerState extends State<SideDrawer> {
             ],
           ),
         ),
-        PopupMenuItem(
-          value: 'Help Center',
-          child: Row(
-            children: [
-              Icon(
-                Icons.help_outline,
-                size: 20.sp,
-                color: Colors.grey.shade700,
-              ),
-              SizedBox(width: 12.w),
-              Text('Help Center', style: TextStyle(fontSize: 14.sp)),
-            ],
-          ),
-        ),
         const PopupMenuDivider(),
         PopupMenuItem(
           value: 'Log out',
@@ -506,7 +506,7 @@ class _SideDrawerState extends State<SideDrawer> {
       },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-        color: Colors.black.withValues(alpha: 0.02),
+        color: Colors.black.withOpacity(0.02),
         child: Row(
           children: [
             CircleAvatar(

@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/shared_helper/app_color.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 
 /// Dedicated admin-only side drawer.
 /// Mirrors the sidebar shown in the screenshots with 5 collapsible sections:
@@ -47,7 +47,7 @@ class _AdminSideDrawerState extends State<AdminSideDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthCubit, AuthState>(
+    return BlocBuilder<AuthCubit, AuthCubitState>(
       builder: (context, state) {
         String name = 'Admin';
         String email = '';

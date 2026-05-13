@@ -82,31 +82,27 @@ class _ToastWidgetState extends State<_ToastWidget>
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 decoration: BoxDecoration(
                   color: _getBackColor(),
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: _getMainColor(), width: 1),
+                  borderRadius: BorderRadius.circular(30.r), // More rounded like a pill
                   boxShadow: [
                     BoxShadow(
-                      color: _getMainColor().withValues(alpha: 0.2),
-                      blurRadius: 10,
-                      offset: const Offset(
-                        0,
-                        -4,
-                      ), // الظل بقا لفوق لأن التوست تحت
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 15,
+                      offset: const Offset(0, 4), // Drop shadow
                     ),
                   ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(_getIcon(), color: _getMainColor(), size: 22.sp),
-                    SizedBox(width: 12.w),
+                    Icon(_getIcon(), color: _getMainColor(), size: 20.sp),
+                    SizedBox(width: 10.w),
                     Flexible(
                       child: Text(
                         widget.message,
                         style: TextStyle(
                           color: Colors.black87,
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
@@ -135,7 +131,7 @@ class _ToastWidgetState extends State<_ToastWidget>
   Color _getMainColor() {
     switch (widget.state) {
       case ToastState.success:
-        return Colors.green;
+        return const Color(0xFF8B2323); // QuickIn Maroon
       case ToastState.error:
         return Colors.red;
       case ToastState.warning:
@@ -144,13 +140,6 @@ class _ToastWidgetState extends State<_ToastWidget>
   }
 
   Color _getBackColor() {
-    switch (widget.state) {
-      case ToastState.success:
-        return const Color(0xFFF1F8E9);
-      case ToastState.error:
-        return const Color(0xFFFFEBEE);
-      case ToastState.warning:
-        return const Color(0xFFFFF3E0);
-    }
+    return Colors.white; // Modern clean white background for all
   }
 }

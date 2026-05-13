@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/app_router/routes.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/features/account/logic/cubit/account_cubit.dart';
 import 'package:freelancer/features/account/logic/cubit/account_state.dart';
@@ -36,12 +36,12 @@ class _AccountScreenState extends State<AccountScreen>
   }
 
   void _loadProfile() {
-    final authState = context.read<AuthCubit>().state;
+    final AuthCubitState = context.read<AuthCubit>().state;
     String? userId;
-    if (authState is AuthSuccess) {
-      userId = authState.user.id;
-    } else if (authState is AuthAdminSuccess) {
-      userId = authState.user.id;
+    if (AuthCubitState is AuthSuccess) {
+      userId = AuthCubitState.user.id;
+    } else if (AuthCubitState is AuthAdminSuccess) {
+      userId = AuthCubitState.user.id;
     }
     if (userId != null) {
       context.read<AccountCubit>().getProfile(userId);
@@ -86,7 +86,7 @@ class _AccountScreenState extends State<AccountScreen>
         ),
       ),
       body: SafeArea(
-        child: BlocBuilder<AuthCubit, AuthState>(
+        child: BlocBuilder<AuthCubit, AuthCubitState>(
           builder: (context, state) {
             String userName = 'Guest User';
             String userEmail = 'guest@example.com';
@@ -183,13 +183,13 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthCubit, AuthState>(
-      builder: (context, authState) {
+    return BlocBuilder<AuthCubit, AuthCubitState>(
+      builder: (context, AuthCubitState) {
         bool isVerified = false;
-        if (authState is AuthAdminSuccess) {
+        if (AuthCubitState is AuthAdminSuccess) {
           isVerified = true; // Admins are always considered verified
-        } else if (authState is AuthSuccess) {
-          isVerified = authState.user.userMetadata['is_identity_verified'] == true;
+        } else if (AuthCubitState is AuthSuccess) {
+          isVerified = AuthCubitState.user.userMetadata['is_identity_verified'] == true;
         }
 
         return Container(
@@ -281,6 +281,7 @@ class _PersonalInfoTabState extends State<PersonalInfoTab> {
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
   final _bioController = TextEditingController();
+  bool _isEmailExpanded = false;
 
   @override
   void dispose() {
@@ -464,38 +465,51 @@ class _PersonalInfoTabState extends State<PersonalInfoTab> {
               _buildSectionCard(
                 title: 'Email Address',
                 subtitle: 'Contact support to change your email',
-                child: Container(
-                   width: double.infinity,
-                   padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                   decoration: BoxDecoration(
-                     color: Colors.grey.shade50,
-                     border: Border.all(color: Colors.grey.shade200),
-                     borderRadius: BorderRadius.circular(8.r),
-                   ),
-                   child: Row(
-                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                     children: [
-                       Text(
-                         widget.userEmail,
-                         style: TextStyle(fontSize: 14.sp, color: Colors.black87),
-                       ),
-                       Container(
-                         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                         decoration: BoxDecoration(
-                           color: Colors.green.shade50,
-                           borderRadius: BorderRadius.circular(16.r),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isEmailExpanded = !_isEmailExpanded;
+                    });
+                  },
+                  child: Container(
+                     width: double.infinity,
+                     padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                     decoration: BoxDecoration(
+                       color: Colors.grey.shade50,
+                       border: Border.all(color: Colors.grey.shade200),
+                       borderRadius: BorderRadius.circular(8.r),
+                     ),
+                     child: Row(
+                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                       crossAxisAlignment: _isEmailExpanded ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                       children: [
+                         Expanded(
+                           child: Text(
+                             widget.userEmail,
+                             style: TextStyle(fontSize: 14.sp, color: Colors.black87),
+                             overflow: _isEmailExpanded ? null : TextOverflow.ellipsis,
+                             maxLines: _isEmailExpanded ? null : 1,
+                           ),
                          ),
-                         child: Row(
-                           mainAxisSize: MainAxisSize.min,
-                           children: [
-                             Icon(Icons.check_circle, size: 14.sp, color: Colors.green.shade600),
-                             SizedBox(width: 4.w),
-                             Text('Verified', style: TextStyle(fontSize: 11.sp, color: Colors.green.shade700, fontWeight: FontWeight.w600)),
-                           ],
-                         ),
-                       )
-                     ],
-                   ),
+                         SizedBox(width: 8.w),
+                         Container(
+                           padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                           decoration: BoxDecoration(
+                             color: Colors.green.shade50,
+                             borderRadius: BorderRadius.circular(16.r),
+                           ),
+                           child: Row(
+                             mainAxisSize: MainAxisSize.min,
+                             children: [
+                               Icon(Icons.check_circle, size: 14.sp, color: Colors.green.shade600),
+                               SizedBox(width: 4.w),
+                               Text('Verified', style: TextStyle(fontSize: 11.sp, color: Colors.green.shade700, fontWeight: FontWeight.w600)),
+                             ],
+                           ),
+                         )
+                       ],
+                     ),
+                  ),
                 ),
               ),
               SizedBox(height: 40.h),
@@ -548,7 +562,7 @@ class VerificationTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthCubit, AuthState>(
+    return BlocBuilder<AuthCubit, AuthCubitState>(
       builder: (context, state) {
         String status = 'Not verified';
         bool isPending = false;
@@ -768,7 +782,9 @@ class SettingsTab extends StatelessWidget {
           }
         }),
         SizedBox(height: 16.h),
-        _buildSettingCard(Icons.notifications_none_outlined, 'Notifications', 'Choose notification preferences'),
+        _buildSettingCard(Icons.notifications_none_outlined, 'Notifications', 'Choose notification preferences', onTap: () {
+          Navigator.pushNamed(context, AppRoutes.notificationPreferences);
+        }),
       ],
     );
   }

@@ -15,8 +15,11 @@ import 'package:freelancer/features/listing_wizard/presentation/widgets/wizard_s
 import 'package:freelancer/features/listing_wizard/presentation/widgets/wizard_step_7_pricing.dart';
 import 'package:freelancer/features/listing_wizard/presentation/widgets/wizard_step_8_publish.dart';
 import 'package:freelancer/features/listing_wizard/presentation/view/listing_success_screen.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
+import 'package:freelancer/core/utils/widgets/custom_app_bar.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
 
 class ListingWizardScreen extends StatefulWidget {
   const ListingWizardScreen({super.key});
@@ -134,48 +137,57 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
         builder: (context, formState) {
           return Scaffold(
             backgroundColor: AppColors.bgColor,
-            appBar: _buildAppBar(),
-            body: Column(
-              children: [
-                _buildProgressHeader(),
-                Expanded(
-                  child: PageView(
-                    controller: _pageController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentPage = index;
-                      });
-                    },
+            appBar: const CustomAppBar(),
+            drawer: const SideDrawer(),
+            body: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                  child: Column(
                     children: [
-                      WizardStep1PropertyType(),
-                      WizardStep2Lifestyles(),
-                      WizardStep3Descriptions(),
-                      WizardStep4Location(),
-                      WizardStep5Details(),
-                      WizardStep6Photos(),
-                      WizardStep7Pricing(),
-                      WizardStep8Publish(),
+                      SizedBox(
+                        // This uses the exact available height of the Scaffold body, so the buttons won't get pushed down.
+                        height: constraints.maxHeight,
+                        child: Column(
+                          children: [
+                            _buildProgressHeader(),
+                            Expanded(
+                              child: PageView(
+                                controller: _pageController,
+                                physics: const NeverScrollableScrollPhysics(),
+                                onPageChanged: (index) {
+                                  setState(() {
+                                    _currentPage = index;
+                                  });
+                                },
+                                children: [
+                                  WizardStep1PropertyType(),
+                                  WizardStep2Lifestyles(),
+                                  WizardStep3Descriptions(),
+                                  WizardStep4Location(),
+                                  WizardStep5Details(),
+                                  WizardStep6Photos(),
+                                  WizardStep7Pricing(),
+                                  WizardStep8Publish(),
+                                ],
+                              ),
+                            ),
+                            _buildBottomNav(formState),
+                          ],
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                        child: CustomFooter(),
+                      ),
                     ],
                   ),
-                ),
-                _buildBottomNav(formState),
-              ],
+                );
+              },
+            ),
             ),
           );
         },
-      ),
-    );
-  }
-
-  AppBar _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.close, color: AppColors.inkBlack),
-        onPressed: () => Navigator.pop(context),
       ),
     );
   }
@@ -212,7 +224,7 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
           SizedBox(height: 12.h),
           LinearProgressIndicator(
             value: stepNumber / _totalPages,
-            backgroundColor: AppColors.primaryRed.withValues(alpha: 0.2),
+            backgroundColor: AppColors.primaryRed.withOpacity(0.2),
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryRed),
             minHeight: 4.h,
             borderRadius: BorderRadius.circular(4.r),
@@ -323,13 +335,13 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
   }
 
   void _publishListing(ListingFormState formState) {
-    final authState = context.read<AuthCubit>().state;
+    final AuthCubitState = context.read<AuthCubit>().state;
     String userId = '';
     
-    if (authState is AuthSuccess) {
-      userId = authState.user.id;
-    } else if (authState is AuthAdminSuccess) {
-      userId = authState.user.id;
+    if (AuthCubitState is AuthSuccess) {
+      userId = AuthCubitState.user.id;
+    } else if (AuthCubitState is AuthAdminSuccess) {
+      userId = AuthCubitState.user.id;
     }
 
     if (userId.isEmpty) {
@@ -360,7 +372,7 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
       'bathrooms': formState.bathrooms,
       'min_nights': formState.minDuration,
       'currency': formState.currency,
-      'is_published': false, // Needs admin/identity verification
+      'is_published': true, // Auto-publish directly to show in Home
       'translations': {
         'ar': {
           'title': formState.titleAr,

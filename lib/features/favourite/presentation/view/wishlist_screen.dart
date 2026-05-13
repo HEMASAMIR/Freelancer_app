@@ -276,12 +276,12 @@ class _WishlistCard extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: Colors.white.withOpacity(0.6),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.favorite_border_rounded,
-                  color: AppColors.sub.withValues(alpha: 0.5),
+                  color: AppColors.sub.withOpacity(0.5),
                   size: 24,
                 ),
               ),

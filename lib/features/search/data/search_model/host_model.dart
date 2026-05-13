@@ -40,20 +40,6 @@ class PropertyTypeModel {
   }
 }
 
-class ListingImage {
-  final String? url;
-  final int? order;
-
-  ListingImage({this.url, this.order});
-
-  factory ListingImage.fromJson(Map<String, dynamic> json) {
-    return ListingImage(
-      url: json['url'] ?? json['image_url'] ?? json['listing_image_url'] ?? json['image'], 
-      order: json['order'] ?? json['sort_order']
-    );
-  }
-}
-
 class LifestyleModel {
   final bool? isPrimary;
   final String? name;

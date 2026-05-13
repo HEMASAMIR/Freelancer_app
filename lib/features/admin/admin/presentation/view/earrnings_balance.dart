@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/constant/constant.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:freelancer/features/admin/logic/wallet_cubit.dart';
 import 'package:freelancer/features/admin/logic/wallet_state.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
 import 'package:intl/intl.dart';
+import 'package:freelancer/core/utils/widgets/elegant_toast.dart';
 
 class EarningsBalanceView extends StatefulWidget {
   const EarningsBalanceView({super.key});
@@ -21,11 +23,11 @@ class _EarningsBalanceViewState extends State<EarningsBalanceView> {
   @override
   void initState() {
     super.initState();
-    final authState = context.read<AuthCubit>().state;
-    if (authState is AuthAdminSuccess) {
-      context.read<WalletCubit>().loadWallet(authState.user.id);
-    } else if (authState is AuthSuccess) {
-      context.read<WalletCubit>().loadWallet(authState.user.id);
+    final AuthCubitState = context.read<AuthCubit>().state;
+    if (AuthCubitState is AuthAdminSuccess) {
+      context.read<WalletCubit>().loadWallet(AuthCubitState.user.id);
+    } else if (AuthCubitState is AuthSuccess) {
+      context.read<WalletCubit>().loadWallet(AuthCubitState.user.id);
     }
   }
 
@@ -43,10 +45,10 @@ class _EarningsBalanceViewState extends State<EarningsBalanceView> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Withdrawal requested successfully!')),
           );
-          final authState = context.read<AuthCubit>().state;
-          final userId = authState is AuthAdminSuccess
-              ? authState.user.id
-              : authState is AuthSuccess ? authState.user.id : null;
+          final AuthCubitState = context.read<AuthCubit>().state;
+          final userId = AuthCubitState is AuthAdminSuccess
+              ? AuthCubitState.user.id
+              : AuthCubitState is AuthSuccess ? AuthCubitState.user.id : null;
           if (userId != null) {
             context.read<WalletCubit>().loadWallet(userId);
           }
@@ -148,6 +150,7 @@ class _EarningsBalanceViewState extends State<EarningsBalanceView> {
               onMethodChanged: (val) => setState(() => _withdrawalMethod = val),
             ),
             const SizedBox(height: 40),
+            const CustomFooter(),
           ],
         );
       },
@@ -212,8 +215,63 @@ class _TransactionTable extends StatefulWidget {
 
 class _TransactionTableState extends State<_TransactionTable> {
   final TextEditingController _searchCtrl = TextEditingController();
-  final int _rowsPerPage = 10;
+  int _rowsPerPage = 10;
   int _currentPage = 1;
+  int _sortColumnIndex = 0;
+  bool _sortAscending = false;
+  late List<Map<String, dynamic>> _processedHistory;
+
+  @override
+  void initState() {
+    super.initState();
+    _processHistory();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TransactionTable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.history != widget.history) {
+      _processHistory();
+    }
+  }
+
+  void _processHistory() {
+    double currentBalance = 0.0;
+    List<Map<String, dynamic>> temp = [];
+    
+    // Iterate from oldest (end of list) to newest (start of list) to calculate chronological balance
+    for (int i = widget.history.length - 1; i >= 0; i--) {
+      final tx = Map<String, dynamic>.from(widget.history[i]);
+      final status = tx['status'] ?? 'pending';
+      final isCredit = status == 'confirmed' || status == 'completed';
+      final subtotal = (tx['subtotal'] as num?)?.toDouble() ?? 0.0;
+      
+      if (isCredit) {
+        currentBalance += subtotal;
+      }
+      
+      tx['balanceAfter'] = isCredit ? 'EGP ${currentBalance.toStringAsFixed(0)}' : 'Pending';
+      tx['isCredit'] = isCredit;
+      tx['parsedDate'] = tx['created_at'] != null ? DateTime.parse(tx['created_at']) : DateTime.fromMillisecondsSinceEpoch(0);
+      
+      final listingTitle = (tx['listing'] is Map)
+          ? tx['listing']['title'] as String? ?? 'Listing'
+          : 'Listing';
+      tx['description'] = 'Payment for $listingTitle';
+      
+      temp.add(tx);
+    }
+    // Reverse back so newest is first
+    _processedHistory = temp.reversed.toList();
+  }
+
+  void _onSort(int columnIndex, bool ascending) {
+    setState(() {
+      _sortColumnIndex = columnIndex;
+      _sortAscending = ascending;
+      _currentPage = 1; // Reset to first page on sort
+    });
+  }
 
   @override
   void dispose() {
@@ -223,14 +281,54 @@ class _TransactionTableState extends State<_TransactionTable> {
 
   @override
   Widget build(BuildContext context) {
-    // فلترة بسيطة
-    final filteredHistory = widget.history.where((tx) {
+    // 1. Search Filter
+    List<Map<String, dynamic>> filteredList = _processedHistory.where((tx) {
       final query = _searchCtrl.text.toLowerCase();
       if (query.isEmpty) return true;
-      final desc = (tx['listing'] is Map ? tx['listing']['title'] : 'Booking').toString().toLowerCase();
-      final status = (tx['status'] ?? 'pending').toString().toLowerCase();
+      final desc = tx['description'].toString().toLowerCase();
+      final status = tx['status'].toString().toLowerCase();
       return desc.contains(query) || status.contains(query);
     }).toList();
+
+    // 2. Sorting
+    filteredList.sort((a, b) {
+      int cmp = 0;
+      if (_sortColumnIndex == 0) { // Date
+        final d1 = a['parsedDate'] as DateTime;
+        final d2 = b['parsedDate'] as DateTime;
+        cmp = d1.compareTo(d2);
+      } else if (_sortColumnIndex == 1) { // Type
+        final s1 = a['status'].toString();
+        final s2 = b['status'].toString();
+        cmp = s1.compareTo(s2);
+      } else if (_sortColumnIndex == 2) { // Amount
+        final am1 = (a['subtotal'] as num?)?.toDouble() ?? 0.0;
+        final am2 = (b['subtotal'] as num?)?.toDouble() ?? 0.0;
+        cmp = am1.compareTo(am2);
+      } else if (_sortColumnIndex == 3) { // Description
+        final desc1 = a['description'].toString();
+        final desc2 = b['description'].toString();
+        cmp = desc1.compareTo(desc2);
+      } else if (_sortColumnIndex == 4) { // Balance After
+        // Simple string comparison for balance
+        final b1 = a['balanceAfter'].toString();
+        final b2 = b['balanceAfter'].toString();
+        cmp = b1.compareTo(b2);
+      }
+      return _sortAscending ? cmp : -cmp;
+    });
+
+    // 3. Pagination
+    int totalRows = filteredList.length;
+    int totalPages = (totalRows / _rowsPerPage).ceil();
+    if (totalPages == 0) totalPages = 1;
+    if (_currentPage > totalPages) _currentPage = totalPages;
+
+    int startIndex = (_currentPage - 1) * _rowsPerPage;
+    int endIndex = startIndex + _rowsPerPage;
+    if (endIndex > totalRows) endIndex = totalRows;
+
+    final paginatedHistory = startIndex < totalRows ? filteredList.sublist(startIndex, endIndex) : [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -269,53 +367,30 @@ class _TransactionTableState extends State<_TransactionTable> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
+                  sortColumnIndex: _sortColumnIndex,
+                  sortAscending: _sortAscending,
                   headingRowColor: WidgetStateProperty.all(Colors.white),
                   dataRowColor: WidgetStateProperty.all(Colors.white),
                   dividerThickness: 1,
                   columnSpacing: 32,
-                  columns: const [
-                    DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Description', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Balance After', style: TextStyle(fontWeight: FontWeight.bold))),
+                  columns: [
+                    DataColumn(label: const Text('Date', style: TextStyle(fontWeight: FontWeight.bold)), onSort: _onSort),
+                    DataColumn(label: const Text('Type', style: TextStyle(fontWeight: FontWeight.bold)), onSort: _onSort),
+                    DataColumn(label: const Text('Amount', style: TextStyle(fontWeight: FontWeight.bold)), onSort: _onSort),
+                    DataColumn(label: const Text('Description', style: TextStyle(fontWeight: FontWeight.bold)), onSort: _onSort),
+                    DataColumn(label: const Text('Balance After', style: TextStyle(fontWeight: FontWeight.bold)), onSort: _onSort),
                   ],
-                  rows: filteredHistory.isEmpty
+                  rows: paginatedHistory.isEmpty
                       ? []
-                      : List<DataRow>.generate(filteredHistory.length, (index) {
-                          // Calculate running balance (from oldest to newest)
-                          // Since list is descending, index 0 is newest. So running balance up to index i
-                          // is total available balance minus all newer transactions.
-                          
-                          // First, sum all subtotal for this logic
-                          // For a more accurate "Balance After", we simply accumulate subtotals backwards
-                          
-                          final currentTx = filteredHistory[index];
+                      : List<DataRow>.generate(paginatedHistory.length, (index) {
+                          final currentTx = paginatedHistory[index];
                           final status = currentTx['status'] ?? 'pending';
-                          final isCredit = status == 'confirmed' || status == 'completed';
+                          final isCredit = currentTx['isCredit'] ?? false;
                           final subtotal = (currentTx['subtotal'] as num?)?.toDouble() ?? 0.0;
-                          final listingTitle = (currentTx['listing'] is Map)
-                              ? currentTx['listing']['title'] as String? ?? 'Listing'
-                              : 'Listing';
                           
                           final date = currentTx['created_at'] != null
                               ? DateFormat('MMM d, yyyy').format(DateTime.parse(currentTx['created_at']))
                               : '-';
-
-                          final description = 'Payment for $listingTitle';
-                          
-                          // Calculate balance after:
-                          // If we don't have the absolute global balance at time of tx, we can estimate running sum of just these txs
-                          // or leave it as '-' if it's pending. Let's do a simple running sum of shown items for demonstration:
-                          double runningBalance = 0.0;
-                          for(int i = filteredHistory.length - 1; i >= index; i--) {
-                            final st = filteredHistory[i]['status'];
-                            if (st == 'confirmed' || st == 'completed') {
-                              runningBalance += (filteredHistory[i]['subtotal'] as num?)?.toDouble() ?? 0.0;
-                            }
-                          }
-                          
-                          final balanceAfterStr = isCredit ? 'EGP ${runningBalance.toStringAsFixed(0)}' : 'Pending';
 
                           return DataRow(cells: [
                             DataCell(Text(date, style: const TextStyle(fontSize: 13))),
@@ -337,13 +412,13 @@ class _TransactionTableState extends State<_TransactionTable> {
                               ),
                             ),
                             DataCell(Text('EGP ${subtotal.toStringAsFixed(0)}', style: const TextStyle(fontSize: 13))),
-                            DataCell(Text(description, style: const TextStyle(fontSize: 13))),
-                            DataCell(Text(balanceAfterStr, style: TextStyle(fontSize: 13, color: AppColors.sub, fontWeight: FontWeight.w500))),
+                            DataCell(Text(currentTx['description'].toString(), style: const TextStyle(fontSize: 13))),
+                            DataCell(Text(currentTx['balanceAfter'].toString(), style: TextStyle(fontSize: 13, color: AppColors.sub, fontWeight: FontWeight.w500))),
                           ]);
                         }),
                 ),
               ),
-              if (filteredHistory.isEmpty)
+              if (paginatedHistory.isEmpty)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 32),
@@ -364,30 +439,47 @@ class _TransactionTableState extends State<_TransactionTable> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text('${filteredHistory.length} row(s) total.', style: TextStyle(fontSize: 12, color: AppColors.sub)),
+                      Text('$totalRows row(s) total.', style: TextStyle(fontSize: 12, color: AppColors.sub)),
                       const SizedBox(width: 16),
                       Text('Rows per page:', style: TextStyle(fontSize: 12, color: AppColors.sub)),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        height: 30,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                         decoration: BoxDecoration(
                           border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.3)),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Row(
-                          children: [
-                            Text('$_rowsPerPage', style: const TextStyle(fontSize: 12)),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.keyboard_arrow_down, size: 16),
-                          ],
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<int>(
+                            value: _rowsPerPage,
+                            isDense: true,
+                            icon: const Icon(Icons.keyboard_arrow_down, size: 16),
+                            style: const TextStyle(fontSize: 12, color: AppColors.ink),
+                            items: [5, 10, 20, 50].map((v) => DropdownMenuItem(value: v, child: Text('$v'))).toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() {
+                                  _rowsPerPage = val;
+                                  _currentPage = 1;
+                                });
+                              }
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Text('Page $_currentPage of ${filteredHistory.isEmpty ? 0 : 1}', style: TextStyle(fontSize: 12, color: AppColors.sub)),
+                      Text('Page $_currentPage of $totalPages', style: TextStyle(fontSize: 12, color: AppColors.sub)),
                       const SizedBox(width: 8),
-                      Icon(Icons.chevron_left, size: 20, color: AppColors.dividerGrey),
+                      InkWell(
+                        onTap: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                        child: Icon(Icons.chevron_left, size: 20, color: _currentPage > 1 ? AppColors.ink : AppColors.dividerGrey),
+                      ),
                       const SizedBox(width: 8),
-                      Icon(Icons.chevron_right, size: 20, color: AppColors.dividerGrey),
+                      InkWell(
+                        onTap: _currentPage < totalPages ? () => setState(() => _currentPage++) : null,
+                        child: Icon(Icons.chevron_right, size: 20, color: _currentPage < totalPages ? AppColors.ink : AppColors.dividerGrey),
+                      ),
                     ],
                   ),
                 ),
@@ -470,7 +562,10 @@ class _WithdrawalForm extends StatelessWidget {
                     .map((v) => DropdownMenuItem(value: v, child: Text(v)))
                     .toList(),
                 onChanged: (val) {
-                  if (val != null) onMethodChanged(val);
+                  if (val != null) {
+                    onMethodChanged(val);
+                    ElegantToast.show(context, 'Selected: $val', icon: Icons.account_balance_wallet_rounded);
+                  }
                 },
               ),
             ),
@@ -518,10 +613,10 @@ class _WithdrawalForm extends StatelessWidget {
                   );
                   return;
                 }
-                final authState = context.read<AuthCubit>().state;
-                final userId = authState is AuthAdminSuccess
-                    ? authState.user.id
-                    : authState is AuthSuccess ? authState.user.id : null;
+                final AuthCubitState = context.read<AuthCubit>().state;
+                final userId = AuthCubitState is AuthAdminSuccess
+                    ? AuthCubitState.user.id
+                    : AuthCubitState is AuthSuccess ? AuthCubitState.user.id : null;
                 if (userId != null) {
                   context.read<WalletCubit>().requestWithdrawal(
                     hostId: userId,

@@ -5,7 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/core/utils/widgets/custom_app_bar.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_cubit.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_state.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';

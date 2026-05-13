@@ -10,8 +10,8 @@ import 'package:freelancer/core/shared_helper/app_color.dart';
 import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/core/utils/widgets/input_box.dart';
 import 'package:freelancer/core/utils/widgets/social_button.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -45,7 +45,7 @@ class _LoginViewState extends State<LoginView> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: sl<AuthCubit>(),
-      child: BlocConsumer<AuthCubit, AuthState>(
+      child: BlocConsumer<AuthCubit, AuthCubitState>(
         listener: (context, state) {
           if (state is AuthAdminSuccess) {
             CustomToast.show(context, "Welcome Admin 👑", ToastState.success);
@@ -64,12 +64,15 @@ class _LoginViewState extends State<LoginView> {
         builder: (context, state) {
           final cubit = context.read<AuthCubit>();
 
-          return Stack(
-            children: [
-              // ── Blurred backdrop — home screen visible behind ──
-              GestureDetector(
-                onTap: cubit.isLoading ? null : () => Navigator.pop(context),
-                child: BackdropFilter(
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            resizeToAvoidBottomInset: true,
+            body: Stack(
+              children: [
+                // ── Blurred backdrop — home screen visible behind ──
+                GestureDetector(
+                  onTap: cubit.isLoading ? null : () => Navigator.pop(context),
+                  child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
                   child: Container(
                     color: Colors.black.withValues(alpha: 0.30),
@@ -141,12 +144,7 @@ class _LoginViewState extends State<LoginView> {
                                 : () => cubit.signInWithGoogle(),
                           ),
                           SizedBox(height: 10.h),
-                          SocialButton(
-                            icon: Icons.apple,
-                            label: 'Continue with Apple',
-                            onTap: cubit.isLoading ? null : () {},
-                          ),
-                          SizedBox(height: 15.h),
+
 
                           Row(
                             children: [
@@ -271,6 +269,7 @@ class _LoginViewState extends State<LoginView> {
                 ),      // SingleChildScrollView
               ),        // Center
             ],
+          ),
           );
         },
       ),

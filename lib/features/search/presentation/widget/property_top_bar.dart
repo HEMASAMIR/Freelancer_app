@@ -5,14 +5,11 @@ class PropertyTopBar extends StatelessWidget {
   final bool isFavourite;
   final VoidCallback onBack;
   final VoidCallback onFavToggle;
-  final VoidCallback onShare;
-
   const PropertyTopBar({
     super.key,
     required this.isFavourite,
     required this.onBack,
     required this.onFavToggle,
-    required this.onShare,
   });
 
   @override
@@ -31,8 +28,6 @@ class PropertyTopBar extends StatelessWidget {
                   iconColor: isFavourite ? Colors.red : Colors.black,
                   onTap: onFavToggle,
                 ),
-                SizedBox(width: 10.w),
-                _CircleIconBtn(icon: Icons.share_outlined, onTap: onShare),
               ],
             ),
           ],

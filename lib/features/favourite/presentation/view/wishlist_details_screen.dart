@@ -5,6 +5,7 @@ import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/favourite/data/models/wishlist_model.dart';
 import 'package:freelancer/features/search/presentation/widget/property_listing_card.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
 
 class WishlistDetailsScreen extends StatefulWidget {
   final WishlistModel wishlist;
@@ -65,10 +66,10 @@ class _WishlistDetailsScreenState extends State<WishlistDetailsScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Column(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,32 +140,12 @@ class _WishlistDetailsScreenState extends State<WishlistDetailsScreen> {
               ],
             ),
           ),
-        ),
-        // Footer
-        Padding(
-          padding: EdgeInsets.only(bottom: 24.h, top: 12.h),
-          child: Column(
-            children: [
-              Text(
-                '© 2026 QuickIn, Inc. · Terms · Sitemap · Privacy',
-                style: TextStyle(fontSize: 10.sp, color: Colors.grey.shade500),
-              ),
-              SizedBox(height: 8.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.public, size: 14.sp, color: Colors.grey.shade600),
-                  SizedBox(width: 4.w),
-                  Text(
-                    'English (US)  EGP',
-                    style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
-                  ),
-                ],
-              ),
-            ],
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
+            child: const CustomFooter(),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -25,7 +25,9 @@ class HostListingsRepositoryImpl implements HostListingsRepository {
         SupabaseKeys.listingsRest,
         queryParameters: {
           'user_id': 'eq.$hostId',
-          'select': 'id,title,location,price_per_night,is_published,listing_code,listing_images(url)',
+          'select':
+              'id,title,location,price_per_night,currency,is_published,listing_code,bedrooms,bathrooms,max_guests,'
+              'listing_images(*)',
           'order': orderParam,
         },
       );

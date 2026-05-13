@@ -11,16 +11,16 @@ import 'package:freelancer/features/favourite/presentation/widget/wishlist_botto
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_cubit.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/widgets/login_required_sheet.dart';
 import 'package:freelancer/features/bookings/presentation/view/confirm_booking_screen.dart';
 import 'package:freelancer/features/comments/logic/cubit/comments_cubit.dart';
 import 'package:freelancer/features/comments/presentation/widget/comments_section.dart';
+import 'package:freelancer/features/search/presentation/widget/property_map_section.dart';
 
 const Color airbnbMaroon = Color(0xFF710E1F);
 const Color airbnbBg = Color(0xFFF7F3F0);
@@ -53,7 +53,12 @@ class SearchDetails extends StatelessWidget {
               ),
 
               // --- 2. سلايدر الصور يجي هنا ---
-              _ImageSliderAppBar(listing: listing),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 20.h),
+                  child: _BentoImageGallery(listing: listing),
+                ),
+              ),
 
               // --- 3. باقي تفاصيل الصفحة تحت الصور ---
               SliverToBoxAdapter(
@@ -71,7 +76,22 @@ class SearchDetails extends StatelessWidget {
                       const _CustomDivider(),
                       _OffersSection(lifestyles: listing.lifestyles),
                       const _CustomDivider(),
-                      _LocationMapSection(location: listing.location),
+                      if (listing.cancellationPolicy != null &&
+                          listing.cancellationPolicy!.isNotEmpty)
+                        _CancellationPolicySection(
+                          policy: listing.cancellationPolicy!,
+                        ),
+                      if (listing.cancellationPolicy != null &&
+                          listing.cancellationPolicy!.isNotEmpty)
+                        const _CustomDivider(),
+                      if (listing.lat != null && listing.lng != null)
+                        PropertyMapSection(
+                          lat: listing.lat!,
+                          lng: listing.lng!,
+                          locationName: listing.location ?? listing.city,
+                        )
+                      else
+                        _LocationMapSection(location: listing.location),
                       const _CustomDivider(),
                       // قسم المراجعات اللي كان ممسوح رجعناه هنا بشكل أشيك
                       _ReviewsDetailedSection(listing: listing),
@@ -93,7 +113,6 @@ class SearchDetails extends StatelessWidget {
               ),
             ],
           ),
-          _FloatingChatButton(),
         ],
       ),
     );
@@ -146,10 +165,9 @@ class _TopInfoSection extends StatelessWidget {
                 size: 16.sp,
                 color: Colors.grey[700],
               ),
-              // الـ Expanded هنا بيضمن إن اللوكيشن يظهر كامل أو ينتهي بـ نقاط لو طويل جداً
               Expanded(
                 child: Text(
-                  " ${listing.city}, ${listing.country}",
+                  ' ${listing.displayLocation ?? ''}',
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: Colors.grey[700],
@@ -162,20 +180,10 @@ class _TopInfoSection extends StatelessWidget {
           ),
           SizedBox(height: 15.h),
 
-          // أزرار التفاعل (Share & Save)
+          // أزرار التفاعل (Save)
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              _ActionBtn(
-                icon: Icons.ios_share,
-                label: "Share",
-                onTap: () {
-                  final String link = 'https://quickin.com/listing/${listing.id}';
-                  // ignore: deprecated_member_use
-                  Share.share('Check out this amazing property on QuickIn: ${listing.title}\n$link');
-                },
-              ),
-              SizedBox(width: 20.w),
               BlocBuilder<FavCubit, FavState>(
                 builder: (context, state) {
                   final favCubit = context.read<FavCubit>();
@@ -186,8 +194,8 @@ class _TopInfoSection extends StatelessWidget {
                     label: isFav ? "Saved" : "Save",
                     iconColor: isFav ? Colors.red : Colors.black,
                     onTap: () {
-                      final authState = context.read<AuthCubit>().state;
-                      final isLoggedIn = authState is AuthSuccess || authState is AuthAdminSuccess;
+                      final AuthCubitState = context.read<AuthCubit>().state;
+                      final isLoggedIn = AuthCubitState is AuthSuccess || AuthCubitState is AuthAdminSuccess;
                       if (!isLoggedIn) {
                         showLoginRequiredSheet(context);
                         return;
@@ -561,10 +569,10 @@ class _BookingCardState extends State<_BookingCard> {
                             await authCubit.getUserInfo();
                           }
 
-                          final authState = authCubit.state;
+                          final AuthCubitState = authCubit.state;
 
-                          if (authState is! AuthSuccess &&
-                              authState is! AuthAdminSuccess) {
+                          if (AuthCubitState is! AuthSuccess &&
+                              AuthCubitState is! AuthAdminSuccess) {
                             setState(() => isLoading = false);
                             if (!context.mounted) return;
                             await showLoginRequiredSheet(
@@ -576,9 +584,9 @@ class _BookingCardState extends State<_BookingCard> {
                             return;
                           }
 
-                          final userId = authState is AuthSuccess
-                              ? authState.user.id
-                              : (authState as AuthAdminSuccess).user.id;
+                          final userId = AuthCubitState is AuthSuccess
+                              ? AuthCubitState.user.id
+                              : (AuthCubitState as AuthAdminSuccess).user.id;
 
                           // Check availability first
                           final bool isAvailable =
@@ -840,7 +848,7 @@ class _HostInfoSection extends StatelessWidget {
               style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
             ),
             Text(
-              "${listing.bedrooms ?? 0} bedrooms • ${listing.beds ?? 0} beds",
+              "${listing.bedrooms ?? 0} bedrooms • ${listing.beds ?? 0} beds • ${listing.bathrooms ?? 0} bathrooms",
             ),
           ],
         ),
@@ -854,17 +862,196 @@ class _HostInfoSection extends StatelessWidget {
   );
 }
 
-class _ImageSliderAppBar extends StatefulWidget {
+class _BentoImageGallery extends StatelessWidget {
   final ListingModel listing;
-  const _ImageSliderAppBar({required this.listing});
+  const _BentoImageGallery({required this.listing});
 
   @override
-  State<_ImageSliderAppBar> createState() => _ImageSliderAppBarState();
+  Widget build(BuildContext context) {
+    final images = listing.images ?? [];
+    if (images.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
+        child: Container(
+          height: 300.h,
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          child: const Center(child: Icon(Icons.home_outlined, size: 60, color: Colors.grey)),
+        ),
+      );
+    }
+
+    if (images.length < 5) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16.r),
+          child: SizedBox(
+            height: 350.h,
+            width: double.infinity,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => _FullScreenGallery(images: images, initialIndex: 0),
+                  transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+                ));
+              },
+              child: Image.network(images.first.url ?? '', fit: BoxFit.cover),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Full 5-image Bento Grid matching the web prototype
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16.r),
+        child: SizedBox(
+          height: 380.h,
+          child: Row(
+            children: [
+              // Left: Main Image (50%)
+              Expanded(
+                flex: 1,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => _FullScreenGallery(images: images, initialIndex: 0),
+                      transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+                    ));
+                  },
+                  child: Image.network(
+                    images[0].url ?? '',
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    errorBuilder: (_, __, ___) => Container(color: Colors.grey[200]),
+                  ),
+                ),
+              ),
+              SizedBox(width: 8.w),
+              // Right: 2x2 Grid (50%)
+              Expanded(
+                flex: 1,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Expanded(child: _ImageItem(images[1].url, onTap: () {
+                            Navigator.of(context).push(PageRouteBuilder(
+                              pageBuilder: (_, __, ___) => _FullScreenGallery(images: images, initialIndex: 1),
+                              transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+                            ));
+                          })),
+                          SizedBox(width: 8.w),
+                          Expanded(child: _ImageItem(images[2].url, onTap: () {
+                            Navigator.of(context).push(PageRouteBuilder(
+                              pageBuilder: (_, __, ___) => _FullScreenGallery(images: images, initialIndex: 2),
+                              transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+                            ));
+                          })),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Expanded(child: _ImageItem(images[3].url, onTap: () {
+                            Navigator.of(context).push(PageRouteBuilder(
+                              pageBuilder: (_, __, ___) => _FullScreenGallery(images: images, initialIndex: 3),
+                              transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+                            ));
+                          })),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(PageRouteBuilder(
+                                  pageBuilder: (_, __, ___) => _FullScreenGallery(images: images, initialIndex: 4),
+                                  transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+                                ));
+                              },
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  _ImageItem(images[4].url),
+                                  if (images.length > 5)
+                                    Container(
+                                      color: Colors.black.withOpacity(0.4),
+                                      child: Center(
+                                        child: Text(
+                                          '+${images.length - 5}',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 24.sp,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _ImageSliderAppBarState extends State<_ImageSliderAppBar> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
+class _ImageItem extends StatelessWidget {
+  final String? url;
+  final VoidCallback? onTap;
+  const _ImageItem(this.url, {this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Image.network(
+        url ?? '',
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => Container(color: Colors.grey[200]),
+      ),
+    );
+  }
+}
+
+class _FullScreenGallery extends StatefulWidget {
+  final List<ListingImage> images;
+  final int initialIndex;
+  
+  const _FullScreenGallery({required this.images, required this.initialIndex});
+
+  @override
+  State<_FullScreenGallery> createState() => _FullScreenGalleryState();
+}
+
+class _FullScreenGalleryState extends State<_FullScreenGallery> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
 
   @override
   void dispose() {
@@ -874,60 +1061,41 @@ class _ImageSliderAppBarState extends State<_ImageSliderAppBar> {
 
   @override
   Widget build(BuildContext context) {
-    final images = widget.listing.images ?? [];
-    return SliverAppBar(
-      expandedHeight: 280.h,
-      backgroundColor: Colors.white,
-      elevation: 0,
-      automaticallyImplyLeading: false,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          children: [
-            if (images.isNotEmpty)
-              PageView.builder(
-                controller: _pageController,
-                itemCount: images.length,
-                onPageChanged: (index) => setState(() => _currentPage = index),
-                itemBuilder: (context, index) {
-                  return Image.network(
-                    images[index].url ?? '',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: Colors.grey[200],
-                      child: const Center(child: Icon(Icons.broken_image, size: 40)),
-                    ),
-                  );
-                },
-              )
-            else
-              Container(
-                color: Colors.grey[200],
-                child: const Center(child: Icon(Icons.home_outlined, size: 60, color: Colors.grey)),
-              ),
-            
-            // Image Indicator Badge
-            if (images.length > 1)
-              Positioned(
-                bottom: 16.h,
-                right: 16.w,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Text(
-                    "${_currentPage + 1} / ${images.length}",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          '${_currentIndex + 1} / ${widget.images.length}',
+          style: const TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        itemCount: widget.images.length,
+        itemBuilder: (context, index) {
+          return InteractiveViewer(
+            minScale: 1.0,
+            maxScale: 5.0,
+            child: Center(
+              child: Image.network(
+                widget.images[index].url ?? '',
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Center(
+                  child: Icon(Icons.broken_image, color: Colors.white, size: 50),
                 ),
               ),
-          ],
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -990,25 +1158,141 @@ class _CustomDivider extends StatelessWidget {
       Divider(height: 40.h, thickness: 1, color: Colors.grey.shade300);
 }
 
-class _AboutSection extends StatelessWidget {
+class _CancellationPolicySection extends StatelessWidget {
+  final String policy;
+  const _CancellationPolicySection({required this.policy});
+
+  IconData get _icon {
+    switch (policy.toLowerCase()) {
+      case 'flexible':
+        return Icons.check_circle_outline;
+      case 'moderate':
+        return Icons.info_outline;
+      case 'strict':
+        return Icons.warning_amber_rounded;
+      default:
+        return Icons.policy_outlined;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.event_busy_outlined, size: 20.sp),
+            SizedBox(width: 8.w),
+            Text(
+              "Cancellation policy",
+              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        Container(
+          padding: EdgeInsets.all(16.r),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            children: [
+              Icon(_icon, color: airbnbMaroon, size: 24.sp),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      policy,
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      _policyDescription(policy),
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: Colors.grey.shade600,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _policyDescription(String policy) {
+    switch (policy.toLowerCase()) {
+      case 'flexible':
+        return 'Free cancellation up to 24 hours before check-in.';
+      case 'moderate':
+        return 'Free cancellation up to 5 days before check-in.';
+      case 'strict':
+        return '50% refund up to 1 week before check-in.';
+      default:
+        return 'Review the cancellation terms before booking.';
+    }
+  }
+}
+
+class _AboutSection extends StatefulWidget {
   final String? description;
   const _AboutSection({this.description});
   @override
-  Widget build(BuildContext context) => Text(
-    description ?? "No description provided.",
-    style: TextStyle(height: 1.5, fontSize: 15.sp),
-  );
+  State<_AboutSection> createState() => _AboutSectionState();
 }
 
-class _FloatingChatButton extends StatelessWidget {
+class _AboutSectionState extends State<_AboutSection> {
+  bool _expanded = false;
+
   @override
-  Widget build(BuildContext context) => Positioned(
-    bottom: 24.h,
-    right: 24.w,
-    child: FloatingActionButton(
-      onPressed: () {},
-      backgroundColor: airbnbMaroon,
-      child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final text = widget.description ?? "No description provided.";
+    final isLong = text.length > 200;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _expanded || !isLong ? text : '${text.substring(0, 200)}...',
+          style: TextStyle(height: 1.5, fontSize: 15.sp),
+        ),
+        if (isLong) ...[
+          SizedBox(height: 10.h),
+          GestureDetector(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Row(
+              children: [
+                Text(
+                  _expanded ? 'Show less' : 'Show more',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+                SizedBox(width: 4.w),
+                Icon(
+                  _expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_right,
+                  size: 18.sp,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 }
+

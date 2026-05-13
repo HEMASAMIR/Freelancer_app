@@ -11,21 +11,23 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    // Always attach anonKey to apikey header
+    // Always attach the publishable key so Supabase can identify the project
     options.headers['apikey'] = SupabaseKeys.supabaseAnonKey;
 
     // 1️⃣ Try live session from Supabase client (always fresh / auto-refreshed)
-    String? accessToken = Supabase.instance.client.auth.currentSession?.accessToken;
+    String? accessToken =
+        Supabase.instance.client.auth.currentSession?.accessToken;
 
     // 2️⃣ Fallback to SharedPreferences (for startup before Supabase is ready)
     accessToken ??= sharedPreferences.getString('supabase_access_token');
 
     if (accessToken != null && accessToken.isNotEmpty) {
+      // Authenticated request — use the real JWT
       options.headers['Authorization'] = 'Bearer $accessToken';
-    } else {
-      // Public / anonymous request
-      options.headers['Authorization'] = 'Bearer ${SupabaseKeys.supabaseAnonKey}';
     }
+    // Anonymous request — do NOT send Authorization header.
+    // Supabase handles anonymous access via the apikey header alone.
+    // Sending the publishable key as a Bearer token is invalid and breaks RLS.
 
     return handler.next(options);
   }

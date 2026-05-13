@@ -9,6 +9,7 @@ import 'package:freelancer/features/admin/admin/presentation/view/earrnings_bala
 import 'package:freelancer/features/admin/admin/widget/admin_side_drawer.dart';
 import 'package:freelancer/features/admin/logic/admin_management_cubit.dart';
 import 'package:freelancer/features/bookings/presentation/view/booking_request.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
 import 'package:freelancer/features/host/presentation/host_listing.dart';
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_form_cubit.dart';
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_wizard_cubit.dart';
@@ -92,87 +93,10 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
         body: SafeArea(
           child: _buildContent(_currentView),
         ),
-        bottomNavigationBar: _buildGlobalFooter(),
       ),
     );
   }
 
-  Widget _buildGlobalFooter() {
-    return Container(
-      width: double.infinity,
-      color: const Color(0xFFF6F1E6), // match backgroundCream
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Divider(color: AppColors.dividerGrey, height: 1),
-          const SizedBox(height: 16),
-          Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 24,
-            runSpacing: 12,
-            children: [
-              Text(
-                '© 2026 QuickIn, Inc.',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.ink.withValues(alpha: 0.7),
-                ),
-              ),
-              _footerTextButton('Terms'),
-              const Text('·', style: TextStyle(color: AppColors.greyText)),
-              _footerTextButton('Sitemap'),
-              const Text('·', style: TextStyle(color: AppColors.greyText)),
-              _footerTextButton('Privacy'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  'https://flagcdn.com/w40/eg.png',
-                  height: 24,
-                  width: 24,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.public, size: 24, color: AppColors.greyText),
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                '\$ EGP',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.ink,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-        ],
-      ),
-    );
-  }
-
-  Widget _footerTextButton(String text) {
-    return InkWell(
-      onTap: () {},
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: AppColors.ink.withValues(alpha: 0.7),
-        ),
-      ),
-    );
-  }
   Widget _buildAppBarTitle(String view) {
     final label = _sectionTitle(view);
     return Text(
@@ -489,6 +413,8 @@ class _AdminPlaceholderView extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 48),
+          const CustomFooter(),
         ],
       ),
     );
@@ -559,6 +485,8 @@ class _InternalListingDetailsView extends StatelessWidget {
           _statRow('Location', '${listing.city}, ${listing.country}'),
           _statRow('Status',
               listing.isPublished == true ? 'Published' : 'Draft'),
+          const SizedBox(height: 48),
+          const CustomFooter(),
         ],
       ),
     );

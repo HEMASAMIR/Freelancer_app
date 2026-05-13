@@ -114,7 +114,6 @@ class GuestBookingsRepositoryImpl implements GuestBookingsRepository {
         SupabaseKeys.bookingsRest,
         queryParameters: {
           'id': 'eq.$bookingId',
-          'user_id': 'eq.$userId',
         },
         data: {'status': 'cancelled'},
       );

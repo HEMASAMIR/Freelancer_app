@@ -26,13 +26,11 @@ class BookingsRepositoryImpl implements BookingsRepository {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // API returns: [{has_conflict: false, conflict_reason: null}]
         final data = response.data;
         if (data is List && data.isNotEmpty) {
           final hasConflict = data.first['has_conflict'] as bool? ?? true;
-          return Right(!hasConflict); // available = no conflict
+          return Right(!hasConflict);
         }
-        // fallback: if API returns true/false directly
         return Right(data == true);
       }
       return const Left("فشل في التحقق من التوافر");
@@ -49,10 +47,12 @@ class BookingsRepositoryImpl implements BookingsRepository {
   Future<Either<String, Map<String, dynamic>>>
   getCurrentCommissionRate() async {
     try {
+      // ✅ الـ commission rate الحالية هي اللي effective_to = null
+      // (مفيش is_active column — بنفلتر على effective_to)
       final response = await dio.get(
         SupabaseKeys.commissionRatesRest,
         queryParameters: {
-          'is_active': 'eq.true',
+          'effective_to': 'is.null',
           'select': 'id,guest_rate',
           'limit': '1',
         },
@@ -63,15 +63,35 @@ class BookingsRepositoryImpl implements BookingsRepository {
         if (data.isNotEmpty) {
           return Right(data.first);
         }
-        return const Left("لا يوجد نسبة عمولة مفعلة");
+        // Fallback: جيب آخر record لو كلهم عندهم effective_to
+        return _getFallbackCommissionRate();
       }
-      return const Left("فشل في الحصول على نسبة العمولة");
+      return const Left("NO_COMMISSION_RATE");
     } on DioException catch (e) {
-      return Left(
-        e.response?.data?['message'] ?? e.message ?? "خطأ في الاتصال",
-      );
+      return const Left("NO_COMMISSION_RATE");
     } catch (e) {
-      return Left("خطأ غير متوقع: ${e.toString()}");
+      return const Left("NO_COMMISSION_RATE");
+    }
+  }
+
+  // Fallback: يجيب أحدث commission rate لو مفيش واحد بـ effective_to=null
+  Future<Either<String, Map<String, dynamic>>> _getFallbackCommissionRate() async {
+    try {
+      final response = await dio.get(
+        SupabaseKeys.commissionRatesRest,
+        queryParameters: {
+          'select': 'id,guest_rate',
+          'order': 'created_at.desc',
+          'limit': '1',
+        },
+      );
+      if (response.statusCode == 200) {
+        final List data = response.data;
+        if (data.isNotEmpty) return Right(data.first);
+      }
+      return const Left("NO_COMMISSION_RATE");
+    } catch (_) {
+      return const Left("NO_COMMISSION_RATE");
     }
   }
 
@@ -86,7 +106,22 @@ class BookingsRepositoryImpl implements BookingsRepository {
     String? commissionRateId,
   }) async {
     try {
-      final payload = {
+      // ✅ الخطوة 1: جيب الـ commission rate ID
+      String? rateId = commissionRateId;
+      if (rateId == null) {
+        final rateResult = await getCurrentCommissionRate();
+        rateId = rateResult.fold((l) => null, (r) => r['id']?.toString());
+      }
+
+      // ✅ الخطوة 2: لو مفيش commission rate خالص → بلّغ المستخدم
+      // (الـ commission_rate_id NOT NULL في الـ DB ومينفعش نبعت null)
+      if (rateId == null) {
+        return const Left(
+          "لا يمكن إتمام الحجز: يرجى التواصل مع الدعم (كود: CR-001)",
+        );
+      }
+
+      final payload = <String, dynamic>{
         "listing_id": listingId,
         "user_id": userId,
         "check_in": checkIn,
@@ -95,10 +130,8 @@ class BookingsRepositoryImpl implements BookingsRepository {
         "subtotal": subtotal,
         "status": "pending",
         "escrow_status": "none",
+        "commission_rate_id": rateId,
       };
-      if (commissionRateId != null) {
-        payload["commission_rate_id"] = commissionRateId;
-      }
 
       final response = await dio.post(
         SupabaseKeys.bookingsRest,
@@ -115,9 +148,18 @@ class BookingsRepositoryImpl implements BookingsRepository {
       }
       return const Left("فشل في إنشاء الحجز");
     } on DioException catch (e) {
-      return Left(
-        e.response?.data?['message'] ?? e.message ?? "خطأ في الاتصال",
-      );
+      final String rawMessage = e.response?.data?['message'] ?? e.message ?? "";
+      
+      if (rawMessage.contains("commission_rate_id") ||
+          rawMessage.contains("violates not-null constraint")) {
+        return const Left("خطأ في إعدادات الحجز — يرجى التواصل مع الدعم (كود: CR-001)");
+      } else if (rawMessage.contains("conflict") || rawMessage.contains("overlap")) {
+        return const Left("عفواً، هذه المواعيد تم حجزها بالفعل");
+      } else if (rawMessage.contains("JWT") || rawMessage.contains("auth")) {
+        return const Left("انتهت صلاحية الجلسة — يرجى تسجيل الدخول مجدداً");
+      }
+      
+      return Left(rawMessage.isNotEmpty ? rawMessage : "خطأ في الاتصال بالسيرفر");
     } catch (e) {
       return Left("خطأ غير متوقع: ${e.toString()}");
     }
@@ -131,7 +173,7 @@ class BookingsRepositoryImpl implements BookingsRepository {
     try {
       final response = await dio.patch(
         SupabaseKeys.bookingsRest,
-        queryParameters: {'id': 'eq.$bookingId', 'user_id': 'eq.$userId'},
+        queryParameters: {'id': 'eq.$bookingId'},
         data: {"status": "cancelled"},
       );
 
@@ -154,7 +196,6 @@ class BookingsRepositoryImpl implements BookingsRepository {
     required String hostId,
   }) async {
     try {
-      // Only the listing's host can confirm — filter by matching listing owner
       final response = await dio.patch(
         SupabaseKeys.bookingsRest,
         queryParameters: {'id': 'eq.$bookingId'},
@@ -180,9 +221,10 @@ class BookingsRepositoryImpl implements BookingsRepository {
     String? status,
   }) async {
     try {
+      // ✅ PostgREST embedded filter syntax — استخدام listing!inner(user_id)=eq.hostId
       final queryParams = <String, dynamic>{
         'select': '*,listing:listings!inner(id,title,listing_code,user_id),guest:profiles(id,full_name,email)',
-        'listing.user_id': 'eq.$hostId',
+        'listing.user_id': 'eq.$hostId',  // PostgREST embedded filter
         'order': 'created_at.desc',
       };
       if (status != null) queryParams['status'] = 'eq.$status';
@@ -193,8 +235,15 @@ class BookingsRepositoryImpl implements BookingsRepository {
       );
 
       if (response.statusCode == 200) {
-        final List data = response.data;
-        return Right(data.map((e) => BookingModel.fromJson(e)).toList());
+        final List data = response.data as List;
+        // ✅ فلترة إضافية على الـ client جانب للتأكد إن الحجوزات للـ host الصح
+        final filtered = data.where((e) {
+          final listing = e['listing'];
+          if (listing == null) return false;
+          if (listing is List) return listing.any((l) => l['user_id'] == hostId);
+          return listing['user_id'] == hostId;
+        }).toList();
+        return Right(filtered.map((e) => BookingModel.fromJson(e)).toList());
       }
       return const Left("فشل في تحميل حجوزات المضيف");
     } on DioException catch (e) {

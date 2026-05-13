@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/constant/constant.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:freelancer/features/bookings/data/models/booking_model.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_cubit.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_state.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
 import 'package:intl/intl.dart';
 
 class BookingRequestsView extends StatefulWidget {
@@ -25,9 +26,9 @@ class _BookingRequestsViewState extends State<BookingRequestsView>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    final authState = context.read<AuthCubit>().state;
-    if (authState is AuthAdminSuccess) {
-      context.read<BookingsCubit>().getHostBookings(hostId: authState.user.id);
+    final AuthCubitState = context.read<AuthCubit>().state;
+    if (AuthCubitState is AuthAdminSuccess) {
+      context.read<BookingsCubit>().getHostBookings(hostId: AuthCubitState.user.id);
     }
   }
 
@@ -53,9 +54,9 @@ class _BookingRequestsViewState extends State<BookingRequestsView>
     return BlocListener<BookingsCubit, BookingsState>(
       listener: (context, state) {
         if (state is BookingsConfirmed || state is BookingsCancelled) {
-          final authState = context.read<AuthCubit>().state;
-          if (authState is AuthAdminSuccess) {
-            context.read<BookingsCubit>().getHostBookings(hostId: authState.user.id);
+          final AuthCubitState = context.read<AuthCubit>().state;
+          if (AuthCubitState is AuthAdminSuccess) {
+            context.read<BookingsCubit>().getHostBookings(hostId: AuthCubitState.user.id);
           }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -199,30 +200,9 @@ class _BookingRequestsViewState extends State<BookingRequestsView>
         ),
 
         // ── Footer ─────────────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          child: Column(
-            children: [
-              const Divider(height: 1, color: AppColors.dividerGrey),
-              const SizedBox(height: 24),
-              Text(
-                '© 2026 QuickIn, Inc. · Terms · Sitemap · Privacy',
-                style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.public, size: 14, color: Colors.grey.shade600),
-                  const SizedBox(width: 4),
-                  const Text(
-                    'English (US)  EGP',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.ink),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          child: CustomFooter(),
         ),
       ],
       ),
@@ -386,10 +366,10 @@ class _BookingCard extends StatelessWidget {
                     Expanded(
                       child: InkWell(
                         onTap: () {
-                          final authState = context.read<AuthCubit>().state;
-                          final hostId = authState is AuthAdminSuccess
-                              ? authState.user.id
-                              : (authState as AuthSuccess).user.id;
+                          final AuthCubitState = context.read<AuthCubit>().state;
+                          final hostId = AuthCubitState is AuthAdminSuccess
+                              ? AuthCubitState.user.id
+                              : (AuthCubitState as AuthSuccess).user.id;
                           context.read<BookingsCubit>().confirmBooking(
                             booking.id ?? '',
                             hostId,
@@ -419,10 +399,10 @@ class _BookingCard extends StatelessWidget {
                     Expanded(
                       child: InkWell(
                         onTap: () {
-                          final authState = context.read<AuthCubit>().state;
-                          final userId = authState is AuthAdminSuccess
-                              ? authState.user.id
-                              : (authState as AuthSuccess).user.id;
+                          final AuthCubitState = context.read<AuthCubit>().state;
+                          final userId = AuthCubitState is AuthAdminSuccess
+                              ? AuthCubitState.user.id
+                              : (AuthCubitState as AuthSuccess).user.id;
                           context.read<BookingsCubit>().cancelBooking(
                             booking.id ?? '',
                             userId,

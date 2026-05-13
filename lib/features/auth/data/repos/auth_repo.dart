@@ -37,4 +37,6 @@ abstract class AuthRepo {
   Future<Either<AuthFailure, UserModel>> updateMetadata(Map<String, dynamic> metadata);
 
   UserModel? getCurrentUser();
+
+  Future<void> saveSessionFromOAuth(dynamic session);
 }

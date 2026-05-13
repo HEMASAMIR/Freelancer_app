@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/app_router/routes.dart';
@@ -12,7 +11,8 @@ import 'package:freelancer/features/admin/logic/wallet_cubit.dart';
 import 'package:freelancer/features/host/logic/cubit/host_cubit.dart';
 import 'package:freelancer/features/admin/logic/host_listings_cubit.dart';
 import 'package:freelancer/features/account/logic/cubit/account_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/view/presentation/view/login_redirect_screen.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
 import 'package:freelancer/features/auth/view/presentation/view/sign_up_view.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_cubit.dart';
@@ -35,35 +35,66 @@ import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/trips/presentation/view/trips.dart';
 import 'package:freelancer/features/account/logic/security_cubit.dart';
 import 'package:freelancer/features/bookings/presentation/view/confirm_booking_screen.dart';
+import 'package:freelancer/features/notifications/presentation/notifications_screen.dart';
+import 'package:freelancer/features/notifications/logic/host_notification_cubit.dart';
+import 'package:freelancer/features/account/presentation/notification_preferences_screen.dart';
 
 // ✅ الشاشتين الجديدتين
-// import 'package:freelancer/features/account/presentation/view/personal_info_screen.dart'; // ← عدّل المسار حسب مشروعك
 
 class AppRouter {
+  // فاد transition كريم بدون شاشة سودا
+  static Route<T> _fadeRoute<T>(Widget page) {
+    return PageRouteBuilder<T>(
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionDuration: const Duration(milliseconds: 300),
+      reverseTransitionDuration: const Duration(milliseconds: 200),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          child: child,
+        );
+      },
+    );
+  }
+
   static Route? generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.splash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
 
       case AppRoutes.login:
-        return MaterialPageRoute(
-          builder: (_) => BlocProvider.value(
+        return PageRouteBuilder(
+          opaque: false,
+          pageBuilder: (_, __, ___) => BlocProvider.value(
             value: sl<AuthCubit>(),
             child: const LoginView(),
           ),
         );
 
-      case AppRoutes.signUp:
+      case AppRoutes.loginRedirect:
         return MaterialPageRoute(
-          builder: (_) => BlocProvider.value(
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: sl<AuthCubit>()),
+              BlocProvider.value(value: sl<FavCubit>()),
+            ],
+            child: const LoginRedirectScreen(),
+          ),
+        );
+
+      case AppRoutes.signUp:
+        return PageRouteBuilder(
+          opaque: false,
+          pageBuilder: (_, __, ___) => BlocProvider.value(
             value: sl<AuthCubit>(),
             child: const SignUpView(),
           ),
         );
 
       case AppRoutes.home:
-        return MaterialPageRoute(
-          builder: (_) => MultiBlocProvider(
+        // نستخدم fade route عشان مافيش شاشة سودا بين السبلاش والهوم
+        return _fadeRoute(
+          MultiBlocProvider(
             providers: [
               BlocProvider.value(value: sl<AuthCubit>()),
               BlocProvider.value(value: sl<FavCubit>()..loadFavorites()),
@@ -109,8 +140,8 @@ class AppRouter {
 
       case AppRoutes.adminDashboard:
         final view = settings.arguments as String? ?? 'Dashboard';
-        return MaterialPageRoute(
-          builder: (_) => MultiBlocProvider(
+        return _fadeRoute(
+          MultiBlocProvider(
             providers: [
               BlocProvider.value(value: sl<AuthCubit>()),
               BlocProvider.value(value: sl<BookingsCubit>()),
@@ -261,7 +292,6 @@ class AppRouter {
                   child: EarningsBalanceView(),
                 ),
               ),
-              bottomNavigationBar: _buildGlobalFooter(),
             ),
           ),
         );
@@ -279,6 +309,19 @@ class AppRouter {
           ),
         );
 
+      case AppRoutes.notifications:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider.value(
+            value: sl<HostNotificationCubit>(),
+            child: const NotificationsScreen(),
+          ),
+        );
+
+      case AppRoutes.notificationPreferences:
+        return MaterialPageRoute(
+          builder: (_) => const NotificationPreferencesScreen(),
+        );
+
       default:
         return _errorRoute();
     }
@@ -289,83 +332,6 @@ class AppRouter {
       builder: (_) => Scaffold(
         appBar: AppBar(title: const Text('Error')),
         body: const Center(child: Text('Page not found!')),
-      ),
-    );
-  }
-
-  static Widget _buildGlobalFooter() {
-    return Container(
-      width: double.infinity,
-      color: const Color(0xFFF6F1E6),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Divider(color: AppColors.dividerGrey, height: 1),
-          const SizedBox(height: 16),
-          Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 24,
-            runSpacing: 12,
-            children: [
-              Text(
-                '© 2026 QuickIn, Inc.',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.ink.withValues(alpha: 0.7),
-                ),
-              ),
-              _footerTextButton('Terms'),
-              const Text('·', style: TextStyle(color: AppColors.greyText)),
-              _footerTextButton('Sitemap'),
-              const Text('·', style: TextStyle(color: AppColors.greyText)),
-              _footerTextButton('Privacy'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  'https://flagcdn.com/w40/eg.png',
-                  height: 24,
-                  width: 24,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.public, size: 24, color: AppColors.greyText),
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                '\$ EGP',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.ink,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-        ],
-      ),
-    );
-  }
-
-  static Widget _footerTextButton(String text) {
-    return InkWell(
-      onTap: () {},
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: AppColors.ink.withValues(alpha: 0.7),
-        ),
       ),
     );
   }

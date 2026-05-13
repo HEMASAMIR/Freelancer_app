@@ -14,13 +14,20 @@ class PropertySearchBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+      padding: EdgeInsets.only(
+        left: 24.w,
+        right: 24.w,
+        top: 12.h,
+        bottom: 12.h,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.grey.shade200)),
       ),
-      child: Row(
-        children: [
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
           // زر مسح الكل
           TextButton(
             onPressed: onClearAll,
@@ -62,6 +69,7 @@ class PropertySearchBottomBar extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

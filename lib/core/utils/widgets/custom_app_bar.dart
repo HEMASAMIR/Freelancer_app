@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/app_router/routes.dart';
+import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/core/di/service_locator.dart';
-import 'package:freelancer/core/shared_helper/app_color.dart'; // تأكد من المسار الصحيح للالوان
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
-import 'package:freelancer/features/auth/view/presentation/view/help_center.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
 import 'package:freelancer/features/auth/view/presentation/view/sign_up_view.dart';
 import 'package:freelancer/features/search/data/search_model/search_params_model.dart';
@@ -18,7 +17,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color customRedColor = AppColors.maroon;
+    const Color customRedColor = AppColors.primaryBurgundy;
 
     return Container(
       color: Colors.white,
@@ -55,64 +54,67 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
 
               // Search Bar Section
-              GestureDetector(
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (context) => BlocProvider(
-                      create: (_) => sl<SearchCubit>(),
-                      child: AirbnbSearchModal(
-                        initialParams: SearchParamsModel(),
+              Expanded( // ✅ FIX: يمنع الـ Overflow لو الشاشة ضيقة
+                child: GestureDetector(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => BlocProvider(
+                        create: (_) => sl<SearchCubit>(),
+                        child: AirbnbSearchModal(
+                          initialParams: SearchParamsModel(),
+                        ),
                       ),
+                    );
+                  },
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: 12.w),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 6.h,
                     ),
-                  );
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 6.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Search',
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w500,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
-                      SizedBox(width: 8.w),
-                      CircleAvatar(
-                        radius: 14.r,
-                        backgroundColor: customRedColor,
-                        child: Icon(
-                          Icons.search,
-                          color: Colors.white,
-                          size: 15.r,
+                      ],
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Search',
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
+                        CircleAvatar(
+                          radius: 14.r,
+                          backgroundColor: customRedColor,
+                          child: Icon(
+                            Icons.search,
+                            color: Colors.white,
+                            size: 15.r,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
 
               // Menu & Profile Section
-              BlocBuilder<AuthCubit, AuthState>(
+              BlocBuilder<AuthCubit, AuthCubitState>(
                 builder: (context, state) {
                   return Container(
                     padding: EdgeInsets.symmetric(
@@ -164,13 +166,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                                           color: Colors.black,
                                           fontSize: 13.sp,
                                         ),
+                                        overflow: TextOverflow.ellipsis, // ✅ FIX
+                                        maxLines: 1,
                                       ),
                                       Text(
-                                        user.email ?? '',
+                                        user.email,
                                         style: TextStyle(
                                           fontSize: 11.sp,
                                           color: Colors.grey.shade600,
                                         ),
+                                        overflow: TextOverflow.ellipsis, // ✅ FIX
+                                        maxLines: 1,
                                       ),
                                     ],
                                   ),
@@ -187,7 +193,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                                 _buildPopupItem('bookings', 'Bookings'),
                                 const PopupMenuDivider(height: 1),
                                 _buildPopupItem('account', 'Account'),
-                                _buildPopupItem('help', 'Help Center'),
                                 const PopupMenuDivider(height: 1),
                                 _buildPopupItem('logout', 'Log out'),
                               ];
@@ -202,7 +207,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                               _buildPopupItem('login', 'Log in'),
                               const PopupMenuDivider(height: 1),
                               _buildPopupItem('host', 'Host your home'),
-                              _buildPopupItem('help', 'Help Center'),
                             ];
                           },
                         ),
@@ -266,8 +270,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              backgroundColor: AppColors
-                  .maroon, // استخدمنا اللون المارون بتاعك عشان يبقى شيك
+              backgroundColor: AppColors.primaryBurgundy,
               behavior: SnackBarBehavior
                   .floating, // خليناه عايم مش لزق في الشاشة من تحت
               shape: RoundedRectangleBorder(
@@ -288,8 +291,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
               action: SnackBarAction(
                 label: 'Login',
-                textColor:
-                    Colors.white, // لون الزرار أبيض عشان يظهر على المارون
+                textColor: Colors.white,
                 onPressed: () => showDialog(
                   context: context,
                   builder: (_) => const LoginView(),
@@ -300,20 +302,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         }
         break;
 
-      case 'help':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const HelpCenter()),
-        );
-        break;
 
       case 'dashboard':
         {
           final authState = context.read<AuthCubit>().state;
           if (authState is AuthAdminSuccess) {
             Navigator.pushNamed(context, AppRoutes.adminDashboard);
+          } else if (authState is AuthSuccess) {
+            Navigator.pushNamed(context, AppRoutes.hostDashboard);
           } else {
-            // غير الادمن بيروح للهوم
             Navigator.pushNamed(context, AppRoutes.home);
           }
           break;

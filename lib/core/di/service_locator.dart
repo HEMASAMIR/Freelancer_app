@@ -11,6 +11,10 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/core/network/auth_interceptor.dart';
 
+// Notifications
+import 'package:freelancer/features/notifications/data/services/host_notification_service.dart';
+import 'package:freelancer/features/notifications/logic/host_notification_cubit.dart';
+
 // Comments & Q&A
 import 'package:freelancer/features/comments/data/repos/comments_repo.dart';
 import 'package:freelancer/features/comments/data/repos/comments_repo_impl.dart';
@@ -19,7 +23,7 @@ import 'package:freelancer/features/comments/logic/cubit/comments_cubit.dart';
 // Auth
 import 'package:freelancer/features/auth/data/repos/auth_repo.dart';
 import 'package:freelancer/features/auth/data/repos/auth_repo_impl.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
 import 'package:freelancer/features/account/logic/security_cubit.dart';
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_wizard_cubit.dart';
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_form_cubit.dart';
@@ -145,7 +149,11 @@ Future<void> setupServiceLocator() async {
 
   // --- Auth Feature ---
   sl.registerLazySingleton<AuthRepo>(
-    () => AuthRepoImpl(dio: sl<Dio>(), prefs: sl<SharedPreferences>()),
+    () => AuthRepoImpl(
+      dio: sl<Dio>(),
+      prefs: sl<SharedPreferences>(),
+      supabase: sl<SupabaseClient>(),
+    ),
   );
   // Register AdminEmailService — load() must complete before AuthCubit is created
   // because AuthCubit's constructor calls isAdmin() synchronously.
@@ -164,7 +172,7 @@ Future<void> setupServiceLocator() async {
 
   // --- Search Feature ---
   sl.registerLazySingleton<SearchRepository>(
-    () => SearchRepositoryImpl(dio: sl<Dio>()),
+    () => SearchRepositoryImpl(supabase: sl<SupabaseClient>()),
   );
   sl.registerFactory<SearchCubit>(() => SearchCubit(sl<SearchRepository>()));
 
@@ -276,5 +284,13 @@ Future<void> setupServiceLocator() async {
   );
   sl.registerFactory<CommentsCubit>(
     () => CommentsCubit(sl<CommentsRepository>()),
+  );
+
+  // --- Host Notifications Feature ---
+  sl.registerLazySingleton<HostNotificationService>(
+    () => HostNotificationService(sl<SupabaseClient>()),
+  );
+  sl.registerLazySingleton<HostNotificationCubit>(
+    () => HostNotificationCubit(sl<HostNotificationService>()),
   );
 }

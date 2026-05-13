@@ -5,6 +5,7 @@ import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/features/identity_verification/logic/identity_verification_cubit.dart';
 import 'package:freelancer/features/identity_verification/logic/identity_verification_state.dart';
 import 'package:freelancer/features/listing_wizard/presentation/view/listing_success_screen.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -92,8 +93,9 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
               style: TextStyle(color: Colors.black, fontSize: 16.sp, fontWeight: FontWeight.bold),
             ),
           ),
-          body: SingleChildScrollView(
-            padding: EdgeInsets.all(24.w),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(24.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -204,6 +206,7 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
             ],
           ),
         ),
+        ),
         );
       },
     );
@@ -281,27 +284,8 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
             const Spacer(flex: 2),
             // Footer
             Padding(
-              padding: EdgeInsets.only(bottom: 24.h),
-              child: Column(
-                children: [
-                  Text(
-                    '© 2026 QuickIn, Inc. · Terms · Sitemap · Privacy',
-                    style: TextStyle(fontSize: 10.sp, color: Colors.grey.shade500),
-                  ),
-                  SizedBox(height: 8.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.public, size: 14.sp, color: Colors.grey.shade600),
-                      SizedBox(width: 4.w),
-                      Text(
-                        'English (US)  EGP',
-                        style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
+              child: const CustomFooter(),
             ),
           ],
         ),

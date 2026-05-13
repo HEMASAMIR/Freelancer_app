@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/core/di/service_locator.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
 import 'package:freelancer/features/auth/view/presentation/view/sign_up_view.dart';

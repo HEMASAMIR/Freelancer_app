@@ -10,12 +10,17 @@ class ListingModel {
   final String? cityId;
   final String? stateId;
   final String? countryId;
+  // Resolved name fields (filled by RPC or lookup)
+  final String? cityName;
+  final String? stateName;
+  final String? countryName;
   final int? maxGuests;
   final int? bedrooms;
   final int? beds;
   final int? bathrooms;
   final String? propertyTypeId;
   final bool? isGuestFavorite;
+  final bool? isBestOffer;
   final bool? isPublished;
   final double? cleaningFee;
   final String? currency;
@@ -44,12 +49,16 @@ class ListingModel {
     this.cityId,
     this.stateId,
     this.countryId,
+    this.cityName,
+    this.stateName,
+    this.countryName,
     this.maxGuests,
     this.bedrooms,
     this.beds,
     this.bathrooms,
     this.propertyTypeId,
     this.isGuestFavorite,
+    this.isBestOffer,
     this.isPublished,
     this.cleaningFee,
     this.currency,
@@ -69,19 +78,29 @@ class ListingModel {
     this.translations,
   });
 
-  @Deprecated('Use cityId')
-  String? get city => cityId;
+  // Helper getters: return resolved name first, NEVER fallback to UUID for display
+  String? get city => _filterUuid(cityName);
+  String? get state => _filterUuid(stateName);
+  String? get country => _filterUuid(countryName);
 
-  @Deprecated('Use stateId')
-  String? get state => stateId;
+  String? get displayLocation {
+    final c = city;
+    final co = country;
+    if (c != null && co != null) return '$c, $co';
+    if (c != null) return c;
+    if (co != null) return co;
+    return _filterUuid(location);
+  }
 
-  @Deprecated('Use countryId')
-  String? get country => countryId;
+  String? _filterUuid(String? value) {
+    if (value == null) return null;
+    if (value.length > 30 && value.contains('-')) return null; // Likely a UUID
+    return value;
+  }
 
   @Deprecated('Use userId')
   String? get hostId => userId;
 
-  // ✅ ميثود الـ copyWith عشان تخلي شغلك Dynamic 100%
   ListingModel copyWith({
     String? id,
     String? userId,
@@ -92,12 +111,16 @@ class ListingModel {
     String? cityId,
     String? stateId,
     String? countryId,
+    String? cityName,
+    String? stateName,
+    String? countryName,
     int? maxGuests,
     int? bedrooms,
     int? beds,
     int? bathrooms,
     String? propertyTypeId,
     bool? isGuestFavorite,
+    bool? isBestOffer,
     bool? isPublished,
     double? cleaningFee,
     String? currency,
@@ -126,12 +149,16 @@ class ListingModel {
       cityId: cityId ?? this.cityId,
       stateId: stateId ?? this.stateId,
       countryId: countryId ?? this.countryId,
+      cityName: cityName ?? this.cityName,
+      stateName: stateName ?? this.stateName,
+      countryName: countryName ?? this.countryName,
       maxGuests: maxGuests ?? this.maxGuests,
       bedrooms: bedrooms ?? this.bedrooms,
       beds: beds ?? this.beds,
       bathrooms: bathrooms ?? this.bathrooms,
       propertyTypeId: propertyTypeId ?? this.propertyTypeId,
       isGuestFavorite: isGuestFavorite ?? this.isGuestFavorite,
+      isBestOffer: isBestOffer ?? this.isBestOffer,
       isPublished: isPublished ?? this.isPublished,
       cleaningFee: cleaningFee ?? this.cleaningFee,
       currency: currency ?? this.currency,
@@ -187,7 +214,6 @@ class ListingModel {
     return json;
   }
 
-  // الـ Logic بتاع استخراج الإحداثيات من اللينك
   static double? _parseLat(String? link) {
     if (link == null) return null;
     final pinRegExp = RegExp(r'3d([0-9.-]+)!4d([0-9.-]+)');
@@ -258,6 +284,21 @@ class ListingModel {
     final parsedLat = parsedPoint['lat'];
     final parsedLng = parsedPoint['lng'];
 
+    // Helper to extract name from potential nested join object or flat key
+    String? extractName(dynamic value, String? flatKey) {
+      if (value is List && value.isNotEmpty) {
+        return extractName(value.first, null);
+      }
+      if (value is Map && value.containsKey('name')) {
+        return value['name']?.toString();
+      }
+      final str = value?.toString() ?? flatKey?.toString();
+      if (str != null && str.length > 30 && str.contains('-')) {
+        return null; // UUID
+      }
+      return str;
+    }
+
     return ListingModel(
       id: json['id'],
       userId: json['user_id'],
@@ -268,23 +309,30 @@ class ListingModel {
       cityId: json['city_id']?.toString(),
       stateId: json['state_id']?.toString(),
       countryId: json['country_id']?.toString(),
+      
+      // Resolved names - handle nested join objects like { "name": "..." } or flat keys
+      cityName: extractName(json['city'] ?? json['cities'], json['city_name']),
+      stateName: extractName(json['state'] ?? json['states'], json['state_name']),
+      countryName: extractName(json['country'] ?? json['countries'], json['country_name']),
+
       maxGuests: json['max_guests'],
       bedrooms: json['bedrooms'],
       beds: json['beds'],
       bathrooms: json['bathrooms'],
       propertyTypeId: json['property_type_id'],
       isGuestFavorite: json['is_guest_favorite'] ?? false,
+      isBestOffer: json['is_best_offer'] ?? json['best_offer'] ?? false,
       isPublished: json['is_published'] ?? false,
       cleaningFee: (json['cleaning_fee'] as num?)?.toDouble() ?? 0.0,
       currency: json['currency'] ?? 'EGP',
       cancellationPolicy: json['cancellation_policy'],
       listingCode: json['listing_code'],
-        minNights: json['min_nights'],
+      minNights: json['min_nights'],
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
       googleMapsLink: json['google_maps_link'],
-        locationGeo: locationGeoText,
+      locationGeo: locationGeoText,
       lat:
           parsedLat ??
           (json['lat'] as num?)?.toDouble() ??
@@ -302,11 +350,11 @@ class ListingModel {
           : null,
       images:
           (json['listing_images'] as List?)
-              ?.map((i) => ListingImage.fromJson(i))
-              .toList() ??
+               ?.map((i) => ListingImage.fromJson(i))
+               .toList() ??
           (json['images_json'] as List?)
-              ?.map((i) => ListingImage.fromJson(i))
-              .toList(),
+               ?.map((i) => ListingImage.fromJson(i))
+               .toList(),
       lifestyles: (json['lifestyles_json'] as List?)
           ?.map((i) => LifestyleModel.fromJson(i))
           .toList(),
@@ -324,11 +372,27 @@ class ListingImage {
   ListingImage({this.id, this.url, this.order, this.category});
 
   factory ListingImage.fromJson(Map<String, dynamic> json) {
+    String? rawUrl =
+        json['url']?.toString() ??
+        json['image_url']?.toString() ??
+        json['listing_image_url']?.toString() ??
+        json['image']?.toString();
+
+    String? resolvedUrl;
+    if (rawUrl != null && rawUrl.isNotEmpty) {
+      if (rawUrl.startsWith('http')) {
+        resolvedUrl = rawUrl;
+      } else {
+        const supabaseUrl = 'https://xpvrgdpsvffmttlwwfuo.supabase.co';
+        resolvedUrl = '$supabaseUrl/storage/v1/object/public/$rawUrl';
+      }
+    }
+
     return ListingImage(
-      id: json['id'],
-      url: json['url'],
-      order: json['order'],
-      category: json['category'],
+      id: json['id']?.toString(),
+      url: resolvedUrl,
+      order: json['order'] ?? json['sort_order'],
+      category: json['category']?.toString(),
     );
   }
 }

@@ -7,8 +7,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/favourite/presentation/widget/wishlist_bottom_sheet.dart';
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:shimmer/shimmer.dart';
 
 class PropertyListingCard extends StatelessWidget {
@@ -35,6 +35,17 @@ class PropertyListingCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: EdgeInsets.only(bottom: 24.h),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -44,7 +55,7 @@ class PropertyListingCard extends StatelessWidget {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(24.r),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
                   child: Image.network(
                     imageUrl,
                     height: 280.h,
@@ -103,8 +114,8 @@ class PropertyListingCard extends StatelessWidget {
                             ),
                           ),
                           onPressed: () {
-                            final authState = context.read<AuthCubit>().state;
-                            final isLoggedIn = authState is AuthSuccess || authState is AuthAdminSuccess;
+                            final AuthCubitState = context.read<AuthCubit>().state;
+                            final isLoggedIn = AuthCubitState is AuthSuccess || AuthCubitState is AuthAdminSuccess;
                             if (!isLoggedIn) {
                               showLoginRequiredSheet(context);
                               return;
@@ -123,8 +134,8 @@ class PropertyListingCard extends StatelessWidget {
                     },
                   ),
                 ),
-                // الـ Badge بتاع Guest Favorite
-                if (listing.isGuestFavorite == true)
+                // الـ Badge بتاع Best Offer أو Guest Favorite
+                if (listing.isBestOffer == true || listing.isGuestFavorite == true)
                   Positioned(
                     top: 12.h,
                     left: 12.w,
@@ -134,73 +145,113 @@ class PropertyListingCard extends StatelessWidget {
                         vertical: 4.h,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: listing.isBestOffer == true
+                            ? const Color(0xFF1A7A3C)  // أخضر للـ Best Offer
+                            : Colors.white.withOpacity(0.9),
                         borderRadius: BorderRadius.circular(20.r),
                       ),
-                      child: Text(
-                        "Guest favorite",
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (listing.isBestOffer == true)
+                            Padding(
+                              padding: EdgeInsets.only(right: 4.w),
+                              child: Icon(Icons.local_offer_rounded, size: 12.r, color: Colors.white),
+                            ),
+                          Text(
+                            listing.isBestOffer == true ? "Best Offer" : "Guest favorite",
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.bold,
+                              color: listing.isBestOffer == true ? Colors.white : Colors.black,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
               ],
             ),
-            SizedBox(height: 12.h),
-
-            // --- 2. العنوان والتقييم ---
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    listing.title ?? "Cozy Stay",
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryBurgundy,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Row(
-                  children: [
-                    Icon(Icons.star, size: 14.r, color: Colors.black),
-                    SizedBox(width: 4.w),
-                    Text("4.85", style: TextStyle(fontSize: 14.sp)),
-                  ],
-                ),
-              ],
-            ),
-
-            // --- 3. الموقع ---
-            Text(
-              "${listing.city ?? 'Cairo'}, ${listing.country ?? 'Egypt'}",
-              style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
-            ),
-
-            // --- 4. التفاصيل ---
-            SizedBox(height: 4.h),
-            Text(
-              "${listing.maxGuests ?? 0} guests · ${listing.bedrooms ?? 0} bedroom · ${listing.bathrooms ?? 0} bath",
-              style: TextStyle(fontSize: 13.sp, color: Colors.grey[600]),
-            ),
-
-            // --- 5. السعر ---
-            SizedBox(height: 8.h),
-            RichText(
-              text: TextSpan(
-                style: TextStyle(color: Colors.black, fontSize: 15.sp),
+            // --- النصوص والتفاصيل ---
+            Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextSpan(
-                    text:
-                        "${listing.currency ?? 'EGP'} ${listing.pricePerNight?.round() ?? 0} ",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  // --- 2. العنوان والتقييم ---
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          listing.title ?? "Cozy Stay",
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryBurgundy,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Icon(Icons.star, size: 14.r, color: Colors.black),
+                          SizedBox(width: 4.w),
+                          Text("4.85", style: TextStyle(fontSize: 14.sp)),
+                        ],
+                      ),
+                    ],
                   ),
-                  const TextSpan(text: "night"),
+
+                  // --- 3. الموقع ---
+                  SizedBox(height: 6.h),
+                  Text(
+                    listing.displayLocation ?? '',
+                    style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+                  ),
+
+                  // --- 4. التفاصيل ---
+                  SizedBox(height: 4.h),
+                  Text(
+                    "${listing.maxGuests ?? 0} guests · ${listing.beds ?? listing.bedrooms ?? 0} beds · ${listing.bathrooms ?? 0} bath",
+                    style: TextStyle(fontSize: 13.sp, color: Colors.grey[600]),
+                  ),
+
+                  // --- 5. السعر ---
+                  SizedBox(height: 12.h),
+                  Row(
+                    children: [
+                      // السعر الأصلي المشطوب لو في displayPrice
+                      if (listing.displayPrice != null && listing.displayPrice! > (listing.pricePerNight ?? 0)) ...[
+                        Text(
+                          "${listing.currency ?? 'EGP'} ${listing.displayPrice!.round()}",
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            color: Colors.grey,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                        SizedBox(width: 6.w),
+                        Text(
+                          "${listing.currency ?? 'EGP'} ${listing.pricePerNight?.round() ?? 0} ",
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF1A7A3C), // أخضر
+                          ),
+                        ),
+                      ] else
+                        Text(
+                          "${listing.currency ?? 'EGP'} ${listing.pricePerNight?.round() ?? 0} ",
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      Text("night", style: TextStyle(fontSize: 14.sp, color: Colors.black87)),
+                    ],
+                  ),
                 ],
               ),
             ),

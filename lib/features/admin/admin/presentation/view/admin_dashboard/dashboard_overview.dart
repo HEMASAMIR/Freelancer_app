@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/shared_helper/app_color.dart';
 import 'package:freelancer/features/admin/logic/admin_management_cubit.dart';
 import 'package:freelancer/features/admin/logic/admin_management_state.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
 
 class DashboardOverviewContent extends StatefulWidget {
   final Function(String)? onViewChanged;
@@ -187,12 +188,7 @@ class _DashboardOverviewContentState extends State<DashboardOverviewContent> {
 
             SizedBox(height: 40.h),
 
-            Center(
-              child: Text(
-                '© 2026 QuickIn Inc. · Terms · Sitemap · Privacy',
-                style: TextStyle(fontSize: 10.sp, color: Colors.grey),
-              ),
-            ),
+            const CustomFooter(),
           ],
         ),
       ),

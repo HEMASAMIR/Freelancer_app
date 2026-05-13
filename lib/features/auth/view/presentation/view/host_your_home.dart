@@ -1,7 +1,7 @@
 // import 'package:flutter/material.dart';
 // import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-// import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+// import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+// import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 // import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
 
 // const _kPrimary = Color(0xFF8B1A1A);

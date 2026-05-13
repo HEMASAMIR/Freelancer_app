@@ -34,7 +34,7 @@ class _WhoBookingPageState extends State<WhoBookingPage> {
                       borderRadius: BorderRadius.circular(15.r),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: Colors.black.withOpacity(0.05),
                           blurRadius: 10,
                         ),
                       ],
@@ -43,15 +43,23 @@ class _WhoBookingPageState extends State<WhoBookingPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Who",
+                          "Who", // ✅ This is fixed width, so it's safe
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14.sp,
                           ),
                         ),
-                        Text(
-                          guests > 1 ? "$guests guests" : "Add guests",
-                          style: TextStyle(color: Colors.grey, fontSize: 14.sp),
+                        SizedBox(width: 16.w),
+                        Expanded(
+                          // ✅ FIX: Allows text to shrink or wrap if needed
+                          child: Text(
+                            guests > 1 ? "$guests guests" : "Add guests",
+                            textAlign: TextAlign.end,
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14.sp,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -67,7 +75,7 @@ class _WhoBookingPageState extends State<WhoBookingPage> {
                     borderRadius: BorderRadius.circular(25.r),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: Colors.black.withOpacity(0.1),
                         blurRadius: 20,
                       ),
                     ],
@@ -169,19 +177,25 @@ class WhoSection extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "Adults",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp),
-              ),
-              Text(
-                "Ages 13 or above",
-                style: TextStyle(fontSize: 11.sp, color: Colors.grey),
-              ),
-            ],
+          Expanded(
+            // ✅ FIX: Prevents overflow if text is long (e.g., localization)
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Adults",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13.sp,
+                  ),
+                ),
+                Text(
+                  "Ages 13 or above",
+                  style: TextStyle(fontSize: 11.sp, color: Colors.grey),
+                ),
+              ],
+            ),
           ),
           Row(
             children: [

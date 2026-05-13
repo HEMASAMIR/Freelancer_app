@@ -9,8 +9,9 @@ import 'package:freelancer/core/shared_helper/app_color.dart';
 import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/core/utils/widgets/input_box.dart';
 import 'package:freelancer/core/utils/widgets/social_button.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
+import 'package:freelancer/features/auth/view/widget/check_email_dialog.dart';
 
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
@@ -47,7 +48,7 @@ class _SignUpViewState extends State<SignUpView> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: sl<AuthCubit>(),
-      child: BlocConsumer<AuthCubit, AuthState>(
+      child: BlocConsumer<AuthCubit, AuthCubitState>(
         listener: (context, state) {
           if (state is AuthAdminSuccess) {
             CustomToast.show(
@@ -57,8 +58,8 @@ class _SignUpViewState extends State<SignUpView> {
             );
             context.read<AuthCubit>().navigateAfterLogin(context);
           } else if (state is AuthSuccess) {
-            CustomToast.show(context, "Account created! 🚀", ToastState.success);
-            context.read<AuthCubit>().navigateAfterLogin(context);
+            // Show Check Email Dialog instead of navigating immediately
+            CheckEmailDialog.show(context, _emailController.text.trim());
           } else if (state is AuthError) {
             CustomToast.show(context, state.message, ToastState.error);
           }
@@ -66,12 +67,15 @@ class _SignUpViewState extends State<SignUpView> {
         builder: (context, state) {
           final cubit = context.read<AuthCubit>();
 
-          return Stack(
-            children: [
-              // ── Blurred backdrop ──
-              GestureDetector(
-                onTap: cubit.isLoading ? null : () => Navigator.pop(context),
-                child: BackdropFilter(
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            resizeToAvoidBottomInset: true,
+            body: Stack(
+              children: [
+                // ── Blurred backdrop ──
+                GestureDetector(
+                  onTap: cubit.isLoading ? null : () => Navigator.pop(context),
+                  child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
                   child: Container(
                     color: Colors.black.withValues(alpha: 0.30),
@@ -143,12 +147,7 @@ class _SignUpViewState extends State<SignUpView> {
                                   : () => cubit.signInWithGoogle(),
                             ),
                             SizedBox(height: 10.h),
-                            SocialButton(
-                              icon: Icons.apple,
-                              label: 'Continue with Apple',
-                              onTap: cubit.isLoading ? null : () {},
-                            ),
-                            SizedBox(height: 15.h),
+
 
                             Row(
                               children: [
@@ -281,6 +280,7 @@ class _SignUpViewState extends State<SignUpView> {
                 ),
               ),
             ],
+          ),
           );
         },
       ),

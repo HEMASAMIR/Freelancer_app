@@ -9,6 +9,7 @@ class HeroWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        // ── Background image ────────────────────────────────────────────────
         Container(
           width: double.infinity,
           height: 480.h,
@@ -21,6 +22,7 @@ class HeroWidget extends StatelessWidget {
             ),
           ),
         ),
+        // ── Dark gradient overlay ───────────────────────────────────────────
         Container(
           height: 480.h,
           width: double.infinity,
@@ -28,10 +30,14 @@ class HeroWidget extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
+              colors: [
+                Colors.transparent,
+                Colors.black.withValues(alpha: 0.65),
+              ],
             ),
           ),
         ),
+        // ── Text content ────────────────────────────────────────────────────
         Positioned(
           bottom: 50.h,
           left: 20.w,
@@ -40,17 +46,17 @@ class HeroWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Curated stays\nfor slow travelers",
+                "Find it. Book it. Live it",
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 36.sp,
+                  fontSize: 30.sp,
                   fontWeight: FontWeight.bold,
                   height: 1.1,
                 ),
               ),
               SizedBox(height: 15.h),
               Text(
-                "Handpicked homes designed for comfort,\nbeauty, and calm.",
+                "Carefully selected homes from trusted hosts,\ndesigned with guests in mind.",
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 17.sp,

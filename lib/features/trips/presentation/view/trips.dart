@@ -3,12 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/constant/constant.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_state.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:freelancer/features/bookings/data/models/booking_model.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_cubit.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_state.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
+import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
@@ -35,11 +36,11 @@ class _TripsScreenState extends State<TripsScreen> {
   }
 
   void _loadBookings() {
-    final authState = context.read<AuthCubit>().state;
-    if (authState is AuthSuccess || authState is AuthAdminSuccess) {
-      final userId = authState is AuthSuccess
-          ? authState.user.id
-          : (authState as AuthAdminSuccess).user.id;
+    final AuthCubitState = context.read<AuthCubit>().state;
+    if (AuthCubitState is AuthSuccess || AuthCubitState is AuthAdminSuccess) {
+      final userId = AuthCubitState is AuthSuccess
+          ? AuthCubitState.user.id
+          : (AuthCubitState as AuthAdminSuccess).user.id;
       context.read<BookingsCubit>().getUserBookings(userId: userId);
     } else {
       // لو مش مسجل دخول، ممكن نـ emit حالة فاضية أو نوجه للـ login
@@ -100,7 +101,10 @@ class _TripsScreenState extends State<TripsScreen> {
         actions: [
           if (Navigator.of(context).canPop())
             IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.ink),
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: AppColors.ink,
+              ),
               onPressed: () => Navigator.of(context).pop(),
             ),
         ],
@@ -114,132 +118,156 @@ class _TripsScreenState extends State<TripsScreen> {
         ),
       ),
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Main Content ──────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Trips',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Main Content ──────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Trips',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Your booking requests and reservations.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.sub.withValues(alpha: 0.7),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Your booking requests and reservations.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.sub.withValues(alpha: 0.7),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // ── Search ─────────────────────────────────────────
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (v) => setState(() => _searchQuery = v),
-                      decoration: InputDecoration(
-                        hintText: 'Find by reservation code...',
-                        hintStyle: TextStyle(
-                          color: AppColors.sub.withValues(alpha: 0.5),
-                          fontSize: 14,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: AppColors.sub.withValues(alpha: 0.5),
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 14,
+                    // ── Search ─────────────────────────────────────────
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (v) => setState(() => _searchQuery = v),
+                        decoration: InputDecoration(
+                          hintText: 'Find by reservation code...',
+                          hintStyle: TextStyle(
+                            color: AppColors.sub.withValues(alpha: 0.5),
+                            fontSize: 14,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: AppColors.sub.withValues(alpha: 0.5),
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // ── Filter Chips ───────────────────────────────────
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: ['Pending', 'Upcoming', 'History'].map((filter) {
-                        final isSelected = _selectedFilter == filter;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: GestureDetector(
-                            onTap: () => setState(() => _selectedFilter = filter),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected ? AppColors.ink : Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    filter == 'Pending'
-                                        ? Icons.access_time_rounded
-                                        : filter == 'Upcoming'
-                                        ? Icons.check_circle_outline_rounded
-                                        : Icons.history_rounded,
-                                    size: 14,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : AppColors.sub,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    filter,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
+                    // ── Filter Chips ───────────────────────────────────
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: ['Pending', 'Upcoming', 'History'].map((
+                          filter,
+                        ) {
+                          final isSelected = _selectedFilter == filter;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: GestureDetector(
+                              onTap: () =>
+                                  setState(() => _selectedFilter = filter),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppColors.ink
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      filter == 'Pending'
+                                          ? Icons.access_time_rounded
+                                          : filter == 'Upcoming'
+                                          ? Icons.check_circle_outline_rounded
+                                          : Icons.history_rounded,
+                                      size: 14,
                                       color: isSelected
                                           ? Colors.white
                                           : AppColors.sub,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      filter,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : AppColors.sub,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        }).toList(),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // ── Content ──────────────────────────────────────────────
-            Expanded(
-              child: BlocBuilder<BookingsCubit, BookingsState>(
+              // ── Content ──────────────────────────────────────────────
+              BlocConsumer<BookingsCubit, BookingsState>(
+                listener: (context, state) {
+                  if (state is BookingsCancelled) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Reservation cancelled successfully'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    _loadBookings(); // Reload the list so only the cancelled one disappears
+                  }
+                },
                 builder: (context, state) {
                   if (state is BookingsLoading) {
                     return const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primaryBurgundy,
-                        strokeWidth: 2.5,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40),
+                        child: CircularProgressIndicator(
+                          color: AppColors.primaryBurgundy,
+                          strokeWidth: 2.5,
+                        ),
                       ),
                     );
                   }
                   if (state is BookingsError) {
-                    return Center(child: Text(state.message));
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 40),
+                        child: Text(state.message),
+                      ),
+                    );
                   }
                   if (state is BookingsListLoaded) {
                     final filtered = _filterBookings(state.bookings);
@@ -247,9 +275,11 @@ class _TripsScreenState extends State<TripsScreen> {
                       return _EmptyTrips(filter: _selectedFilter);
                     }
                     return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       itemCount: filtered.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (_, i) => _TripCard(booking: filtered[i]),
                     );
                   }
@@ -257,19 +287,13 @@ class _TripsScreenState extends State<TripsScreen> {
                   return _EmptyTrips(filter: _selectedFilter);
                 },
               ),
-            ),
 
-            // ── Footer ───────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16, top: 8),
-              child: Center(
-                child: Text(
-                  '© 2026 QuickIn, Inc. · Terms · Sitemap · Privacy',
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
-                ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: CustomFooter(),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -311,7 +335,9 @@ class _EmptyTrips extends StatelessWidget {
                 Icon(
                   config['icon'] as IconData,
                   size: 64.sp,
-                  color: config['iconColor'] as Color? ?? AppColors.sub.withValues(alpha: 0.3),
+                  color:
+                      config['iconColor'] as Color? ??
+                      AppColors.sub.withValues(alpha: 0.3),
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -339,8 +365,9 @@ class _EmptyTrips extends StatelessWidget {
                     width: double.infinity,
                     height: 52.h,
                     child: ElevatedButton(
-                      onPressed: () =>
-                          Navigator.of(context).pushNamed(AppRoutes.searchResult),
+                      onPressed: () => Navigator.of(
+                        context,
+                      ).pushNamed(AppRoutes.searchResult),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryRed,
                         elevation: 0,
@@ -424,10 +451,14 @@ class _TripCard extends StatelessWidget {
     String checkOut = '-';
     try {
       if (booking.checkIn != null) {
-        checkIn = DateFormat('MMM d, yyyy').format(DateTime.parse(booking.checkIn!));
+        checkIn = DateFormat(
+          'MMM d, yyyy',
+        ).format(DateTime.parse(booking.checkIn!));
       }
       if (booking.checkOut != null) {
-        checkOut = DateFormat('MMM d, yyyy').format(DateTime.parse(booking.checkOut!));
+        checkOut = DateFormat(
+          'MMM d, yyyy',
+        ).format(DateTime.parse(booking.checkOut!));
       }
     } catch (e) {
       debugPrint("Error parsing booking dates: $e");
@@ -516,10 +547,10 @@ class _TripCard extends StatelessWidget {
               children: [
                 GestureDetector(
                   onTap: () {
-                    final authState = context.read<AuthCubit>().state;
-                    final userId = authState is AuthSuccess
-                        ? authState.user.id
-                        : (authState as AuthAdminSuccess).user.id;
+                    final AuthCubitState = context.read<AuthCubit>().state;
+                    final userId = AuthCubitState is AuthSuccess
+                        ? AuthCubitState.user.id
+                        : (AuthCubitState as AuthAdminSuccess).user.id;
                     context.read<BookingsCubit>().cancelBooking(
                       booking.id ?? '',
                       userId,
@@ -541,29 +572,41 @@ class _TripCard extends StatelessWidget {
                   listener: (context, state) {
                     if (state is PaymentSuccess) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Receipt uploaded successfully!'), backgroundColor: Colors.green),
+                        const SnackBar(
+                          content: Text('Receipt uploaded successfully!'),
+                          backgroundColor: Colors.green,
+                        ),
                       );
                     }
                     if (state is PaymentError) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                        SnackBar(
+                          content: Text(state.message),
+                          backgroundColor: Colors.red,
+                        ),
                       );
                     }
                   },
                   builder: (context, state) {
                     return GestureDetector(
-                      onTap: state is PaymentLoading ? null : () async {
-                        final picker = ImagePicker();
-                        final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-                        if (image != null && context.mounted) {
-                          context.read<PaymentCubit>().uploadReceipt(
-                            booking.id ?? '',
-                            File(image.path),
-                          );
-                        }
-                      },
+                      onTap: state is PaymentLoading
+                          ? null
+                          : () async {
+                              final picker = ImagePicker();
+                              final XFile? image = await picker.pickImage(
+                                source: ImageSource.gallery,
+                              );
+                              if (image != null && context.mounted) {
+                                context.read<PaymentCubit>().uploadReceipt(
+                                  booking.id ?? '',
+                                  File(image.path),
+                                );
+                              }
+                            },
                       child: Text(
-                        state is PaymentLoading ? 'Uploading...' : 'Upload Receipt',
+                        state is PaymentLoading
+                            ? 'Uploading...'
+                            : 'Upload Receipt',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,

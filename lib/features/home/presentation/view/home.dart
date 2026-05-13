@@ -32,6 +32,7 @@ import 'package:freelancer/core/utils/widgets/custom_app_bar.dart';
 import 'package:freelancer/features/home/presentation/widget/home_screen_body.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 import 'package:freelancer/features/search/logic/search_cubit/cubit/search_cubit.dart';
+import 'package:freelancer/core/shared_helper/app_color.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -51,4 +52,4 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-}
+}

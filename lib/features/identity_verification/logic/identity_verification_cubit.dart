@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/core/services/admin_email_service.dart';
 import 'package:freelancer/features/auth/data/repos/auth_repo.dart';
-import 'package:freelancer/features/auth/logic/cubit/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
 import 'identity_verification_state.dart';
 
 class IdentityVerificationCubit extends Cubit<IdentityVerificationState> {

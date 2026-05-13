@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +7,8 @@ import 'package:freelancer/features/listing_wizard/data/models/wizard_models.dar
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_form_cubit.dart';
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_wizard_cubit.dart';
 import 'package:freelancer/features/listing_wizard/logic/cubit/listing_wizard_state.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class WizardStep4Location extends StatefulWidget {
   const WizardStep4Location({super.key});
@@ -22,7 +23,6 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
   late TextEditingController _lngController;
   late TextEditingController _addressController;
 
-  String _mapImageUrl = '';
   static const double _defaultLat = 30.0444;
   static const double _defaultLng = 31.2357;
 
@@ -39,9 +39,6 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
     _latController.addListener(_onCoordsChanged);
     _lngController.addListener(_onCoordsChanged);
     _addressController.addListener(_updateForm);
-
-    // Build initial map URL
-    _updateMapUrl(_defaultLat, _defaultLng);
   }
 
   void _updateForm() {
@@ -55,28 +52,7 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
 
   void _onCoordsChanged() {
     _updateForm();
-    final lat = double.tryParse(_latController.text.trim());
-    final lng = double.tryParse(_lngController.text.trim());
-    if (lat != null && lng != null) {
-      _updateMapUrl(lat, lng);
-    }
-  }
-
-  void _updateMapUrl(double lat, double lng) {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final url =
-        'https://static-maps.yandex.ru/1.x/'
-        '?lang=en_US'
-        '&ll=$lng,$lat'
-        '&z=14'
-        '&l=map'
-        '&size=600,300'
-        '&_t=$timestamp'; // bypass cache
-    if (mounted) {
-      setState(() {
-        _mapImageUrl = url;
-      });
-    }
+    setState(() {}); // trigger rebuild for map center
   }
 
   @override
@@ -90,6 +66,9 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
 
   @override
   Widget build(BuildContext context) {
+    final currentLat = double.tryParse(_latController.text.trim()) ?? _defaultLat;
+    final currentLng = double.tryParse(_lngController.text.trim()) ?? _defaultLng;
+
     return BlocBuilder<ListingWizardCubit, ListingWizardState>(
       builder: (context, wizardState) {
         final List<dynamic> countriesList = wizardState is ListingWizardLookupsLoaded ? wizardState.countries : [];
@@ -202,71 +181,55 @@ class _WizardStep4LocationState extends State<WizardStep4Location> {
                   height: 180.h,
                   width: double.infinity,
                   color: AppColors.dividerGrey,
-                  child: _mapImageUrl.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.map_outlined, size: 40.sp, color: AppColors.greyText),
-                              SizedBox(height: 8.h),
-                              Text(
-                                'Select a location to preview map',
-                                style: TextStyle(fontSize: 13.sp, color: AppColors.greyText),
-                              ),
-                            ],
-                          ),
-                        )
-                      : GestureDetector(
-                          onTap: () async {
-                            final lat = double.tryParse(_latController.text.trim());
-                            final lng = double.tryParse(_lngController.text.trim());
-                            if (lat != null && lng != null) {
-                              final gmapsUrl = 'https://maps.google.com/?q=$lat,$lng';
-                              if (await canLaunchUrl(Uri.parse(gmapsUrl))) {
-                                await launchUrl(Uri.parse(gmapsUrl), mode: LaunchMode.externalApplication);
-                              }
-                            }
-                          },
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Image.network(
-                                _mapImageUrl,
-                                key: ValueKey(_mapImageUrl),
-                                fit: BoxFit.cover,
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Center(
-                                    child: CircularProgressIndicator(
-                                      color: AppColors.primaryRed,
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded /
-                                              loadingProgress.expectedTotalBytes!
-                                          : null,
-                                    ),
-                                  );
-                                },
-                                errorBuilder: (context, error, stackTrace) => Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.broken_image_outlined, size: 36.sp, color: AppColors.greyText),
-                                      SizedBox(height: 8.h),
-                                      Text('Map preview unavailable', style: TextStyle(fontSize: 12.sp, color: AppColors.greyText)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              // Pin overlay at center
-                              Align(
-                                alignment: Alignment.center,
-                                child: Icon(Icons.location_on, size: 40.sp, color: AppColors.primaryRed, shadows: const [
-                                  Shadow(blurRadius: 8, color: Colors.black38),
-                                ]),
-                              ),
-                            ],
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      FlutterMap(
+                        options: MapOptions(
+                          initialCenter: LatLng(currentLat, currentLng),
+                          initialZoom: 14.0,
+                          interactionOptions: const InteractionOptions(
+                            flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                           ),
                         ),
+                        children: [
+                          TileLayer(
+                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'com.freelancer.app',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: LatLng(currentLat, currentLng),
+                                width: 80,
+                                height: 80,
+                                child: const Icon(
+                                  Icons.location_on,
+                                  color: AppColors.primaryRed,
+                                  size: 40,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Positioned(
+                        bottom: 8.h,
+                        right: 8.w,
+                        child: FloatingActionButton.small(
+                          heroTag: 'open_maps',
+                          backgroundColor: Colors.white,
+                          child: Icon(Icons.open_in_new, color: AppColors.primaryRed),
+                          onPressed: () async {
+                            final gmapsUrl = 'https://maps.google.com/?q=$currentLat,$currentLng';
+                            if (await canLaunchUrl(Uri.parse(gmapsUrl))) {
+                              await launchUrl(Uri.parse(gmapsUrl), mode: LaunchMode.externalApplication);
+                            }
+                          },
+                        ),
+                      )
+                    ],
+                  ),
                 ),
               ),
               SizedBox(height: 32.h),

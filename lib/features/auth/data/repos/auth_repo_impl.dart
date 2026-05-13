@@ -1,32 +1,32 @@
 import 'dart:convert';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:freelancer/core/constant/constant.dart';
-
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:freelancer/core/error/failures_errors.dart';
 import 'package:freelancer/features/auth/data/repos/auth_repo.dart';
 import 'package:freelancer/features/auth/data/models/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthRepoImpl implements AuthRepo {
   final Dio _dio;
   final SharedPreferences _prefs;
+  final SupabaseClient _supabase;
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    serverClientId:
-        '1027935621214-l0gp46oa1gf79dv6ja7lc2t3ttcbhme.apps.googleusercontent.com',
-    scopes: ['email', 'profile'],
-  );
-
-  AuthRepoImpl({required Dio dio, required SharedPreferences prefs})
-      : _dio = dio,
-        _prefs = prefs;
+  AuthRepoImpl({
+    required Dio dio,
+    required SharedPreferences prefs,
+    required SupabaseClient supabase,
+  }) : _dio = dio,
+       _prefs = prefs,
+       _supabase = supabase;
 
   // ─────────────────────────────────────────────
   //  Helpers
   // ─────────────────────────────────────────────
-  
+
   Future<void> _saveSession(Map<String, dynamic> data) async {
     final accessToken = data['access_token'];
     final refreshToken = data['refresh_token'];
@@ -72,7 +72,10 @@ class AuthRepoImpl implements AuthRepo {
       await _saveSession(data);
       return right(UserModel.fromJson(data['user']));
     } on DioException catch (e) {
-      final msg = e.response?.data?['error_description'] ?? e.response?.data?['msg'] ?? e.message;
+      final msg =
+          e.response?.data?['error_description'] ??
+          e.response?.data?['msg'] ??
+          e.message;
       return left(UnknownFailure(msg.toString()));
     } catch (e) {
       return left(NetworkFailure(e.toString()));
@@ -100,8 +103,6 @@ class AuthRepoImpl implements AuthRepo {
         return left(const UnknownFailure('فشل إنشاء الحساب'));
       }
 
-      // Supabase Signup with email confirmation might not return a session instantly.
-      // If access_token exists, save it:
       if (data['access_token'] != null) {
         await _saveSession(data);
       }
@@ -118,41 +119,51 @@ class AuthRepoImpl implements AuthRepo {
   @override
   Future<Either<AuthFailure, UserModel>> signInWithGoogle() async {
     try {
-      await _googleSignIn.signOut();
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      // ✅ Native Google Sign-In with Supabase
+      // بنستخدم الـ Native عشان البراوزر بيعمل مشكلة "Not Found" في الـ Deep Link
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId: SupabaseKeys.googleWebClientId,
+        clientId: SupabaseKeys.googleIosClientId.isNotEmpty
+            ? SupabaseKeys.googleIosClientId
+            : null,
+      );
 
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
-        return left(const UnknownFailure('تم إلغاء عملية تسجيل الدخول'));
+        return left(const UnknownFailure('تم إلغاء تسجيل الدخول'));
       }
 
-      final GoogleSignInAuthentication auth = await googleUser.authentication;
-      final String? idToken = auth.idToken;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final accessToken = googleAuth.accessToken;
+      final idToken = googleAuth.idToken;
 
       if (idToken == null) {
         return left(
-          const UnknownFailure('فشل الحصول على بيانات Google — حاول مرة أخرى'),
+          const UnknownFailure('فشل في الحصول على بيانات المصادقة من جوجل'),
         );
       }
 
-      final response = await _dio.post(
-        '${SupabaseKeys.authBaseUrl}token?grant_type=id_token',
-        data: {
-          'id_token': idToken,
-          'provider': 'google',
-        },
+      final AuthResponse response = await _supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
       );
 
-      final data = response.data;
-      if (data == null || data['user'] == null) {
-        return left(const GoogleSignInFailure());
+      final user = response.user;
+      if (user == null) {
+        return left(const UnknownFailure('فشل تسجيل الدخول في النظام'));
       }
 
-      await _saveSession(data);
-      return right(UserModel.fromJson(data['user']));
-    } on DioException catch (e) {
-      final msg = e.response?.data?['error_description'] ?? e.response?.data?['msg'] ?? e.message;
-      return left(UnknownFailure(msg.toString()));
+      final session = response.session;
+      if (session != null) {
+        await saveSessionFromOAuth(session);
+      }
+
+      final userModel = UserModel.fromJson(user.toJson());
+      return right(userModel);
     } catch (e) {
+      debugPrint('❌ [AuthRepo] Google Native Sign-In error: $e');
       return left(NetworkFailure(e.toString()));
     }
   }
@@ -175,24 +186,37 @@ class AuthRepoImpl implements AuthRepo {
   }
 
   // ─────────────────────────────────────────────
+  //  OAuth Session Save
+  // ─────────────────────────────────────────────
+
+  @override
+  Future<void> saveSessionFromOAuth(dynamic session) async {
+    if (session is Session) {
+      await _saveSession({
+        'access_token': session.accessToken,
+        'refresh_token': session.refreshToken,
+        'user': session.user.toJson(),
+      });
+      debugPrint('✅ [AuthRepo] OAuth session saved to SharedPreferences');
+    }
+  }
+
+  // ─────────────────────────────────────────────
   //  Sign Out
   // ─────────────────────────────────────────────
 
   @override
   Future<Either<AuthFailure, Unit>> signOut() async {
     try {
-      // Opt: We can hit the logout endpoint if we have an active token
       final token = _prefs.getString('supabase_access_token');
       if (token != null) {
         try {
           await _dio.post('${SupabaseKeys.authBaseUrl}logout');
-        } catch (_) {
-          // Ignore network errs during logout, we will flush session below
-        }
+        } catch (_) {}
       }
 
       await _clearSession();
-      await _googleSignIn.signOut();
+      await _supabase.auth.signOut();
 
       return right(unit);
     } catch (e) {
@@ -205,7 +229,9 @@ class AuthRepoImpl implements AuthRepo {
   // ─────────────────────────────────────────────
 
   @override
-  Future<Either<AuthFailure, Unit>> recoverPassword({required String email}) async {
+  Future<Either<AuthFailure, Unit>> recoverPassword({
+    required String email,
+  }) async {
     try {
       await _dio.post(
         '${SupabaseKeys.authBaseUrl}recover',
@@ -225,10 +251,7 @@ class AuthRepoImpl implements AuthRepo {
     try {
       final response = await _dio.post(
         '${SupabaseKeys.authBaseUrl}factors',
-        data: {
-          'factor_type': 'totp',
-          'friendly_name': 'Authenticator App',
-        },
+        data: {'factor_type': 'totp', 'friendly_name': 'Authenticator App'},
       );
       return right(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
@@ -248,10 +271,7 @@ class AuthRepoImpl implements AuthRepo {
     try {
       await _dio.post(
         '${SupabaseKeys.authBaseUrl}factors/$factorId/verify',
-        data: {
-          'challenge_id': challengeId,
-          'code': code,
-        },
+        data: {'challenge_id': challengeId, 'code': code},
       );
       return right(unit);
     } on DioException catch (e) {
@@ -279,12 +299,15 @@ class AuthRepoImpl implements AuthRepo {
       return left(NetworkFailure(e.toString()));
     }
   }
+
   @override
   Future<Either<AuthFailure, Map<String, dynamic>>> refreshToken() async {
     try {
       final refreshToken = _prefs.getString('supabase_refresh_token');
       if (refreshToken == null) {
-        return left(const UnknownFailure('No refresh token found. Please login again.'));
+        return left(
+          const UnknownFailure('No refresh token found. Please login again.'),
+        );
       }
       final response = await _dio.post(
         '${SupabaseKeys.authBaseUrl}token?grant_type=refresh_token',
@@ -297,7 +320,10 @@ class AuthRepoImpl implements AuthRepo {
       await _saveSession(data);
       return right(data as Map<String, dynamic>);
     } on DioException catch (e) {
-      final msg = e.response?.data?['error_description'] ?? e.response?.data?['msg'] ?? e.message;
+      final msg =
+          e.response?.data?['error_description'] ??
+          e.response?.data?['msg'] ??
+          e.message;
       return left(UnknownFailure(msg.toString()));
     } catch (e) {
       return left(NetworkFailure(e.toString()));
@@ -312,19 +338,24 @@ class AuthRepoImpl implements AuthRepo {
       if (data == null) {
         return left(const UnknownFailure('Failed to fetch user data'));
       }
-      // Usually, /user endpoint returns just the user object. We update cached user context if valid.
       final userModel = UserModel.fromJson(data);
       await _prefs.setString('supabase_user', jsonEncode(data));
       return right(userModel);
     } on DioException catch (e) {
-      final msg = e.response?.data?['error_description'] ?? e.response?.data?['msg'] ?? e.message;
+      final msg =
+          e.response?.data?['error_description'] ??
+          e.response?.data?['msg'] ??
+          e.message;
       return left(UnknownFailure(msg.toString()));
     } catch (e) {
       return left(NetworkFailure(e.toString()));
     }
   }
+
   @override
-  Future<Either<AuthFailure, UserModel>> updateMetadata(Map<String, dynamic> metadata) async {
+  Future<Either<AuthFailure, UserModel>> updateMetadata(
+    Map<String, dynamic> metadata,
+  ) async {
     try {
       final response = await _dio.put(
         '${SupabaseKeys.authBaseUrl}user',
@@ -338,7 +369,10 @@ class AuthRepoImpl implements AuthRepo {
       await _prefs.setString('supabase_user', jsonEncode(data));
       return right(userModel);
     } on DioException catch (e) {
-      final msg = e.response?.data?['error_description'] ?? e.response?.data?['msg'] ?? e.message;
+      final msg =
+          e.response?.data?['error_description'] ??
+          e.response?.data?['msg'] ??
+          e.message;
       return left(UnknownFailure(msg.toString()));
     } catch (e) {
       return left(NetworkFailure(e.toString()));

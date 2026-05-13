@@ -44,51 +44,53 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(),
-            const Divider(),
-            SizedBox(height: 10.h),
-            Flexible(
-              child: BlocBuilder<FavCubit, FavState>(
-                builder: (context, state) {
-                  if (state is FavLoading) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF710E1F),
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeader(),
+              const Divider(),
+              SizedBox(height: 10.h),
+              Flexible(
+                child: BlocBuilder<FavCubit, FavState>(
+                  builder: (context, state) {
+                    if (state is FavLoading) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF710E1F),
+                          ),
                         ),
-                      ),
-                    );
-                  }
-
-                  if (state is FavLoaded) {
-                    if (state.wishlists.isEmpty && !_isCreating) {
-                      return _buildNoWishlists();
+                      );
                     }
-
-                    // تحديد أقصى ارتفاع للـ list عشان متغطيش الشاشة كلها لو العدد ضخم
-                    return ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(context).size.height * 0.5,
-                      ),
-                      child: _isCreating
-                          ? _buildCreateForm()
-                          : _buildWishlistList(state),
-                    );
-                  }
-
-                  // في حالة الخطأ أو البداية
-                  return _buildNoWishlists();
-                },
+  
+                    if (state is FavLoaded) {
+                      if (state.wishlists.isEmpty && !_isCreating) {
+                        return _buildNoWishlists();
+                      }
+  
+                      // تحديد أقصى ارتفاع للـ list عشان متغطيش الشاشة كلها لو العدد ضخم
+                      return ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.5,
+                        ),
+                        child: _isCreating
+                            ? _buildCreateForm()
+                            : _buildWishlistList(state),
+                      );
+                    }
+  
+                    // في حالة الخطأ أو البداية
+                    return _buildNoWishlists();
+                  },
+                ),
               ),
-            ),
-            SizedBox(height: 10.h),
-          ],
+              SizedBox(height: 10.h),
+            ],
+          ),
         ),
       ),
     );

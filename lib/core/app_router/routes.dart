@@ -1,6 +1,7 @@
 class AppRoutes {
   static const String splash = '/';
   static const String login = '/login';
+  static const String loginRedirect = '/login-redirect';
   static const String signUp = '/sign-up';
   static const String home = '/home';
   static const String dashboard = '/home';
@@ -19,4 +20,6 @@ class AppRoutes {
   static const String security = '/security';
   static const String userDashboard = '/userDashboard';
   static const String confirmBooking = '/confirm-booking';
+  static const String notifications = '/notifications';
+  static const String notificationPreferences = '/notification-preferences';
 }

@@ -11,6 +11,9 @@ import 'location_tag_item.dart';
 import 'package:freelancer/features/home/presentation/widget/best_offers_banner.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_her_widget.dart';
+import 'package:freelancer/core/utils/widgets/listings_sort_header.dart';
+import 'package:freelancer/features/search/data/search_model/listing_model.dart';
+import 'package:freelancer/core/utils/widgets/elegant_toast.dart';
 
 class HomescreenBody extends StatefulWidget {
   const HomescreenBody({super.key});
@@ -20,11 +23,20 @@ class HomescreenBody extends StatefulWidget {
 }
 
 class _HomescreenBodyState extends State<HomescreenBody> {
-  String _selectedCategory = 'Best Offers';
+  String _selectedCategory = 'All';
+  String _selectedSort = 'Recommended';
+  final List<String> _sortOptions = [
+    'Recommended',
+    'Price: Low to High',
+    'Price: High to Low',
+    'Highest Rated',
+    'Newest',
+  ];
 
   final List<String> categories = [
+    'All',
     'Best Offers',
-    'Main Office',
+    'El Gouna',
     'Marakia',
     'Cairo',
   ];
@@ -37,15 +49,52 @@ class _HomescreenBodyState extends State<HomescreenBody> {
   }
 
   void _fetchListings(String cat) {
-    final params = cat == 'Best Offers'
-        ? SearchParamsModel(bestOffer: true)
-        : SearchParamsModel(location: cat);
+    SearchParamsModel params;
+    if (cat == 'All') {
+      params = SearchParamsModel();
+    } else if (cat == 'Best Offers') {
+      params = SearchParamsModel(bestOffer: true);
+    } else {
+      params = SearchParamsModel(location: cat);
+    }
     context.read<SearchCubit>().getListings(params: params);
   }
 
   void _onCategoryTap(String city) {
     setState(() => _selectedCategory = city);
     _fetchListings(city);
+    
+    // Show elegant animated toast
+    String displayCity = city == 'All' ? 'All listings' : city;
+    ElegantToast.show(context, 'Showing $displayCity', icon: Icons.location_on_rounded);
+  }
+
+  List<ListingModel> _getSortedListings(List<ListingModel> listings) {
+    List<ListingModel> sorted = List.from(listings);
+    switch (_selectedSort) {
+      case 'Price: Low to High':
+        sorted.sort((a, b) => (a.displayPrice ?? a.pricePerNight ?? 0)
+            .compareTo(b.displayPrice ?? b.pricePerNight ?? 0));
+        break;
+      case 'Price: High to Low':
+        sorted.sort((a, b) => (b.displayPrice ?? b.pricePerNight ?? 0)
+            .compareTo(a.displayPrice ?? a.pricePerNight ?? 0));
+        break;
+      case 'Highest Rated':
+        sorted.sort((a, b) {
+          if (a.isGuestFavorite == b.isGuestFavorite) return 0;
+          return (a.isGuestFavorite ?? false) ? -1 : 1;
+        });
+        break;
+      case 'Newest':
+        sorted.sort((a, b) => (b.createdAt ?? DateTime(2000))
+            .compareTo(a.createdAt ?? DateTime(2000)));
+        break;
+      case 'Recommended':
+      default:
+        break;
+    }
+    return sorted;
   }
 
   @override
@@ -84,9 +133,11 @@ class _HomescreenBodyState extends State<HomescreenBody> {
 
               // ── Section title ─────────────────────────────────────
               Text(
-                _selectedCategory == 'Best Offers'
-                    ? 'Top picks for you'
-                    : 'Listings in $_selectedCategory',
+                _selectedCategory == 'All'
+                    ? 'All Listings'
+                    : _selectedCategory == 'Best Offers'
+                        ? 'Top picks for you'
+                        : 'Listings in $_selectedCategory',
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
@@ -130,9 +181,7 @@ class _HomescreenBodyState extends State<HomescreenBody> {
                               Icon(
                                 Icons.home_outlined,
                                 size: 40,
-                                color: AppColors.greyText.withValues(
-                                  alpha: 0.4,
-                                ),
+                                color: AppColors.greyText.withOpacity(0.4),
                               ),
                               const SizedBox(height: 12),
                               Text(
@@ -147,20 +196,30 @@ class _HomescreenBodyState extends State<HomescreenBody> {
                         ),
                       );
                     }
+                    final sortedListings = _getSortedListings(state.listings);
+                    final displayedListings = sortedListings.take(5).toList();
+
                     return Column(
-                      children: state.listings
-                          .take(5) // show first 5 on home
-                          .map(
-                            (listing) => PropertyListingCard(
-                              listing: listing,
-                              onTap: () => Navigator.pushNamed(
-                                context,
-                                AppRoutes.details,
-                                arguments: listing,
-                              ),
+                      children: [
+                        ListingsSortHeader(
+                          totalListings: displayedListings.length,
+                          selectedSort: _selectedSort,
+                          sortOptions: _sortOptions,
+                          onSortChanged: (val) {
+                            if (val != null) setState(() => _selectedSort = val);
+                          },
+                        ),
+                        ...displayedListings.map(
+                          (listing) => PropertyListingCard(
+                            listing: listing,
+                            onTap: () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.details,
+                              arguments: listing,
                             ),
-                          )
-                          .toList(),
+                          ),
+                        ),
+                      ],
                     );
                   }
                   return const SizedBox.shrink();
