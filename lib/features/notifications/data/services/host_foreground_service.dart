@@ -14,11 +14,13 @@ class HostForegroundService {
   static void initForegroundTask() {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'quickin_host_service',
+        channelId: 'quickin_host_service_v4',
         channelName: 'QuickIn Host Service',
         channelDescription: 'Keeps booking alerts active in the background',
         channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
+        playSound: false,
+        enableVibration: false,
       ),
       iosNotificationOptions: const IOSNotificationOptions(
         showNotification: false,
@@ -45,8 +47,11 @@ class HostForegroundService {
     } else {
       final result = await FlutterForegroundTask.startService(
         serviceId: _serviceId,
-        notificationTitle: 'QuickIn',
-        notificationText: 'Monitoring new booking requests…',
+        notificationTitle: 'QuickIn Host',
+        notificationText: 'جاهز لاستقبال طلبات الحجز 🏠',
+        notificationIcon: const NotificationIcon(
+          metaDataName: 'com.pravera.flutter_foreground_task.NOTIFICATION_ICON',
+        ),
         callback: foregroundTaskEntryPoint,
       );
       debugPrint('[HostForegroundService] start result: $result');

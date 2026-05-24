@@ -69,7 +69,9 @@ class LoginRedirectScreen extends StatelessWidget {
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF5B0F16), // Maroon
+                              backgroundColor: const Color(
+                                0xFF5B0F16,
+                              ), // Maroon
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8.r),

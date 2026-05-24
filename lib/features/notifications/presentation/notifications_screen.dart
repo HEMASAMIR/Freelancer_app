@@ -496,8 +496,13 @@ class _NotificationCard extends StatelessWidget {
                             ),
                             const Spacer(),
                             _InfoChip(
+                              icon: Icons.nights_stay_outlined,
+                              label: '${n.nights} nights',
+                            ),
+                            SizedBox(width: 10.w),
+                            _InfoChip(
                               icon: Icons.person_outline_rounded,
-                              label: '${n.guests}',
+                              label: '${n.guests} guests',
                             ),
                           ],
                         ),

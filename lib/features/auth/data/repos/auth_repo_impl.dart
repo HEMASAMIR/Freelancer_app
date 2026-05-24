@@ -72,11 +72,19 @@ class AuthRepoImpl implements AuthRepo {
       await _saveSession(data);
       return right(UserModel.fromJson(data['user']));
     } on DioException catch (e) {
-      final msg =
+      String msg =
           e.response?.data?['error_description'] ??
           e.response?.data?['msg'] ??
-          e.message;
-      return left(UnknownFailure(msg.toString()));
+          e.message ??
+          'حدث خطأ غير متوقع';
+
+      if (msg.toLowerCase().contains('invalid login credentials')) {
+        msg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+      } else if (msg.toLowerCase().contains('email not confirmed')) {
+        msg = 'برجاء تأكيد البريد الإلكتروني أولاً';
+      }
+
+      return left(UnknownFailure(msg));
     } catch (e) {
       return left(NetworkFailure(e.toString()));
     }
@@ -99,15 +107,19 @@ class AuthRepoImpl implements AuthRepo {
       );
 
       final data = response.data;
-      if (data == null || data['user'] == null) {
+      if (data == null) {
+        return left(const UnknownFailure('فشل إنشاء الحساب'));
+      }
+
+      final userJson = data['user'] ?? data;
+      if (userJson == null || (userJson is Map && userJson['id'] == null)) {
         return left(const UnknownFailure('فشل إنشاء الحساب'));
       }
 
       if (data['access_token'] != null) {
         await _saveSession(data);
       }
-
-      return right(UserModel.fromJson(data['user']));
+      return right(UserModel.fromJson(userJson as Map<String, dynamic>));
     } on DioException catch (e) {
       final msg = e.response?.data?['msg'] ?? e.message;
       return left(UnknownFailure(msg.toString()));
@@ -233,14 +245,49 @@ class AuthRepoImpl implements AuthRepo {
     required String email,
   }) async {
     try {
-      await _dio.post(
-        '${SupabaseKeys.authBaseUrl}recover',
-        data: {'email': email},
+      await _supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'io.supabase.quickin://login-callback',
       );
       return right(unit);
-    } on DioException catch (e) {
-      final msg = e.response?.data?['msg'] ?? e.message;
-      return left(UnknownFailure(msg.toString()));
+    } on AuthException catch (e) {
+      return left(UnknownFailure(e.message));
+    } catch (e) {
+      return left(NetworkFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<AuthFailure, Unit>> verifyRecoveryOTP({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _supabase.auth.verifyOTP(
+        email: email,
+        token: otp,
+        type: OtpType.recovery,
+      );
+
+      if (response.session != null) {
+        await _dio.put(
+          '${SupabaseKeys.authBaseUrl}user',
+          data: {'password': newPassword},
+          options: Options(
+            headers: {
+              'Authorization': 'Bearer ${response.session!.accessToken}',
+            },
+          ),
+        );
+        return right(unit);
+      } else {
+        return left(
+          const UnknownFailure('كود التحقق غير صحيح أو منتهي الصلاحية'),
+        );
+      }
+    } on AuthException catch (e) {
+      return left(UnknownFailure(e.message));
     } catch (e) {
       return left(NetworkFailure(e.toString()));
     }

@@ -1,9 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/features/account/presentation/account_info.dart';
+import 'package:freelancer/core/utils/widgets/quickin_logo.dart';
 import 'package:freelancer/features/admin/admin/presentation/view/admin_dashboard/dashboard_overview.dart';
 import 'package:freelancer/features/admin/admin/presentation/view/earrnings_balance.dart';
 import 'package:freelancer/features/admin/admin/widget/admin_side_drawer.dart';
@@ -99,13 +101,20 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
 
   Widget _buildAppBarTitle(String view) {
     final label = _sectionTitle(view);
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w700,
-        color: AppColors.ink,
-      ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        QuickInLogo(height: 35.h, isHorizontal: true),
+        SizedBox(width: 8.w),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.ink,
+          ),
+        ),
+      ],
     );
   }
 

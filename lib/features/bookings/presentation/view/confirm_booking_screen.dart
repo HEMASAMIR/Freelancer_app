@@ -6,12 +6,15 @@ import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/core/utils/widgets/custom_app_bar.dart';
 import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_cubit.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_state.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_footer.dart';
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:freelancer/features/notifications/data/services/local_notification_service.dart';
 
 // ═══════════════════════════════════════════════════════════════════
 //  MODEL — data passed from BookingCard → ConfirmBookingScreen
@@ -52,6 +55,20 @@ class ConfirmBookingScreen extends StatefulWidget {
 class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
   bool _acceptPolicy = false;
   int _selectedPayment = 0; // 0=full, 1=part
+  final FlutterTts _flutterTts = FlutterTts();
+
+  @override
+  void initState() {
+    super.initState();
+    _initTts();
+  }
+
+  Future<void> _initTts() async {
+    await _flutterTts.setLanguage("en-US");
+    await _flutterTts.setSpeechRate(0.5);
+    await _flutterTts.setVolume(1.0);
+    await _flutterTts.setPitch(1.0);
+  }
 
   // ── helpers ──────────────────────────────────────────────────────
   String _fmtDate(DateTime d) => DateFormat('MMM d, yyyy').format(d);
@@ -78,7 +95,29 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
 
     if (!mounted) return;
     if (success) {
+      final authState = context.read<AuthCubit>().state;
+      String userName = 'Guest';
+      if (authState is AuthSuccess) {
+        userName = authState.user.userMetadata['full_name'] ?? 
+                   authState.user.email?.split('@').first ?? 'Guest';
+      } else if (authState is AuthAdminSuccess) {
+        userName = authState.user.userMetadata['full_name'] ?? 
+                   authState.user.email?.split('@').first ?? 'Admin';
+      }
+
+      final listingName = widget.args.listing.title ?? 'your property';
+      
+      // Trigger TTS Voice Feedback
+      await _flutterTts.speak("Congratulations $userName. Your booking for $listingName is successfully confirmed.");
+
+      // Trigger OS-level local notification (works in background/minimized)
+      LocalNotificationService.instance.showCustomNotification(
+        title: '🏠 Booking Confirmed!',
+        body: 'Congratulations $userName! Your booking for "$listingName" is successfully confirmed. 🎉',
+      );
+
       // pop back to details then go to Trips
+      if (!mounted) return;
       Navigator.of(context).popUntil((r) => r.isFirst);
       Navigator.pushNamed(context, AppRoutes.trips);
     }

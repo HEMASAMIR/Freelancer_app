@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/features/account/logic/security_cubit.dart';
 import 'package:freelancer/core/utils/animation/custom_snackbar.dart';
@@ -56,6 +57,11 @@ class _SecurityScreenState extends State<SecurityScreen> {
           _newPasswordController.clear();
           _confirmPasswordController.clear();
           CustomSnackBar.show(context, isError: false, message: 'Password updated successfully!');
+          Future.delayed(const Duration(seconds: 1, milliseconds: 500), () {
+            if (mounted) {
+              Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+            }
+          });
         } else if (state is MFAVerifiedSuccess) {
           CustomSnackBar.show(context, isError: false, message: '2FA Enabled successfully!');
         }

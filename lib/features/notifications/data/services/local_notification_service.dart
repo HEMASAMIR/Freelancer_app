@@ -74,6 +74,8 @@ class LocalNotificationService {
     required String checkIn,
     required String checkOut,
     required num subtotal,
+    required int guests,
+    required int nights,
     String? bookingId,
   }) async {
     if (!_initialized) await init();
@@ -81,18 +83,18 @@ class LocalNotificationService {
     final id = DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF;
 
     final body =
-        '🎉 Great news! $guestName wants to book "$listingTitle"\n'
-        'Check it out and secure your EGP ${subtotal.toStringAsFixed(0)}!';
+        '🎉 $guestName booked "$listingTitle"\n'
+        '👥 $guests guests • 🌙 $nights nights\n'
+        '💰 Total: EGP ${subtotal.toStringAsFixed(0)}';
 
     const androidDetails = AndroidNotificationDetails(
       _channelId,
       _channelName,
       channelDescription: _channelDescription,
-      importance: Importance.high,
-      priority: Priority.high,
+      importance: Importance.max,
+      priority: Priority.max,
       ticker: 'New booking request',
       icon: '@mipmap/launcher_icon',
-      largeIcon: DrawableResourceAndroidBitmap('@mipmap/launcher_icon'),
       styleInformation: BigTextStyleInformation(''),
       // Rich heads-up notification
       fullScreenIntent: false,
@@ -117,6 +119,48 @@ class LocalNotificationService {
       body,
       details,
       payload: bookingId,
+    );
+  }
+
+  /// Show a simple custom local notification.
+  Future<void> showCustomNotification({
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    if (!_initialized) await init();
+
+    final id = DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF;
+
+    const androidDetails = AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      channelDescription: _channelDescription,
+      importance: Importance.max,
+      priority: Priority.max,
+      icon: '@mipmap/launcher_icon',
+      styleInformation: BigTextStyleInformation(''),
+      autoCancel: true,
+      ongoing: false,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _plugin.show(
+      id,
+      title,
+      body,
+      details,
+      payload: payload,
     );
   }
 

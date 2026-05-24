@@ -557,17 +557,21 @@ class _HostListingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String imageUrl = (listing.images != null && listing.images!.isNotEmpty)
-        ? listing.images!.first.url ?? ''
-        : '';
+        ? listing.images!.first.url ?? 'URL_IS_NULL'
+        : 'NO_IMAGES_IN_LIST';
 
     // ✅ إصلاح الصورة: لو الرابط نسبي (جاي من Supabase Storage مباشرة) نكمله بالمسار الصحيح
-    if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-      if (imageUrl.startsWith('/')) {
-        imageUrl = '${SupabaseKeys.supabaseUrl}$imageUrl';
-      } else {
-        imageUrl =
-            '${SupabaseKeys.supabaseUrl}/storage/v1/object/public/$imageUrl';
+    if (imageUrl != 'NO_IMAGES_IN_LIST' && imageUrl != 'URL_IS_NULL') {
+      if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
+        if (imageUrl.startsWith('/')) {
+          imageUrl = '${SupabaseKeys.supabaseUrl}$imageUrl';
+        } else {
+          imageUrl =
+              '${SupabaseKeys.supabaseUrl}/storage/v1/object/public/$imageUrl';
+        }
       }
+    } else {
+      imageUrl = ''; // Empty string ensures Image.network is not called
     }
 
     // استبدال أي backslashes عشان الروابط تشتغل بدون مشاكل
@@ -610,7 +614,7 @@ class _HostListingCard extends StatelessWidget {
                   ? Image.network(
                       encodedUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => _buildImagePlaceholder(),
+                      errorBuilder: (_, error, ___) => _buildImagePlaceholder(),
                     )
                   : _buildImagePlaceholder(),
             ),
@@ -923,8 +927,13 @@ class _HostListingCard extends StatelessWidget {
   Widget _buildImagePlaceholder() {
     return Container(
       color: AppColors.bgColor,
-      child: const Center(
-        child: Icon(Icons.home_work_outlined, color: AppColors.sub, size: 32),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.home_work_outlined, color: AppColors.sub, size: 32),
+          ],
+        ),
       ),
     );
   }

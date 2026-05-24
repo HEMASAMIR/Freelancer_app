@@ -3,7 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/repos/listing_wizard_repo.dart';
-import 'listing_wizard_state.dart';
+import 'package:freelancer/features/listing_wizard/logic/cubit/listing_wizard_state.dart';
+import 'package:dartz/dartz.dart' as dartz;
 
 class ListingWizardCubit extends Cubit<ListingWizardState> {
   final ListingWizardRepository _repository;
@@ -149,7 +150,10 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
             );
 
             uploadResult.fold(
-              (error) => debugPrint("Failed to upload image $path: $error"),
+              (error) {
+                debugPrint("Failed to upload image $path: $error");
+                throw Exception("Failed to upload image: $error");
+              },
               (url) => imageLinks.add({'listing_id': listingId, 'url': url}),
             );
           }
@@ -163,7 +167,7 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
 
           if (lifestyleIds.isNotEmpty) {
             final lifestylePayload = lifestyleIds
-                .map((id) => {'listing_id': listingId, 'lifestyle_id': id})
+                .map((id) => {'listing_id': listingId, 'lifestyle_category_id': id})
                 .toList();
             futures.add(_repository.bulkLinkLifestyleTags(lifestylePayload));
           }
@@ -176,7 +180,12 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
           }
 
           if (futures.isNotEmpty) {
-            await Future.wait(futures);
+            final results = await Future.wait(futures);
+            for (var result in results) {
+              if (result is dartz.Either<String, void>) {
+                result.fold((err) => throw Exception(err), (_) {});
+              }
+            }
           }
 
           _emitIfOpen(ListingWizardSuccess(newListing));

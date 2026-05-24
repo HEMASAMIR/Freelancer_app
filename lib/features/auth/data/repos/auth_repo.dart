@@ -20,6 +20,12 @@ abstract class AuthRepo {
 
   Future<Either<AuthFailure, Unit>> recoverPassword({required String email});
 
+  Future<Either<AuthFailure, Unit>> verifyRecoveryOTP({
+    required String email,
+    required String otp,
+    required String newPassword,
+  });
+
   Future<Either<AuthFailure, Map<String, dynamic>>> enrollMFA();
 
   Future<Either<AuthFailure, Unit>> verifyMFA({
@@ -34,7 +40,11 @@ abstract class AuthRepo {
 
   Future<Either<AuthFailure, Map<String, dynamic>>> refreshToken();
 
-  Future<Either<AuthFailure, UserModel>> updateMetadata(Map<String, dynamic> metadata);
+  Future<Either<AuthFailure, UserModel>> updateMetadata(
+    Map<String, dynamic> metadata,
+  );
+
+  Future<Either<AuthFailure, UserModel>> getUserInfo();
 
   UserModel? getCurrentUser();
 

@@ -27,6 +27,7 @@ class _CommentsSectionState extends State<CommentsSection> {
   String? _replyToName;
   String? _editingId;
   bool _posting = false;
+  bool _showSuccess = false;
 
   String? _currentUserId;
   String? _currentUserName;
@@ -103,7 +104,16 @@ class _CommentsSectionState extends State<CommentsSection> {
     }
 
     _cancelReplyOrEdit();
-    setState(() => _posting = false);
+    setState(() {
+      _posting = false;
+      _showSuccess = true;
+    });
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() => _showSuccess = false);
+      }
+    });
   }
 
   @override
@@ -237,6 +247,46 @@ class _CommentsSectionState extends State<CommentsSection> {
               ],
             ),
           ),
+
+        // Success Message
+        AnimatedSize(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOutCubic,
+          child: _showSuccess
+              ? Container(
+                  margin: EdgeInsets.only(bottom: 12.h),
+                  padding: EdgeInsets.all(12.r),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F8E9),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: const Color(0xFFC5E1A5)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(6.r),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF4CAF50),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.check_rounded, color: Colors.white, size: 20.sp),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Text(
+                          "Your comment has been posted successfully!",
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF2E7D32),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
 
         TextField(
           controller: _controller,

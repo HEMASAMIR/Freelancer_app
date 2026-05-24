@@ -23,17 +23,7 @@ class HostForegroundTaskHandler extends TaskHandler {
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     // 1. Initialize Supabase (fresh isolate — needs re-init)
-    if (Supabase.instance.client.auth.currentSession == null) {
-      try {
-        await Supabase.initialize(
-          url: SupabaseKeys.supabaseUrl,
-          anonKey: SupabaseKeys.supabaseAnonKey,
-        );
-      } catch (_) {
-        // Already initialized in some edge cases — ignore
-      }
-    }
-    _supabase = Supabase.instance.client;
+    await _ensureSupabaseInitialized();
 
     // 2. Initialize local notifications in this isolate
     await _initLocalNotif();
@@ -77,6 +67,21 @@ class HostForegroundTaskHandler extends TaskHandler {
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────
+  
+  Future<void> _ensureSupabaseInitialized() async {
+    if (_supabase != null) return;
+    try {
+      _supabase = Supabase.instance.client;
+    } catch (_) {
+      try {
+        await Supabase.initialize(
+          url: SupabaseKeys.supabaseUrl,
+          anonKey: SupabaseKeys.supabaseAnonKey,
+        );
+        _supabase = Supabase.instance.client;
+      } catch (_) {}
+    }
+  }
 
   Future<void> _initLocalNotif() async {
     if (_notifInitialized) return;
@@ -87,10 +92,12 @@ class HostForegroundTaskHandler extends TaskHandler {
     );
 
     const channel = AndroidNotificationChannel(
-      'quickin_host_bookings',
-      'New Bookings',
+      'quickin_host_bookings_v3',
+      'New Bookings Alert',
       description: 'Alerts when a guest books one of your listings',
-      importance: Importance.high,
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
     );
     await _localNotif
         .resolvePlatformSpecificImplementation<
@@ -101,10 +108,69 @@ class HostForegroundTaskHandler extends TaskHandler {
   }
 
   Future<void> _startListening(String hostId) async {
+    await _ensureSupabaseInitialized();
+    if (_supabase == null) return;
+
     // Cancel previous channel if any
-    if (_channel != null && _supabase != null) {
-      await _supabase!.removeChannel(_channel!);
+    if (_channel != null) {
+      try {
+        await _supabase!.removeChannel(_channel!);
+      } catch (_) {}
       _channel = null;
+    }
+    
+    // Attempt to fetch the latest booking to update the notification text
+    try {
+      final listingsResp = await _supabase!
+          .from('listings')
+          .select('id, title')
+          .eq('user_id', hostId);
+          
+      if (listingsResp != null && (listingsResp as List).isNotEmpty) {
+        final listingIds = (listingsResp).map((e) => e['id']).toList();
+        final lastBookingResp = await _supabase!
+            .from('bookings')
+            .select('*')
+            .inFilter('listing_id', listingIds)
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+
+        if (lastBookingResp != null) {
+          final listing = (listingsResp).firstWhere((e) => e['id'] == lastBookingResp['listing_id'], orElse: () => {'title': 'شاليه'});
+          final guestId = lastBookingResp['user_id']?.toString() ?? '';
+          String guestName = 'ضيف';
+          if (guestId.isNotEmpty) {
+            final guest = await _supabase!
+                .from('profiles')
+                .select('full_name, email')
+                .eq('id', guestId)
+                .maybeSingle();
+            guestName = guest?['full_name']?.toString() ??
+                guest?['email']?.toString() ??
+                'ضيف';
+          }
+          final listingTitle = listing['title']?.toString() ?? 'شاليه';
+          
+          final checkIn = lastBookingResp['check_in']?.toString() ?? '';
+          final checkOut = lastBookingResp['check_out']?.toString() ?? '';
+          int durationDays = 0;
+          try {
+            final inDate = DateTime.tryParse(checkIn);
+            final outDate = DateTime.tryParse(checkOut);
+            if (inDate != null && outDate != null) {
+              durationDays = outDate.difference(inDate).inDays;
+            }
+          } catch (_) {}
+
+          await FlutterForegroundTask.updateService(
+            notificationTitle: 'آخر حجز تم 🏠',
+            notificationText: 'حجز $guestName "$listingTitle" لمدة $durationDays أيام',
+          );
+        }
+      }
+    } catch (_) {
+      // Ignore errors when fetching the latest booking.
     }
 
     _channel = _supabase!
@@ -148,13 +214,32 @@ class HostForegroundTaskHandler extends TaskHandler {
               final checkIn = newRow['check_in']?.toString() ?? '';
               final checkOut = newRow['check_out']?.toString() ?? '';
               final subtotal = (newRow['subtotal'] as num?) ?? 0;
+              final guests = (newRow['guests'] as num?)?.toInt() ?? 1;
 
+              int durationDays = 0;
+              try {
+                final inDate = DateTime.tryParse(checkIn);
+                final outDate = DateTime.tryParse(checkOut);
+                if (inDate != null && outDate != null) {
+                  durationDays = outDate.difference(inDate).inDays;
+                }
+              } catch (_) {}
+
+              // 1. Update the background/foreground service notification text itself!
+              await FlutterForegroundTask.updateService(
+                notificationTitle: '🏠 طلب حجز جديد!',
+                notificationText: 'قام $guestName بحجز "$listingTitle" لمدة $durationDays أيام',
+              );
+
+              // 2. Show local notification (plays sound and shows popup banner)
               await _showNotification(
                 guestName: guestName,
                 listingTitle: listingTitle,
                 checkIn: checkIn,
                 checkOut: checkOut,
                 subtotal: subtotal,
+                guests: guests,
+                durationDays: durationDays,
               );
             } catch (e) {
               // Silently ignore errors in background isolate
@@ -170,24 +255,40 @@ class HostForegroundTaskHandler extends TaskHandler {
     required String checkIn,
     required String checkOut,
     required num subtotal,
+    required int guests,
+    required int durationDays,
   }) async {
     final id = DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF;
 
     const androidDetails = AndroidNotificationDetails(
-      'quickin_host_bookings',
-      'New Bookings',
+      'quickin_host_bookings_v3',
+      'New Bookings Alert',
       channelDescription: 'Alerts when a guest books one of your listings',
-      importance: Importance.high,
-      priority: Priority.high,
+      importance: Importance.max,
+      priority: Priority.max,
       icon: '@mipmap/launcher_icon',
       autoCancel: true,
+      playSound: true,
+      enableVibration: true,
     );
+
+    // Format checkIn and checkOut dates to look cleaner (e.g. YYYY-MM-DD)
+    String cleanCheckIn = checkIn;
+    String cleanCheckOut = checkOut;
+    try {
+      final inDate = DateTime.tryParse(checkIn);
+      final outDate = DateTime.tryParse(checkOut);
+      if (inDate != null) cleanCheckIn = "${inDate.year}-${inDate.month.toString().padLeft(2, '0')}-${inDate.day.toString().padLeft(2, '0')}";
+      if (outDate != null) cleanCheckOut = "${outDate.year}-${outDate.month.toString().padLeft(2, '0')}-${outDate.day.toString().padLeft(2, '0')}";
+    } catch (_) {}
 
     await _localNotif.show(
       id,
-      '🏠 New Booking Request',
-      '$guestName wants to book "$listingTitle"\n'
-          '$checkIn → $checkOut  •  EGP ${subtotal.toStringAsFixed(0)}',
+      '🏠 طلب حجز جديد!',
+      'قام $guestName بطلب حجز لـ "$listingTitle"\n'
+          'المدة: $durationDays ليالي  •  العدد: $guests فرد\n'
+          'التواريخ: $cleanCheckIn ← $cleanCheckOut\n'
+          'الإجمالي: EGP ${subtotal.toStringAsFixed(0)}',
       const NotificationDetails(android: androidDetails),
     );
   }

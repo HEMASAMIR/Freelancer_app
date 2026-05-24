@@ -59,6 +59,8 @@ class _SplashScreenState extends State<SplashScreen>
     final authState = context.read<AuthCubit>().state;
     if (authState is AuthAdminSuccess) {
       Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
+    } else if (authState is AuthPasswordRecovery) {
+      Navigator.pushReplacementNamed(context, AppRoutes.security);
     } else {
       Navigator.pushReplacementNamed(context, AppRoutes.home);
     }
@@ -157,6 +159,8 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (authState is AuthAdminSuccess) {
       Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
+    } else if (authState is AuthPasswordRecovery) {
+      Navigator.pushReplacementNamed(context, AppRoutes.security);
     } else {
       Navigator.pushReplacementNamed(context, AppRoutes.home);
     }

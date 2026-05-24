@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:freelancer/features/notifications/data/models/notification_model.dart';
 import 'package:freelancer/features/notifications/data/services/local_notification_service.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 /// Listens to real-time booking inserts on the host's listings.
 /// Only activates when a logged-in host is provided.
@@ -72,8 +73,20 @@ class HostNotificationService {
                 checkIn: notification.checkIn,
                 checkOut: notification.checkOut,
                 subtotal: notification.subtotal,
+                guests: notification.guests,
+                nights: notification.nights,
                 bookingId: notification.bookingId,
               );
+
+              // ── 4.5. Play Audio Alert (TTS) ─────────────────────────────
+              try {
+                final tts = FlutterTts();
+                await tts.setLanguage("en-US");
+                await tts.setSpeechRate(0.5);
+                await tts.speak("Congratulations! ${notification.guestName} has just booked ${notification.listingTitle}.");
+              } catch (e) {
+                debugPrint('TTS Error: $e');
+              }
 
               // ── 5. Emit to in-app stream → cubit → UI list ──────────────
               _controller.add(notification);

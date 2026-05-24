@@ -14,6 +14,7 @@ class AppRoutes {
   static const String adminDashboard = '/admin-dashboard';
   static const String adminOverview = '/admin-overview';
   static const String hostDashboard = '/host-dashboard';
+  static const String earningsBalance = '/earnings-balance';
   static const String identityVerification = '/identity-verification';
   static const String personalInfo = '/personal-info';
   static const String myListings = '/my-listings';

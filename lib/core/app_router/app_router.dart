@@ -38,6 +38,7 @@ import 'package:freelancer/features/bookings/presentation/view/confirm_booking_s
 import 'package:freelancer/features/notifications/presentation/notifications_screen.dart';
 import 'package:freelancer/features/notifications/logic/host_notification_cubit.dart';
 import 'package:freelancer/features/account/presentation/notification_preferences_screen.dart';
+import 'package:freelancer/features/host/presentation/dashboard_overview.dart';
 
 // ✅ الشاشتين الجديدتين
 
@@ -244,8 +245,19 @@ class AppRouter {
             ),
           ),
         );
-      // ✅ Host Dashboard — صفحة الإيرادات والمعاملات للـ Host/User العادي
+      // ✅ Host Dashboard Overview Screen
       case AppRoutes.hostDashboard:
+        return MaterialPageRoute(
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: sl<AuthCubit>()),
+            ],
+            child: const DashboardOverviewScreen(),
+          ),
+        );
+
+      // ✅ Earnings & Balance Screen
+      case AppRoutes.earningsBalance:
         return MaterialPageRoute(
           builder: (_) => MultiBlocProvider(
             providers: [
@@ -261,7 +273,7 @@ class AppRouter {
                 scrolledUnderElevation: 0,
                 leading: Builder(
                   builder: (ctx) => IconButton(
-                    icon: const Icon(Icons.menu_rounded, color: AppColors.ink),
+                    icon: const Icon(Icons.menu_rounded, color: AppColors.inkBlack),
                     onPressed: () => Scaffold.of(ctx).openDrawer(),
                   ),
                 ),
@@ -270,7 +282,8 @@ class AppRouter {
                     builder: (ctx) => IconButton(
                       icon: const Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: AppColors.ink,
+                        color: AppColors.inkBlack,
+                        size: 20,
                       ),
                       onPressed: () => Navigator.of(ctx).pop(),
                       tooltip: 'Back',
@@ -278,11 +291,11 @@ class AppRouter {
                   ),
                 ],
                 title: const Text(
-                  'Overview',
+                  'Earnings & Balance',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.ink,
+                    color: AppColors.inkBlack,
                   ),
                 ),
               ),

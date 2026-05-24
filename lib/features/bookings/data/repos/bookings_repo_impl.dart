@@ -150,6 +150,11 @@ class BookingsRepositoryImpl implements BookingsRepository {
     } on DioException catch (e) {
       final String rawMessage = e.response?.data?['message'] ?? e.message ?? "";
       
+      if (rawMessage.toLowerCase().contains("row-level security") ||
+          rawMessage.toLowerCase().contains("violates row-level security")) {
+        return const Left("يرجى تسجيل الدخول أولاً لتتمكن من إتمام الحجز");
+      }
+      
       if (rawMessage.contains("commission_rate_id") ||
           rawMessage.contains("violates not-null constraint")) {
         return const Left("خطأ في إعدادات الحجز — يرجى التواصل مع الدعم (كود: CR-001)");

@@ -277,12 +277,30 @@ class _ListingManagementScreenState extends State<ListingManagementScreen>
                 fontWeight: FontWeight.w600,
               ),
               tabs: const [
-                Tab(text: 'Availability'),
-                Tab(text: 'Pricing'),
-                Tab(text: 'Settings'),
-                Tab(text: 'Conditions'),
-                Tab(text: 'Amenities'),
-                Tab(text: 'Cancellation'),
+                Tab(
+                  icon: Icon(Icons.calendar_today_outlined, size: 18),
+                  text: 'Availability',
+                ),
+                Tab(
+                  icon: Icon(Icons.sell_outlined, size: 18),
+                  text: 'Pricing',
+                ),
+                Tab(
+                  icon: Icon(Icons.settings_outlined, size: 18),
+                  text: 'Settings',
+                ),
+                Tab(
+                  icon: Icon(Icons.gavel_outlined, size: 18),
+                  text: 'Conditions',
+                ),
+                Tab(
+                  icon: Icon(Icons.wifi_outlined, size: 18),
+                  text: 'Amenities',
+                ),
+                Tab(
+                  icon: Icon(Icons.shield_outlined, size: 18),
+                  text: 'Cancellation',
+                ),
               ],
             ),
             Expanded(

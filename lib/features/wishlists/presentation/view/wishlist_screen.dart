@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/favourite/data/models/wishlist_model.dart';
+import 'package:freelancer/features/search/data/search_model/listing_model.dart';
 
 class WishlistsView extends StatefulWidget {
   const WishlistsView({super.key});
@@ -56,8 +57,14 @@ class _WishlistsViewState extends State<WishlistsView> {
                   childAspectRatio: 0.9,
                 ),
                 itemCount: state.wishlists.length,
-                itemBuilder: (context, index) =>
-                    _WishlistCard(wishlist: state.wishlists[index]),
+                itemBuilder: (context, index) {
+                  final wishlist = state.wishlists[index];
+                  final listings = state.wishlistContent[wishlist.id] ?? [];
+                  return _WishlistCard(
+                    wishlist: wishlist,
+                    listings: listings,
+                  );
+                },
               );
             }
             if (state is FavError) {
@@ -102,24 +109,37 @@ class _WishlistsViewState extends State<WishlistsView> {
 
 class _WishlistCard extends StatelessWidget {
   final WishlistModel wishlist;
-  const _WishlistCard({required this.wishlist});
+  final List<ListingModel> listings;
+  const _WishlistCard({required this.wishlist, required this.listings});
 
   @override
   Widget build(BuildContext context) {
+    final firstListing = listings.isNotEmpty ? listings.first : null;
+    final firstImageUrl = (firstListing?.images != null && firstListing!.images!.isNotEmpty)
+        ? firstListing.images!.first.url
+        : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: Container(
+            width: double.infinity,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(15),
               border: Border.all(
                   color: AppColors.dividerGrey.withValues(alpha: 0.5)),
             ),
-            child: const Center(
-              child: Icon(Icons.favorite,
-                  color: AppColors.primaryRed, size: 40),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: firstImageUrl != null
+                  ? Image.network(
+                      firstImageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => _fallbackIcon(),
+                    )
+                  : _fallbackIcon(),
             ),
           ),
         ),
@@ -129,9 +149,22 @@ class _WishlistCard extends StatelessWidget {
                 fontWeight: FontWeight.bold, fontSize: 16),
             maxLines: 1,
             overflow: TextOverflow.ellipsis),
-        Text('Saved items',
-            style: TextStyle(color: AppColors.sub, fontSize: 12)),
+        Text(
+          listings.length == 1
+              ? 'عنصر واحد محفوظ'
+              : listings.length > 1
+                  ? '${listings.length} عناصر محفوظة'
+                  : 'لا توجد عناصر محفوظة',
+          style: const TextStyle(color: AppColors.sub, fontSize: 12),
+        ),
       ],
+    );
+  }
+
+  Widget _fallbackIcon() {
+    return const Center(
+      child: Icon(Icons.favorite,
+          color: AppColors.primaryRed, size: 40),
     );
   }
 }

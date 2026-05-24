@@ -20,14 +20,33 @@ class LocationTagItem extends StatefulWidget {
 class _LocationTagItemState extends State<LocationTagItem> {
   @override
   Widget build(BuildContext context) {
-    const Color primaryRed = Color(0xFF8B1A1A); // لون اللوجو بتاعك
+    const Color primaryRed = Color(0xFF5B0F16); // لون اللوجو المعتمد في التطبيق
+
+    IconData? getIcon(String title) {
+      switch (title) {
+        case 'All':
+          return Icons.explore_outlined;
+        case 'Best Offers':
+          return Icons.local_offer_outlined;
+        case 'El Gouna':
+          return Icons.pool_outlined;
+        case 'Marakia':
+          return Icons.beach_access_outlined;
+        case 'Cairo':
+          return Icons.location_city_outlined;
+        default:
+          return Icons.location_on_outlined;
+      }
+    }
+
+    final icon = getIcon(widget.title);
 
     return GestureDetector(
       onTap: widget.onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         decoration: BoxDecoration(
           color: widget.isSelected ? primaryRed : Colors.white,
           borderRadius: BorderRadius.circular(30.r),
@@ -46,13 +65,26 @@ class _LocationTagItemState extends State<LocationTagItem> {
             ),
           ],
         ),
-        child: Text(
-          widget.title,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
-            color: widget.isSelected ? Colors.white : Colors.black87,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 16.r,
+                color: widget.isSelected ? Colors.white : Colors.black54,
+              ),
+              SizedBox(width: 8.w),
+            ],
+            Text(
+              widget.title,
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+                color: widget.isSelected ? Colors.white : Colors.black87,
+              ),
+            ),
+          ],
         ),
       ),
     );

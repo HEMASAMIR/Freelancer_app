@@ -26,8 +26,7 @@ class HostListingsRepositoryImpl implements HostListingsRepository {
         queryParameters: {
           'user_id': 'eq.$hostId',
           'select':
-              'id,title,location,price_per_night,currency,is_published,listing_code,bedrooms,bathrooms,max_guests,'
-              'listing_images(*)',
+              '*,listing_images(*)',
           'order': orderParam,
         },
       );

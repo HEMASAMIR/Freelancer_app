@@ -10,7 +10,7 @@ class SearchParamsModel {
   final bool? bestOffer;
 
   SearchParamsModel({
-    this.limit = 20,
+    this.limit = 1000,
     this.offset = 0,
     this.location,
     this.checkIn,

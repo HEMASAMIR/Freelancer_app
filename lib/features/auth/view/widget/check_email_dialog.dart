@@ -11,7 +11,7 @@ class CheckEmailDialog extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.3),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (context) => CheckEmailDialog(email: email),
     );
   }
@@ -20,9 +20,7 @@ class CheckEmailDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: const Color(0xFFF5F0E8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.r),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       insetPadding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
@@ -44,7 +42,7 @@ class CheckEmailDialog extends StatelessWidget {
               ),
             ),
             SizedBox(height: 24.h),
-            
+
             // Title
             Text(
               'Check your email',
@@ -56,7 +54,7 @@ class CheckEmailDialog extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 12.h),
-            
+
             // Body
             Text(
               "We've sent a confirmation link to\n$email.\nPlease verify your account to continue.",
@@ -68,7 +66,7 @@ class CheckEmailDialog extends StatelessWidget {
               ),
             ),
             SizedBox(height: 32.h),
-            
+
             // Button
             SizedBox(
               width: double.infinity,

@@ -6,7 +6,9 @@ import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
+import 'package:freelancer/features/auth/view/presentation/view/sign_up_view.dart';
 import 'package:freelancer/core/utils/widgets/elegant_toast.dart';
+import 'package:freelancer/core/utils/widgets/quickin_logo.dart';
 
 enum DrawerMode { home, user, admin }
 
@@ -61,7 +63,7 @@ class _SideDrawerState extends State<SideDrawer> {
       } else if (item == 'Log in') {
         if (context.mounted) _showLoginDialog(context);
       } else if (item == 'Sign up') {
-        navigator.pushNamed(AppRoutes.signUp);
+        if (context.mounted) _showSignUpDialog(context);
       } else if (item == 'Settings') {
         navigator.pushNamed(AppRoutes.account, arguments: 2);
       } else if (item == 'Notifications') {
@@ -103,15 +105,26 @@ class _SideDrawerState extends State<SideDrawer> {
     );
   }
 
+  void _showSignUpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => BlocProvider.value(
+        value: context.read<AuthCubit>(),
+        child: const SignUpView(),
+      ),
+    );
+  }
+
   String? _getRouteForItem(String item, DrawerMode mode) {
     switch (item) {
       case 'Overview':
-      case 'Earnings & Balance':
-        // الـ admin يروح للـ Admin Dashboard الأسود
-        // الـ user العادي/host يروح لصفحة الإيرادات (EarningsBalanceView)
         return mode == DrawerMode.admin
             ? AppRoutes.adminDashboard
             : AppRoutes.hostDashboard;
+      case 'Earnings & Balance':
+        return mode == DrawerMode.admin
+            ? AppRoutes.adminDashboard
+            : AppRoutes.earningsBalance;
       case 'Dashboard':
         // Dashboard بيروح للـ admin panel بس للـ admin account
         return mode == DrawerMode.admin ? AppRoutes.adminDashboard : null;
@@ -181,37 +194,7 @@ class _SideDrawerState extends State<SideDrawer> {
       padding: EdgeInsets.fromLTRB(20.w, 32.h, 20.w, 24.h),
       child: Row(
         children: [
-          Container(
-            width: 32.w,
-            height: 32.w,
-            decoration: BoxDecoration(
-              color: AppColors.primaryRed,
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: const Icon(Icons.home, color: Colors.white, size: 20),
-          ),
-          SizedBox(width: 12.w),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'QuickIn',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.ink,
-                  height: 1.1,
-                ),
-              ),
-              Text(
-                'Your Dashboard',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: AppColors.sub,
-                ),
-              ),
-            ],
-          ),
+          QuickInLogo(height: 45.h, isHorizontal: true),
         ],
       ),
     );

@@ -177,35 +177,38 @@ class _WishlistBottomSheetState extends State<WishlistBottomSheet> {
         ),
         child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
       ),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 4.w),
-        onTap: _isSubmitting ? null : () => _handleToggleFavorite(wishlist),
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isSaved ? Colors.red.shade50 : Colors.grey[100],
-            borderRadius: BorderRadius.circular(8),
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          contentPadding: EdgeInsets.symmetric(horizontal: 4.w),
+          onTap: _isSubmitting ? null : () => _handleToggleFavorite(wishlist),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isSaved ? Colors.red.shade50 : Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              isSaved ? Icons.favorite : Icons.favorite_border,
+              color: isSaved ? Colors.red : Colors.grey,
+            ),
           ),
-          child: Icon(
-            isSaved ? Icons.favorite : Icons.favorite_border,
-            color: isSaved ? Colors.red : Colors.grey,
+          title: Text(
+            wishlist.name,
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-        ),
-        title: Text(
-          wishlist.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          isSaved ? '✓ Saved' : 'Tap to save',
-          style: TextStyle(
-            fontSize: 10,
-            color: isSaved ? Colors.green.shade700 : Colors.grey,
+          subtitle: Text(
+            isSaved ? '✓ Saved' : 'Tap to save',
+            style: TextStyle(
+              fontSize: 10,
+              color: isSaved ? Colors.green.shade700 : Colors.grey,
+            ),
           ),
-        ),
-        trailing: Icon(
-          Icons.swipe_left_outlined,
-          size: 14.sp,
-          color: Colors.grey.shade300,
+          trailing: Icon(
+            Icons.swipe_left_outlined,
+            size: 14.sp,
+            color: Colors.grey.shade300,
+          ),
         ),
       ),
     );

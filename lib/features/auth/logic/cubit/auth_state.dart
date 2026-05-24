@@ -55,6 +55,14 @@ class AuthAdminSuccess extends AuthCubitState {
   List<Object?> get props => [user];
 }
 
+class AuthPasswordRecovery extends AuthCubitState {
+  final UserModel user;
+  const AuthPasswordRecovery(this.user);
+
+  @override
+  List<Object?> get props => [user];
+}
+
 class AuthRecoverSuccess extends AuthCubitState {
   const AuthRecoverSuccess();
 }

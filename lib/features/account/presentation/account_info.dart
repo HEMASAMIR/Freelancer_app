@@ -778,7 +778,7 @@ class SettingsTab extends StatelessWidget {
           if (onViewChanged != null) {
             onViewChanged!('Earnings & Balance');
           } else {
-            Navigator.pushNamed(context, AppRoutes.hostDashboard);
+            Navigator.pushNamed(context, AppRoutes.earningsBalance);
           }
         }),
         SizedBox(height: 16.h),

@@ -15,6 +15,9 @@ import 'package:freelancer/core/utils/widgets/listings_sort_header.dart';
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
 import 'package:freelancer/core/utils/widgets/elegant_toast.dart';
 
+import 'package:freelancer/features/search/presentation/widget/property_listing_card_shimmer.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+
 class HomescreenBody extends StatefulWidget {
   const HomescreenBody({super.key});
 
@@ -150,14 +153,8 @@ class _HomescreenBodyState extends State<HomescreenBody> {
               BlocBuilder<SearchCubit, SearchState>(
                 builder: (context, state) {
                   if (state is SearchLoading) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primaryBurgundy,
-                          strokeWidth: 2.5,
-                        ),
-                      ),
+                    return Column(
+                      children: List.generate(3, (index) => const PropertyListingCardShimmer()),
                     );
                   }
                   if (state is SearchError) {
@@ -197,29 +194,42 @@ class _HomescreenBodyState extends State<HomescreenBody> {
                       );
                     }
                     final sortedListings = _getSortedListings(state.listings);
-                    final displayedListings = sortedListings.take(5).toList();
+                    final displayedListings = sortedListings;
 
-                    return Column(
-                      children: [
-                        ListingsSortHeader(
-                          totalListings: displayedListings.length,
-                          selectedSort: _selectedSort,
-                          sortOptions: _sortOptions,
-                          onSortChanged: (val) {
-                            if (val != null) setState(() => _selectedSort = val);
-                          },
-                        ),
-                        ...displayedListings.map(
-                          (listing) => PropertyListingCard(
-                            listing: listing,
-                            onTap: () => Navigator.pushNamed(
-                              context,
-                              AppRoutes.details,
-                              arguments: listing,
-                            ),
+                    return AnimationLimiter(
+                      child: Column(
+                        children: [
+                          ListingsSortHeader(
+                            totalListings: displayedListings.length,
+                            selectedSort: _selectedSort,
+                            sortOptions: _sortOptions,
+                            onSortChanged: (val) {
+                              if (val != null) setState(() => _selectedSort = val);
+                            },
                           ),
-                        ),
-                      ],
+                          ...displayedListings.asMap().entries.map((entry) {
+                            int index = entry.key;
+                            var listing = entry.value;
+                            return AnimationConfiguration.staggeredList(
+                              position: index,
+                              duration: const Duration(milliseconds: 500),
+                              child: SlideAnimation(
+                                verticalOffset: 50.0,
+                                child: FadeInAnimation(
+                                  child: PropertyListingCard(
+                                    listing: listing,
+                                    onTap: () => Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.details,
+                                      arguments: listing,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                      ),
                     );
                   }
                   return const SizedBox.shrink();

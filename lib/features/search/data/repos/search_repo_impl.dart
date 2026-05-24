@@ -14,7 +14,7 @@ class SearchRepositoryImpl implements SearchRepository {
 
   SearchRepositoryImpl({required this.supabase});
 
-  static const Duration _timeout = Duration(seconds: 30);
+  static const Duration _timeout = Duration(seconds: 60);
 
   // ── Search listings — Direct query (fast) with RPC fallback ─────────────
 
@@ -49,7 +49,10 @@ class SearchRepositoryImpl implements SearchRepository {
       }
 
       // Apply limit at the final call (limit returns PostgrestTransformBuilder)
-      final dynamic result = await query.limit(params.limit).timeout(_timeout);
+      final dynamic result = await query
+          .order('created_at', ascending: false)
+          .limit(params.limit)
+          .timeout(_timeout);
 
       final List<dynamic> data = result as List<dynamic>? ?? [];
       debugPrint('✅ [SearchRepo] direct query got ${data.length} listings');
@@ -87,7 +90,7 @@ class SearchRepositoryImpl implements SearchRepository {
       final filtered = _filterLocally(listings, params);
       return Right(filtered);
     } on TimeoutException {
-      return const Left('التحميل أخذ وقتاً أطول من المتوقع. حاول مجدداً.');
+      return const Left('انتهى وقت الطلب. حاول مجدداً.');
     } catch (e) {
       debugPrint('❌ [SearchRepo] RPC error: $e');
       return Left('خطأ في تحميل البيانات: ${e.toString()}');

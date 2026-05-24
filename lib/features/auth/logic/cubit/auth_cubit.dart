@@ -44,6 +44,11 @@ class AuthCubit extends Cubit<AuthCubitState> {
       } else if (event == AuthChangeEvent.signedOut) {
         log('🔔 Supabase Auth Change: Signed Out', name: 'AuthCubit');
         emit(const AuthSignedOut());
+      } else if (event == AuthChangeEvent.passwordRecovery && session != null) {
+        log('🔔 Supabase Auth Change: Password Recovery', name: 'AuthCubit');
+        final user = UserModel.fromJson(session.user.toJson());
+        await _authRepo.saveSessionFromOAuth(session);
+        emit(AuthPasswordRecovery(user));
       }
     });
   }
@@ -186,6 +191,23 @@ class AuthCubit extends Cubit<AuthCubitState> {
     result.fold(
       (failure) => emit(AuthError(failure.message)),
       (_) => emit(const AuthRecoverSuccess()),
+    );
+  }
+
+  Future<void> verifyRecoveryOTP({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    emit(const AuthLoading());
+    final result = await _authRepo.verifyRecoveryOTP(
+      email: email,
+      otp: otp,
+      newPassword: newPassword,
+    );
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (_) => emit(const AuthUpdatePasswordSuccess()),
     );
   }
 

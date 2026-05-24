@@ -9,6 +9,7 @@ import 'package:freelancer/core/constant/constant.dart' as constants;
 import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/core/bloc_observer.dart';
 import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/notifications/data/services/local_notification_service.dart';
 import 'package:freelancer/features/notifications/data/services/host_foreground_service.dart';
@@ -32,6 +33,9 @@ void main() async {
   await Supabase.initialize(
     url: constants.SupabaseKeys.supabaseUrl,
     anonKey: constants.SupabaseKeys.supabaseAnonKey,
+    authOptions: const FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.pkce, // ✅ أضف ده
+    ),
   );
   await CacheHelper.init();
   await setupServiceLocator();
@@ -69,10 +73,13 @@ class FreelancerApp extends StatelessWidget {
                 return MaterialApp(
                   navigatorKey: navigatorKey,
                   debugShowCheckedModeBanner: false,
-                  color: constants.AppColors.backgroundCream, // ← منع الـ black frame عند الـ startup
+                  color: constants
+                      .AppColors
+                      .backgroundCream, // ← منع الـ black frame عند الـ startup
                   theme: ThemeData(
                     fontFamily: 'Cairo',
-                    scaffoldBackgroundColor: constants.AppColors.backgroundCream,
+                    scaffoldBackgroundColor:
+                        constants.AppColors.backgroundCream,
                     primaryColor: constants.AppColors.primaryBurgundy,
                     colorScheme: ColorScheme.fromSeed(
                       seedColor: constants.AppColors.primaryBurgundy,
@@ -89,7 +96,17 @@ class FreelancerApp extends StatelessWidget {
                     if (connectivityStatus == ConnectivityStatus.disconnected) {
                       return const NoInternetScreen();
                     }
-                    return child!;
+                    return BlocListener<AuthCubit, AuthCubitState>(
+                      listener: (context, state) {
+                        if (state is AuthPasswordRecovery) {
+                          navigatorKey.currentState?.pushNamedAndRemoveUntil(
+                            AppRoutes.security,
+                            (route) => false,
+                          );
+                        }
+                      },
+                      child: child!,
+                    );
                   },
                 );
               },

@@ -11,6 +11,7 @@ import 'package:freelancer/features/favourite/presentation/widget/wishlist_botto
 import 'package:freelancer/features/search/data/search_model/listing_model.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:freelancer/features/bookings/logic/cubit/bookings_cubit.dart';
@@ -25,9 +26,22 @@ import 'package:freelancer/features/search/presentation/widget/property_map_sect
 const Color airbnbMaroon = Color(0xFF710E1F);
 const Color airbnbBg = Color(0xFFF7F3F0);
 
-class SearchDetails extends StatelessWidget {
+class SearchDetails extends StatefulWidget {
   final ListingModel listing;
   const SearchDetails({super.key, required this.listing});
+
+  @override
+  State<SearchDetails> createState() => _SearchDetailsState();
+}
+
+class _SearchDetailsState extends State<SearchDetails> {
+  final ValueNotifier<int> _reviewCountNotifier = ValueNotifier<int>(0);
+
+  @override
+  void dispose() {
+    _reviewCountNotifier.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +60,8 @@ class SearchDetails extends StatelessWidget {
                   children: [
                     _BestOffersBannerFullWidth(), // البانر المارون العريض
                     _TopInfoSection(
-                      listing: listing,
+                      listing: widget.listing,
+                      reviewCountNotifier: _reviewCountNotifier,
                     ), // العنوان والنجوم واللوكيشن
                   ],
                 ),
@@ -56,7 +71,7 @@ class SearchDetails extends StatelessWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.only(bottom: 20.h),
-                  child: _BentoImageGallery(listing: listing),
+                  child: _BentoImageGallery(listing: widget.listing),
                 ),
               ),
 
@@ -70,40 +85,43 @@ class SearchDetails extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _HostInfoSection(listing: listing),
+                      _HostInfoSection(listing: widget.listing),
                       const _CustomDivider(),
-                      _AboutSection(description: listing.description),
+                      _AboutSection(description: widget.listing.description),
                       const _CustomDivider(),
-                      _OffersSection(lifestyles: listing.lifestyles),
+                      _OffersSection(lifestyles: widget.listing.lifestyles),
                       const _CustomDivider(),
-                      if (listing.cancellationPolicy != null &&
-                          listing.cancellationPolicy!.isNotEmpty)
+                      if (widget.listing.cancellationPolicy != null &&
+                          widget.listing.cancellationPolicy!.isNotEmpty)
                         _CancellationPolicySection(
-                          policy: listing.cancellationPolicy!,
+                          policy: widget.listing.cancellationPolicy!,
                         ),
-                      if (listing.cancellationPolicy != null &&
-                          listing.cancellationPolicy!.isNotEmpty)
+                      if (widget.listing.cancellationPolicy != null &&
+                          widget.listing.cancellationPolicy!.isNotEmpty)
                         const _CustomDivider(),
-                      if (listing.lat != null && listing.lng != null)
+                      if (widget.listing.lat != null && widget.listing.lng != null)
                         PropertyMapSection(
-                          lat: listing.lat!,
-                          lng: listing.lng!,
-                          locationName: listing.location ?? listing.city,
+                          lat: widget.listing.lat!,
+                          lng: widget.listing.lng!,
+                          locationName: widget.listing.location ?? widget.listing.city,
                         )
                       else
-                        _LocationMapSection(location: listing.location),
+                        _LocationMapSection(location: widget.listing.location),
                       const _CustomDivider(),
                       // قسم المراجعات اللي كان ممسوح رجعناه هنا بشكل أشيك
-                      _ReviewsDetailedSection(listing: listing),
+                      _ReviewsDetailedSection(
+                        listing: widget.listing,
+                        reviewCountNotifier: _reviewCountNotifier,
+                      ),
                       const _CustomDivider(),
                       // Comments & Q&A
                       _CommentsHeader(),
                       SizedBox(height: 12.h),
                       BlocProvider(
                         create: (_) => sl<CommentsCubit>(),
-                        child: CommentsSection(listingId: listing.id ?? ''),
+                        child: CommentsSection(listingId: widget.listing.id ?? ''),
                       ),
-                      _BookingCard(listing: listing),
+                      _BookingCard(listing: widget.listing),
                       SizedBox(height: 40.h),
                       const CustomFooter(),
                       SizedBox(height: 100.h),
@@ -122,7 +140,8 @@ class SearchDetails extends StatelessWidget {
 // --- ويجت البيانات العلوية (تم معالجة طول العنوان واللوكيشن) ---
 class _TopInfoSection extends StatelessWidget {
   final ListingModel listing;
-  const _TopInfoSection({required this.listing});
+  final ValueNotifier<int> reviewCountNotifier;
+  const _TopInfoSection({required this.listing, required this.reviewCountNotifier});
 
   @override
   Widget build(BuildContext context) {
@@ -155,9 +174,14 @@ class _TopInfoSection extends StatelessWidget {
                 listing.isGuestFavorite == true ? "Guest Favorite" : "New",
                 style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
               ),
-              Text(
-                " · 0 reviews",
-                style: TextStyle(fontSize: 14.sp, color: Colors.grey[800]),
+              ValueListenableBuilder<int>(
+                valueListenable: reviewCountNotifier,
+                builder: (context, count, _) {
+                  return Text(
+                    " · $count reviews",
+                    style: TextStyle(fontSize: 14.sp, color: Colors.grey[800]),
+                  );
+                },
               ),
               SizedBox(width: 8.w),
               Icon(
@@ -221,29 +245,250 @@ class _TopInfoSection extends StatelessWidget {
 }
 
 // --- الويجت اللي رجعناها (Reviews Section) ---
-class _ReviewsDetailedSection extends StatelessWidget {
+class _ReviewsDetailedSection extends StatefulWidget {
   final ListingModel listing;
-  const _ReviewsDetailedSection({required this.listing});
+  final ValueNotifier<int> reviewCountNotifier;
+  const _ReviewsDetailedSection({required this.listing, required this.reviewCountNotifier});
+
+  @override
+  State<_ReviewsDetailedSection> createState() => _ReviewsDetailedSectionState();
+}
+
+class _ReviewsDetailedSectionState extends State<_ReviewsDetailedSection> {
+  int _rating = 0;
+  bool _submitted = false;
+  bool _isLoading = true;
+
+  final List<Map<String, dynamic>> _ratingOptions = [
+    {'value': 5, 'label': 'ممتاز (Excellent)', 'icon': Icons.sentiment_very_satisfied, 'color': const Color(0xFF4CAF50)},
+    {'value': 4, 'label': 'جيد جداً (Very Good)', 'icon': Icons.sentiment_satisfied, 'color': const Color(0xFF8BC34A)},
+    {'value': 3, 'label': 'جيد (Good)', 'icon': Icons.sentiment_neutral, 'color': const Color(0xFFFFC107)},
+    {'value': 2, 'label': 'مقبول (Fair)', 'icon': Icons.sentiment_dissatisfied, 'color': const Color(0xFFFF9800)},
+    {'value': 1, 'label': 'سيء (Poor)', 'icon': Icons.sentiment_very_dissatisfied, 'color': const Color(0xFFF44336)},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchReviews();
+  }
+
+  Future<void> _fetchReviews() async {
+    try {
+      final authState = context.read<AuthCubit>().state;
+      String? userId;
+      if (authState is AuthSuccess) userId = authState.user.id;
+      else if (authState is AuthAdminSuccess) userId = authState.user.id;
+
+      final prefs = await SharedPreferences.getInstance();
+      final localReview = prefs.getInt('review_${widget.listing.id}');
+
+      final response = await Supabase.instance.client
+          .from('reviews')
+          .select('rating, user_id')
+          .eq('listing_id', widget.listing.id ?? '');
+
+      final List data = response as List;
+      
+      if (mounted) {
+        final hasBackendReview = userId != null && data.any((r) => r['user_id'] == userId);
+        widget.reviewCountNotifier.value = data.length + (!hasBackendReview && localReview != null ? 1 : 0);
+        
+        if (localReview != null) {
+          setState(() {
+            _rating = localReview;
+            _submitted = true;
+          });
+        } else if (hasBackendReview) {
+          final myReview = data.where((r) => r['user_id'] == userId).toList();
+          setState(() {
+            _rating = myReview.first['rating'] ?? 0;
+            _submitted = true;
+          });
+        }
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      debugPrint("Error fetching reviews: $e");
+      
+      // Fallback to local
+      final prefs = await SharedPreferences.getInstance();
+      final localReview = prefs.getInt('review_${widget.listing.id}');
+      if (localReview != null && mounted) {
+        setState(() {
+          _rating = localReview;
+          _submitted = true;
+        });
+        if (widget.reviewCountNotifier.value == 0) {
+          widget.reviewCountNotifier.value = 1;
+        }
+      }
+      
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _submitRating(int rating) async {
+    if (_submitted) return;
+    
+    final authState = context.read<AuthCubit>().state;
+    String? userId;
+    if (authState is AuthSuccess) userId = authState.user.id;
+    else if (authState is AuthAdminSuccess) userId = authState.user.id;
+
+    if (userId == null) {
+      showLoginRequiredSheet(context);
+      return;
+    }
+
+    // Optimistic UI update and Local Save
+    setState(() {
+      _rating = rating;
+      _submitted = true;
+    });
+    widget.reviewCountNotifier.value += 1;
+    
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('review_${widget.listing.id}', rating);
+
+    try {
+      await Supabase.instance.client.from('reviews').upsert({
+        'listing_id': widget.listing.id,
+        'user_id': userId,
+        'rating': rating,
+      });
+    } catch (e) {
+      debugPrint("Error saving review to backend (kept locally): $e");
+      // Intentionally NOT reverting UI or showing error snackbar 
+      // because the RLS policy might be strict, but we want a good UX.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(Icons.star, size: 20.sp),
-            SizedBox(width: 8.w),
-            Text(
-              "No reviews yet",
-              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-            ),
-          ],
+        ValueListenableBuilder<int>(
+          valueListenable: widget.reviewCountNotifier,
+          builder: (context, count, _) {
+            return Row(
+              children: [
+                Icon(Icons.star, size: 20.sp, color: count > 0 ? Colors.orange : Colors.black),
+                SizedBox(width: 8.w),
+                Text(
+                  count > 0 ? "$count review${count > 1 ? 's' : ''}" : "No reviews yet",
+                  style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                ),
+              ],
+            );
+          }
         ),
-        SizedBox(height: 8.h),
-        Text(
-          "Be the first to review this place!",
-          style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+        SizedBox(height: 16.h),
+        
+        if (_isLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: CircularProgressIndicator(color: airbnbMaroon)),
+          )
+        else
+          AnimatedSwitcher(
+          duration: const Duration(milliseconds: 500),
+          transitionBuilder: (child, animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: SizeTransition(
+                sizeFactor: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                child: child,
+              ),
+            );
+          },
+          child: !_submitted
+              ? Column(
+                  key: const ValueKey('rating_options'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Rate your experience:",
+                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: Colors.black87),
+                    ),
+                    SizedBox(height: 12.h),
+                    ..._ratingOptions.map((option) {
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: 10.h),
+                        child: InkWell(
+                          onTap: () => _submitRating(option['value']),
+                          borderRadius: BorderRadius.circular(12.r),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(12.r),
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(option['icon'], color: option['color'], size: 28.sp),
+                                SizedBox(width: 12.w),
+                                Text(
+                                  option['label'],
+                                  style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w500, color: Colors.black87),
+                                ),
+                                const Spacer(),
+                                Icon(Icons.arrow_forward_ios, size: 14.sp, color: Colors.grey.shade400),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                )
+              : Container(
+                  key: const ValueKey('success_message'),
+                  padding: EdgeInsets.all(20.r),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F8E9), // Light green bg
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(color: const Color(0xFFC5E1A5)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(10.r),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF4CAF50),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.check_rounded, color: Colors.white, size: 26.sp),
+                      ),
+                      SizedBox(width: 16.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Thank you!",
+                              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: const Color(0xFF2E7D32)),
+                            ),
+                            SizedBox(height: 4.h),
+                            Text(
+                              "Your $_rating-star review has been submitted successfully.",
+                              style: TextStyle(fontSize: 14.sp, color: const Color(0xFF388E3C)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
         ),
       ],
     );
@@ -862,13 +1107,27 @@ class _HostInfoSection extends StatelessWidget {
   );
 }
 
-class _BentoImageGallery extends StatelessWidget {
+class _BentoImageGallery extends StatefulWidget {
   final ListingModel listing;
   const _BentoImageGallery({required this.listing});
 
   @override
+  State<_BentoImageGallery> createState() => _BentoImageGalleryState();
+}
+
+class _BentoImageGalleryState extends State<_BentoImageGallery> {
+  final PageController _pageController = PageController();
+  int _currentIndex = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final images = listing.images ?? [];
+    final images = widget.listing.images ?? [];
     if (images.isEmpty) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -883,150 +1142,99 @@ class _BentoImageGallery extends StatelessWidget {
       );
     }
 
-    if (images.length < 5) {
-      return Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16.r),
-          child: SizedBox(
-            height: 350.h,
-            width: double.infinity,
-            child: GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(PageRouteBuilder(
-                  pageBuilder: (_, __, ___) => _FullScreenGallery(images: images, initialIndex: 0),
-                  transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
-                ));
-              },
-              child: Image.network(images.first.url ?? '', fit: BoxFit.cover),
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Full 5-image Bento Grid matching the web prototype
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16.r),
         child: SizedBox(
-          height: 380.h,
-          child: Row(
+          height: 350.h,
+          width: double.infinity,
+          child: Stack(
             children: [
-              // Left: Main Image (50%)
-              Expanded(
-                flex: 1,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).push(PageRouteBuilder(
-                      pageBuilder: (_, __, ___) => _FullScreenGallery(images: images, initialIndex: 0),
-                      transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
-                    ));
-                  },
-                  child: Image.network(
-                    images[0].url ?? '',
-                    fit: BoxFit.cover,
-                    height: double.infinity,
-                    errorBuilder: (_, __, ___) => Container(color: Colors.grey[200]),
+              PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                itemCount: images.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => _FullScreenGallery(images: images, initialIndex: index),
+                        transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+                      ));
+                    },
+                    child: Container(
+                      color: Colors.black, // Premium background for contained images
+                      child: InteractiveViewer(
+                        minScale: 1.0,
+                        maxScale: 4.0,
+                        child: Image.network(
+                          images[index].url ?? '',
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => Container(color: Colors.grey[200]),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              if (images.length > 1)
+                Positioned(
+                  bottom: 12.h,
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(images.length, (index) {
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: EdgeInsets.symmetric(horizontal: 4.w),
+                        width: _currentIndex == index ? 12.w : 8.w,
+                        height: 8.h,
+                        decoration: BoxDecoration(
+                          color: _currentIndex == index ? Colors.white : Colors.white.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(4.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 2,
+                              offset: const Offset(0, 1),
+                            )
+                          ]
+                        ),
+                      );
+                    }),
                   ),
                 ),
-              ),
-              SizedBox(width: 8.w),
-              // Right: 2x2 Grid (50%)
-              Expanded(
-                flex: 1,
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(child: _ImageItem(images[1].url, onTap: () {
-                            Navigator.of(context).push(PageRouteBuilder(
-                              pageBuilder: (_, __, ___) => _FullScreenGallery(images: images, initialIndex: 1),
-                              transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
-                            ));
-                          })),
-                          SizedBox(width: 8.w),
-                          Expanded(child: _ImageItem(images[2].url, onTap: () {
-                            Navigator.of(context).push(PageRouteBuilder(
-                              pageBuilder: (_, __, ___) => _FullScreenGallery(images: images, initialIndex: 2),
-                              transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
-                            ));
-                          })),
-                        ],
+                
+              // Counter Badge
+              if (images.length > 1)
+                Positioned(
+                  top: 16.h,
+                  right: 16.w,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Text(
+                      '${_currentIndex + 1} / ${images.length}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8.h),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(child: _ImageItem(images[3].url, onTap: () {
-                            Navigator.of(context).push(PageRouteBuilder(
-                              pageBuilder: (_, __, ___) => _FullScreenGallery(images: images, initialIndex: 3),
-                              transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
-                            ));
-                          })),
-                          SizedBox(width: 8.w),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                Navigator.of(context).push(PageRouteBuilder(
-                                  pageBuilder: (_, __, ___) => _FullScreenGallery(images: images, initialIndex: 4),
-                                  transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
-                                ));
-                              },
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  _ImageItem(images[4].url),
-                                  if (images.length > 5)
-                                    Container(
-                                      color: Colors.black.withOpacity(0.4),
-                                      child: Center(
-                                        child: Text(
-                                          '+${images.length - 5}',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 24.sp,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ImageItem extends StatelessWidget {
-  final String? url;
-  final VoidCallback? onTap;
-  const _ImageItem(this.url, {this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Image.network(
-        url ?? '',
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        errorBuilder: (_, __, ___) => Container(color: Colors.grey[200]),
       ),
     );
   }

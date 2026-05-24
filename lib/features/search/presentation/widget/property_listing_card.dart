@@ -205,16 +205,46 @@ class PropertyListingCard extends StatelessWidget {
 
                   // --- 3. الموقع ---
                   SizedBox(height: 6.h),
-                  Text(
-                    listing.displayLocation ?? '',
-                    style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+                  Row(
+                    children: [
+                      Icon(Icons.map_outlined, size: 14.r, color: Colors.grey[500]),
+                      SizedBox(width: 4.w),
+                      Expanded(
+                        child: Text(
+                          listing.displayLocation ?? '',
+                          style: TextStyle(fontSize: 13.sp, color: Colors.grey[600]),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
 
                   // --- 4. التفاصيل ---
-                  SizedBox(height: 4.h),
-                  Text(
-                    "${listing.maxGuests ?? 0} guests · ${listing.beds ?? listing.bedrooms ?? 0} beds · ${listing.bathrooms ?? 0} bath",
-                    style: TextStyle(fontSize: 13.sp, color: Colors.grey[600]),
+                  SizedBox(height: 8.h),
+                  Row(
+                    children: [
+                      Icon(Icons.group_outlined, size: 14.r, color: Colors.grey[500]),
+                      SizedBox(width: 4.w),
+                      Text(
+                        "${listing.maxGuests ?? 0} guests",
+                        style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+                      ),
+                      Text("  ·  ", style: TextStyle(color: Colors.grey[300])),
+                      Icon(Icons.bed_outlined, size: 14.r, color: Colors.grey[500]),
+                      SizedBox(width: 4.w),
+                      Text(
+                        "${listing.beds ?? listing.bedrooms ?? 0} beds",
+                        style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+                      ),
+                      Text("  ·  ", style: TextStyle(color: Colors.grey[300])),
+                      Icon(Icons.bathtub_outlined, size: 14.r, color: Colors.grey[500]),
+                      SizedBox(width: 4.w),
+                      Text(
+                        "${listing.bathrooms ?? 0} bath",
+                        style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+                      ),
+                    ],
                   ),
 
                   // --- 5. السعر ---

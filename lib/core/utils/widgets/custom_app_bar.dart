@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/core/constant/constant.dart';
+import 'package:freelancer/core/utils/widgets/quickin_logo.dart';
 import 'package:freelancer/core/di/service_locator.dart';
 import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
@@ -27,31 +28,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Logo Section
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Q',
-                    style: TextStyle(
-                      color: customRedColor,
-                      fontSize: 24.sp,
-                      fontWeight: FontWeight.bold,
-                      height: 1,
-                    ),
-                  ),
-                  Text(
-                    'QUICK IN',
-                    style: TextStyle(
-                      color: customRedColor,
-                      fontSize: 9.sp,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
+              QuickInLogo(height: 50.h, isHorizontal: false),
 
               // Search Bar Section
               Expanded( // ✅ FIX: يمنع الـ Overflow لو الشاشة ضيقة
@@ -253,13 +230,22 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   void _handleMenuSelection(BuildContext context, String value) {
     switch (value) {
       case 'login':
-        showDialog(context: context, builder: (_) => const LoginView());
+        showDialog(
+          context: context,
+          builder: (_) => BlocProvider.value(
+            value: context.read<AuthCubit>(),
+            child: const LoginView(),
+          ),
+        );
         break;
 
       case 'signup':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const SignUpView()),
+        showDialog(
+          context: context,
+          builder: (_) => BlocProvider.value(
+            value: context.read<AuthCubit>(),
+            child: const SignUpView(),
+          ),
         );
         break;
 
@@ -335,6 +321,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
       case 'logout':
         context.read<AuthCubit>().signOut();
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (route) => false);
         break;
     }
   }

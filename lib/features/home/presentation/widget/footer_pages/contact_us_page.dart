@@ -124,15 +124,15 @@ class ContactUsPage extends StatelessWidget {
                 Row(
                   children: [
                     _socialButton(
-                      icon: Icons.facebook_rounded,
-                      label: 'Facebook',
-                      onTap: () => _launchUrl('https://facebook.com'),
+                      icon: Icons.tiktok, // TikTok icon
+                      label: 'TikTok',
+                      onTap: () => _launchUrl('https://www.tiktok.com/@quick.in1'),
                     ),
                     SizedBox(width: 16.w),
                     _socialButton(
                       icon: Icons.camera_alt_rounded,
                       label: 'Instagram',
-                      onTap: () => _launchUrl('https://instagram.com'),
+                      onTap: () => _launchUrl('https://www.instagram.com/quickin.egy_?igsh=MXQ1OTNraXloY3dhOQ%3D%3D&utm_source=qr'),
                     ),
                   ],
                 ),

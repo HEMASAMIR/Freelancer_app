@@ -46,11 +46,41 @@ class FavCubit extends Cubit<FavState> {
       // تحميل الـ Wishlists بالمرة (فقط لو اليوزر مسجل)
       final wishlists = _isLoggedIn ? await _repository.getWishlists() : <WishlistModel>[];
 
+      // تحميل محتويات كل قائمة (Wishlist Content) تلقائياً لعرض الصور
+      final Map<String, List<ListingModel>> wishlistContent = {};
+      if (_isLoggedIn) {
+        for (var wl in wishlists) {
+          try {
+            final itemIds = await _repository.getWishlistItems(wl.id);
+            final List<String> missingIds = itemIds
+                .where((id) => !_cachedFavModels.any((m) => m.id.toString() == id))
+                .toList();
+
+            if (missingIds.isNotEmpty) {
+              final hydratedListings = await _repository.getListingsByIds(missingIds);
+              for (var l in hydratedListings) {
+                if (!_cachedFavModels.any((m) => m.id == l.id)) {
+                  _cachedFavModels.add(l);
+                }
+              }
+            }
+
+            final itemsToShow = _cachedFavModels
+                .where((element) => itemIds.contains(element.id.toString()))
+                .toList();
+            wishlistContent[wl.id] = itemsToShow;
+          } catch (e) {
+            debugPrint("Error loading items for wishlist ${wl.id}: $e");
+          }
+        }
+      }
+
       emit(
         FavLoaded(
           favorites: favoritesToShow,
           favoriteIds: favoriteIds,
           wishlists: wishlists,
+          wishlistContent: wishlistContent,
         ),
       );
     } catch (e) {
@@ -102,32 +132,7 @@ class FavCubit extends Cubit<FavState> {
 
   // تحميل الـ Wishlists فقط
   Future<void> loadWishlists() async {
-    // نحتفظ بالحالة السابقة إذا كانت FavLoaded عشان مانكسرش الـ UI
-    final previousState = state;
-    // لو guest مرجعش حاجة فاضية من غير تحميل
-    if (!_isLoggedIn) {
-      if (previousState is! FavLoaded) {
-        emit(const FavLoaded(favorites: [], favoriteIds: [], wishlists: []));
-      }
-      return;
-    }
-    emit(FavLoading());
-    try {
-      final wishlists = await _repository.getWishlists();
-      if (previousState is FavLoaded) {
-        emit(previousState.copyWith(wishlists: wishlists));
-      } else {
-        emit(FavLoaded(favorites: const [], favoriteIds: const [], wishlists: wishlists));
-      }
-    } catch (e) {
-      debugPrint("loadWishlists error: $e");
-      // نرجع للحالة السابقة بدل ما نكسر الـ UI
-      if (previousState is FavLoaded) {
-        emit(previousState);
-      } else {
-        emit(FavLoaded(favorites: const [], favoriteIds: const [], wishlists: const []));
-      }
-    }
+    await loadFavorites();
   }
 
   Future<bool> createWishlist(

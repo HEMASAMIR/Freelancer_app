@@ -5,7 +5,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Freelancer</string>
+		<string>QuickIn</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -59,5 +59,21 @@
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSCameraUsageDescription</key>
+		<string>QuickIn requires access to your camera to allow you to take photos for property listings or profile pictures.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>QuickIn requires access to your photo library to let you upload photos for property listings or profile pictures.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>QuickIn requires access to your microphone when recording video for listings.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>QuickIn uses your location to show nearby properties and navigate maps.</string>
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>sms</string>
+			<string>tel</string>
+			<string>mailto</string>
+			<string>https</string>
+			<string>http</string>
+		</array>
 	</dict>
 </plist>

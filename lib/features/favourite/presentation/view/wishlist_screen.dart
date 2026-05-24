@@ -5,6 +5,10 @@ import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/favourite/data/models/wishlist_model.dart';
 import 'package:freelancer/features/favourite/presentation/view/wishlist_details_screen.dart';
 import 'package:freelancer/features/home/presentation/widget/custom_drawer.dart';
+import 'package:freelancer/core/utils/widgets/elegant_toast.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
+import 'package:freelancer/features/search/data/search_model/listing_model.dart';
 
 class WishlistsScreen extends StatefulWidget {
   const WishlistsScreen({super.key});
@@ -49,10 +53,27 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (controller.text.trim().isNotEmpty) {
-                context.read<FavCubit>().createWishlist(controller.text.trim());
+                final name = controller.text.trim();
                 Navigator.pop(ctx);
+                final success = await context.read<FavCubit>().createWishlist(name);
+                if (success && context.mounted) {
+                  // Get username for a personalized animated toast
+                  final authCubit = context.read<AuthCubit>();
+                  String userName = 'Guest';
+                  if (authCubit.state is AuthSuccess) {
+                    userName = (authCubit.state as AuthSuccess).user.userMetadata['full_name'] ?? 'Guest';
+                  } else if (authCubit.state is AuthAdminSuccess) {
+                    userName = (authCubit.state as AuthAdminSuccess).user.userMetadata['full_name'] ?? 'Admin';
+                  }
+                  
+                  ElegantToast.show(
+                    context, 
+                    'Congratulations $userName! Wishlist "$name" created successfully. 🎉',
+                    icon: Icons.favorite_rounded,
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(
@@ -161,8 +182,14 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
                             mainAxisSpacing: 16,
                           ),
                       itemCount: state.wishlists.length,
-                      itemBuilder: (_, i) =>
-                          _WishlistCard(wishlist: state.wishlists[i]),
+                      itemBuilder: (_, i) {
+                        final wishlist = state.wishlists[i];
+                        final listings = state.wishlistContent[wishlist.id];
+                        return _WishlistCard(
+                          wishlist: wishlist,
+                          listings: listings,
+                        );
+                      },
                     );
                   }
                   return _EmptyWishlists(onAdd: _showCreateDialog);
@@ -250,10 +277,26 @@ class _EmptyWishlists extends StatelessWidget {
 // ── Wishlist Card ─────────────────────────────────────────────────────────────
 class _WishlistCard extends StatelessWidget {
   final WishlistModel wishlist;
-  const _WishlistCard({required this.wishlist});
+  final List<ListingModel>? listings;
+
+  const _WishlistCard({
+    required this.wishlist,
+    this.listings,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final hasImages = listings != null &&
+        listings!.isNotEmpty &&
+        listings!.any((l) => l.images?.isNotEmpty ?? false);
+
+    String? coverImageUrl;
+    if (hasImages) {
+      final firstListingWithImage =
+          listings!.firstWhere((l) => l.images?.isNotEmpty ?? false);
+      coverImageUrl = firstListingWithImage.images!.first.url;
+    }
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -271,49 +314,112 @@ class _WishlistCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            Center(
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.favorite_border_rounded,
-                  color: AppColors.sub.withOpacity(0.5),
-                  size: 24,
+            // Cover Image
+            if (coverImageUrl != null)
+              Positioned.fill(
+                child: Image.network(
+                  coverImageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: const Color(0xFFF0EBE3),
+                    child: Center(
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
+
+            // Gradient Overlay
+            if (coverImageUrl != null)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.black.withOpacity(0.65),
+                        Colors.black.withOpacity(0.1),
+                      ],
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                    ),
+                  ),
+                ),
+              ),
+
+            // Center Heart Icon (Only if there is no cover image)
+            if (coverImageUrl == null)
+              Center(
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.favorite_border_rounded,
+                    color: AppColors.sub.withOpacity(0.5),
+                    size: 24,
+                  ),
+                ),
+              ),
+
+            // Delete Button
             Positioned(
               top: 8,
               right: 8,
-              child: IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      title: const Text('Delete Wishlist', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
-                      content: Text('Are you sure you want to delete "${wishlist.name}"? This action cannot be undone.'),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                        ElevatedButton(
-                          onPressed: () {
-                            context.read<FavCubit>().deleteWishlist(wishlist.id);
-                            Navigator.pop(ctx);
-                          },
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryRed),
-                          child: const Text('Delete', style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: coverImageUrl != null
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.white.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: coverImageUrl != null ? Colors.white : Colors.redAccent,
+                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        title: const Text('Delete Wishlist',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.ink)),
+                        content: Text(
+                            'Are you sure you want to delete "${wishlist.name}"? This action cannot be undone.'),
+                        actions: [
+                          TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text('Cancel')),
+                          ElevatedButton(
+                            onPressed: () {
+                              context
+                                  .read<FavCubit>()
+                                  .deleteWishlist(wishlist.id);
+                              Navigator.pop(ctx);
+                            },
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryRed),
+                            child: const Text('Delete',
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
+
+            // Bottom texts
             Positioned(
               left: 16,
               bottom: 16,
@@ -325,17 +431,42 @@ class _WishlistCard extends StatelessWidget {
                     wishlist.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: coverImageUrl != null ? Colors.white : AppColors.ink,
+                      shadows: coverImageUrl != null
+                          ? [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.6),
+                                offset: const Offset(0, 1.5),
+                                blurRadius: 4,
+                              )
+                            ]
+                          : null,
                     ),
                   ),
-                  const Text(
-                    'Saved listings',
+                  const SizedBox(height: 2),
+                  Text(
+                    '${listings?.length ?? 0} saved listing${(listings?.length ?? 0) == 1 ? '' : 's'}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, color: AppColors.sub),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: coverImageUrl != null
+                          ? Colors.white.withOpacity(0.85)
+                          : AppColors.sub,
+                      shadows: coverImageUrl != null
+                          ? [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.6),
+                                offset: const Offset(0, 1.5),
+                                blurRadius: 4,
+                              )
+                            ]
+                          : null,
+                    ),
                   ),
                 ],
               ),

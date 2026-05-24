@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:freelancer/features/search/data/search_model/host_model.dart';
 
 class ListingModel {
@@ -378,10 +379,27 @@ class ListingImage {
         json['listing_image_url']?.toString() ??
         json['image']?.toString();
 
+    // Fix if rawUrl is a JSON array string like '["listings/..."]'
+    if (rawUrl != null && rawUrl.startsWith('[') && rawUrl.endsWith(']')) {
+      try {
+        final List<dynamic> parsed = jsonDecode(rawUrl);
+        if (parsed.isNotEmpty) {
+          rawUrl = parsed.first.toString();
+        } else {
+          rawUrl = null;
+        }
+      } catch (e) {
+        rawUrl = rawUrl?.replaceAll(RegExp(r'[\[\]"]'), '');
+      }
+    }
+
     String? resolvedUrl;
     if (rawUrl != null && rawUrl.isNotEmpty) {
       if (rawUrl.startsWith('http')) {
         resolvedUrl = rawUrl;
+      } else if (rawUrl.startsWith('/')) {
+        const supabaseUrl = 'https://xpvrgdpsvffmttlwwfuo.supabase.co';
+        resolvedUrl = '$supabaseUrl$rawUrl';
       } else {
         const supabaseUrl = 'https://xpvrgdpsvffmttlwwfuo.supabase.co';
         resolvedUrl = '$supabaseUrl/storage/v1/object/public/$rawUrl';

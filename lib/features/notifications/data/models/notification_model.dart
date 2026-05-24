@@ -44,6 +44,17 @@ class NotificationModel {
     );
   }
 
+  int get nights {
+    try {
+      final cin = DateTime.parse(checkIn);
+      final cout = DateTime.parse(checkOut);
+      final diff = cout.difference(cin).inDays;
+      return diff > 0 ? diff : 1;
+    } catch (_) {
+      return 1;
+    }
+  }
+
   String get timeAgo {
     final diff = DateTime.now().difference(receivedAt);
     if (diff.inMinutes < 1) return 'Just now';

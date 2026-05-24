@@ -70,7 +70,12 @@ class CommentsRepositoryImpl implements CommentsRepository {
       }
       return const Left('Failed to post comment');
     } on DioException catch (e) {
-      return Left(e.response?.data?['message'] ?? e.message ?? 'Network error');
+      final msg = e.response?.data?['message'] ?? e.message ?? 'Network error';
+      if (msg.toString().toLowerCase().contains('row-level security') || 
+          msg.toString().toLowerCase().contains('violates row-level security')) {
+        return const Left('يرجى تسجيل الدخول أولاً لتتمكن من كتابة تعليق');
+      }
+      return Left(msg.toString());
     }
   }
 

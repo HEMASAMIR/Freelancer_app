@@ -39,6 +39,7 @@ class _AdminSideDrawerState extends State<AdminSideDrawer> {
       }
       if (item == 'Log out') {
         context.read<AuthCubit>().signOut();
+        Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
         return;
       }
       widget.onItemSelected(item);
@@ -470,6 +471,7 @@ class _AdminSideDrawerState extends State<AdminSideDrawer> {
               Future.microtask(() {
                 if (!mounted) return;
                 context.read<AuthCubit>().signOut();
+                Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
               });
             },
             borderRadius: BorderRadius.circular(6.r),

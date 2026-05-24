@@ -13,9 +13,40 @@ import 'package:freelancer/core/utils/widgets/elegant_toast.dart';
 /// 2. Starts the in-app Realtime listener → populates the Notifications page.
 ///
 /// Both start on login and stop on logout.
-class AuthAwareNotificationWrapper extends StatelessWidget {
+class AuthAwareNotificationWrapper extends StatefulWidget {
   final Widget child;
   const AuthAwareNotificationWrapper({super.key, required this.child});
+
+  @override
+  State<AuthAwareNotificationWrapper> createState() => _AuthAwareNotificationWrapperState();
+}
+
+class _AuthAwareNotificationWrapperState extends State<AuthAwareNotificationWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startIfLoggedIn();
+    });
+  }
+
+  void _startIfLoggedIn() async {
+    if (!mounted) return;
+    final authCubit = context.read<AuthCubit>();
+    final state = authCubit.state;
+    if (state is AuthSuccess || state is AuthAdminSuccess) {
+      final userId = state is AuthSuccess
+          ? state.user.id
+          : (state as AuthAdminSuccess).user.id;
+
+      await HostForegroundService.instance.startForHost(userId);
+      await HostForegroundService.instance.requestBatteryOptimizationExemption();
+
+      if (mounted) {
+        sl<HostNotificationCubit>().startForHost(userId);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +88,7 @@ class AuthAwareNotificationWrapper extends StatelessWidget {
               );
             }
           },
-          child: child,
+          child: widget.child,
         ),
       ),
     );
