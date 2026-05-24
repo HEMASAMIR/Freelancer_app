@@ -17,6 +17,8 @@ class SearchCubit extends Cubit<SearchState> {
     try {
       final result = await _searchRepository.searchListings(params);
 
+      if (isClosed) return;
+
       result.fold(
         (failure) {
           debugPrint('❌ [SearchCubit] فشل البحث: $failure');
@@ -31,6 +33,7 @@ class SearchCubit extends Cubit<SearchState> {
       );
     } catch (e) {
       debugPrint('❌ [SearchCubit] استثناء غير متوقع أثناء البحث: $e');
+      if (isClosed) return;
       emit(SearchError('حدث خطأ غير متوقع أثناء تحميل البيانات.'));
     }
   }
@@ -42,6 +45,8 @@ class SearchCubit extends Cubit<SearchState> {
     debugPrint('ℹ️ [SearchCubit] جاري جلب تفاصيل الـ ID: $id');
 
     final result = await _searchRepository.getListingDetails(id);
+
+    if (isClosed) return;
 
     result.fold(
       (failure) {

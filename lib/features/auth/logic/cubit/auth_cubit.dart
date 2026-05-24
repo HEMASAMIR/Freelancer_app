@@ -15,7 +15,7 @@ class AuthCubit extends Cubit<AuthCubitState> {
   final AdminEmailService _adminService;
   Timer? _googleSignInTimer;
 
-  static const _kGoogleSignInTimeout = Duration(seconds: 10);
+  static const _kGoogleSignInTimeout = Duration(minutes: 2);
 
   AuthCubit({
     required AuthRepo authRepo,
