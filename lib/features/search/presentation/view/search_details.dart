@@ -615,32 +615,31 @@ class _LocationMapSection extends StatelessWidget {
             child: Container(
               height: 180.h,
               width: double.infinity,
-              color: Colors.grey[100],
-              child: Image.network(
-                // We use a placeholder logic if no key is available to avoid broken links
-                'https://via.placeholder.com/600x300/F5F5F5/710E1F?text=Map+Preview+of+${Uri.encodeComponent(location ?? "Location")}',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.map_outlined, color: Colors.grey[400], size: 40),
+                  SizedBox(height: 8.h),
+                  Text(
+                    location ?? "Location Preview",
+                    style: TextStyle(fontSize: 13.sp, color: Colors.grey[600]),
+                    textAlign: TextAlign.center,
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.map_outlined,
-                        color: Colors.grey[400],
-                        size: 40,
-                      ),
-                      SizedBox(height: 8.h),
-                      Text(location ?? "Location Preview"),
-                      Text(
-                        "Tap to open Google Maps",
-                        style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.w600),
-                      ),
-                    ],
+                  SizedBox(height: 4.h),
+                  Text(
+                    "Tap to open Google Maps",
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: airbnbMaroon,
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),

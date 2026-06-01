@@ -110,6 +110,9 @@ Future<void> setupServiceLocator() async {
   final baseDio = Dio(
     BaseOptions(
       baseUrl: SupabaseKeys.restBaseUrl,
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      sendTimeout: const Duration(seconds: 30),
       headers: {
         'apikey': SupabaseKeys.supabaseAnonKey,
         'Content-Type': 'application/json',
@@ -123,6 +126,9 @@ Future<void> setupServiceLocator() async {
         Dio(
             BaseOptions(
               baseUrl: SupabaseKeys.restBaseUrl,
+              connectTimeout: const Duration(seconds: 30),
+              receiveTimeout: const Duration(seconds: 30),
+              sendTimeout: const Duration(seconds: 30),
               headers: {
                 'Content-Type': 'application/json',
                 'Prefer': 'return=representation',

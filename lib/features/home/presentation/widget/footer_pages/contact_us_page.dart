@@ -124,13 +124,13 @@ class ContactUsPage extends StatelessWidget {
                 Row(
                   children: [
                     _socialButton(
-                      icon: Icons.tiktok, // TikTok icon
+                      icon: Icon(Icons.tiktok, color: Colors.black, size: 22.r), // TikTok icon
                       label: 'TikTok',
                       onTap: () => _launchUrl('https://www.tiktok.com/@quick.in1'),
                     ),
                     SizedBox(width: 16.w),
                     _socialButton(
-                      icon: Icons.camera_alt_rounded,
+                      icon: _buildInstagramIcon(size: 22.r),
                       label: 'Instagram',
                       onTap: () => _launchUrl('https://www.instagram.com/quickin.egy_?igsh=MXQ1OTNraXloY3dhOQ%3D%3D&utm_source=qr'),
                     ),
@@ -256,7 +256,7 @@ class ContactUsPage extends StatelessWidget {
   }
 
   Widget _socialButton({
-    required IconData icon,
+    required Widget icon,
     required String label,
     required VoidCallback onTap,
   }) {
@@ -273,7 +273,7 @@ class ContactUsPage extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: AppColors.primaryBurgundy, size: 22.r),
+              icon,
               SizedBox(width: 8.w),
               Text(
                 label,
@@ -297,5 +297,60 @@ class ContactUsPage extends StatelessWidget {
     } catch (e) {
       debugPrint('Could not launch $url: $e');
     }
+  }
+
+  Widget _buildInstagramIcon({required double size}) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(size * 0.28),
+        gradient: const LinearGradient(
+          begin: Alignment.bottomLeft,
+          end: Alignment.topRight,
+          colors: [
+            Color(0xFFFCAF45), // Yellow-orange
+            Color(0xFFF58529), // Orange
+            Color(0xFFDD2A7B), // Pink-red
+            Color(0xFF812A90), // Purple
+            Color(0xFF515BD4), // Blue
+          ],
+          stops: [0.0, 0.15, 0.5, 0.85, 1.0],
+        ),
+      ),
+      padding: EdgeInsets.all(size * 0.15),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.white, width: size * 0.08),
+          borderRadius: BorderRadius.circular(size * 0.22),
+        ),
+        child: Stack(
+          children: [
+            Center(
+              child: Container(
+                width: size * 0.28,
+                height: size * 0.28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: size * 0.08),
+                ),
+              ),
+            ),
+            Positioned(
+              top: size * 0.04,
+              right: size * 0.04,
+              child: Container(
+                width: size * 0.07,
+                height: size * 0.07,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

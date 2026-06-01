@@ -27,9 +27,7 @@ class PropertyListingCard extends StatelessWidget {
     final bool hasImages = images != null && images.isNotEmpty;
 
     // سحب أول رابط صورة بشكل آمن
-    final String imageUrl = hasImages
-        ? (images.first.url ?? 'https://via.placeholder.com/400x300')
-        : 'https://via.placeholder.com/400x300';
+    final String? imageUrl = hasImages ? images.first.url : null;
 
     return GestureDetector(
       onTap: onTap,
@@ -56,30 +54,34 @@ class PropertyListingCard extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-                  child: Image.network(
-                    imageUrl,
-                    height: 280.h,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Shimmer.fromColors(
-                        baseColor: Colors.grey[300]!,
-                        highlightColor: Colors.grey[100]!,
-                        child: Container(
+                  child: imageUrl != null && imageUrl.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: imageUrl,
                           height: 280.h,
                           width: double.infinity,
-                          color: Colors.white,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Shimmer.fromColors(
+                            baseColor: Colors.grey[300]!,
+                            highlightColor: Colors.grey[100]!,
+                            child: Container(
+                              height: 280.h,
+                              width: double.infinity,
+                              color: Colors.white,
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            height: 280.h,
+                            width: double.infinity,
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.broken_image, color: Colors.grey),
+                          ),
+                        )
+                      : Container(
+                          height: 280.h,
+                          width: double.infinity,
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.broken_image, color: Colors.grey),
                         ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      height: 280.h,
-                      width: double.infinity,
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.broken_image, color: Colors.grey),
-                    ),
-                  ),
                 ),
                 // زرار المفضلة
                 Positioned(

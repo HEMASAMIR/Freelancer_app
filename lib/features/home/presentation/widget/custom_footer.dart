@@ -79,18 +79,18 @@ class CustomFooter extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconButton(
-              icon: Icon(Icons.facebook, color: const Color(0xFF1877F2), size: 28.sp), // Facebook Blue
-              onPressed: () => launchUrl(Uri.parse('https://facebook.com')),
+              icon: Icon(Icons.chat_rounded, color: const Color(0xFF25D366), size: 28.sp), // WhatsApp Green
+              onPressed: () => _launchUrl('https://wa.me/201110105107'),
             ),
             SizedBox(width: 15.w),
             IconButton(
-              icon: Icon(Icons.chat, color: const Color(0xFF25D366), size: 28.sp), // WhatsApp Green
-              onPressed: () => launchUrl(Uri.parse('https://wa.me')),
+              icon: Icon(Icons.tiktok, color: Colors.black, size: 28.sp), // TikTok Black
+              onPressed: () => _launchUrl('https://www.tiktok.com/@quick.in1'),
             ),
             SizedBox(width: 15.w),
             IconButton(
-              icon: Icon(Icons.music_note, color: Colors.black, size: 28.sp), // TikTok Black
-              onPressed: () => launchUrl(Uri.parse('https://tiktok.com')),
+              icon: _buildInstagramIcon(size: 26.sp),
+              onPressed: () => _launchUrl('https://www.instagram.com/quickin.egy_?igsh=MXQ1OTNraXloY3dhOQ%3D%3D&utm_source=qr'),
             ),
           ],
         ),
@@ -185,6 +185,70 @@ class CustomFooter extends StatelessWidget {
             BlocProvider.value(value: sl<AuthCubit>()),
           ],
           child: page,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('Could not launch $url: $e');
+    }
+  }
+
+  Widget _buildInstagramIcon({required double size}) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(size * 0.28),
+        gradient: const LinearGradient(
+          begin: Alignment.bottomLeft,
+          end: Alignment.topRight,
+          colors: [
+            Color(0xFFFCAF45), // Yellow-orange
+            Color(0xFFF58529), // Orange
+            Color(0xFFDD2A7B), // Pink-red
+            Color(0xFF812A90), // Purple
+            Color(0xFF515BD4), // Blue
+          ],
+          stops: [0.0, 0.15, 0.5, 0.85, 1.0],
+        ),
+      ),
+      padding: EdgeInsets.all(size * 0.15),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.white, width: size * 0.08),
+          borderRadius: BorderRadius.circular(size * 0.22),
+        ),
+        child: Stack(
+          children: [
+            Center(
+              child: Container(
+                width: size * 0.28,
+                height: size * 0.28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: size * 0.08),
+                ),
+              ),
+            ),
+            Positioned(
+              top: size * 0.04,
+              right: size * 0.04,
+              child: Container(
+                width: size * 0.07,
+                height: size * 0.07,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

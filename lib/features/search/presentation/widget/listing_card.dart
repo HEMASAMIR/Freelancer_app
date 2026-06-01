@@ -39,13 +39,14 @@ class ListingCard extends StatelessWidget {
               borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
               child: AspectRatio(
                 aspectRatio: 16 / 9,
-                child: (listing.images != null && listing.images!.isNotEmpty)
-                    ? Image.network(
-                        listing.images!.first.url ??
-                            '', // تأكد أن ListingImage فيها url
+                child: (listing.images != null && listing.images!.isNotEmpty &&
+                        listing.images!.first.url != null &&
+                        listing.images!.first.url!.isNotEmpty)
+                    ? CachedNetworkImage(
+                        imageUrl: listing.images!.first.url!,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            _placeholder(),
+                        placeholder: (context, url) => Container(color: Colors.grey[200]),
+                        errorWidget: (context, url, error) => _placeholder(),
                       )
                     : _placeholder(),
               ),

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/constant/constant.dart';
@@ -134,10 +135,11 @@ class _WishlistCard extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(15),
               child: firstImageUrl != null
-                  ? Image.network(
-                      firstImageUrl,
+                  ? CachedNetworkImage(
+                      imageUrl: firstImageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => _fallbackIcon(),
+                      placeholder: (context, url) => Container(color: Colors.grey[200]),
+                      errorWidget: (context, url, error) => _fallbackIcon(),
                     )
                   : _fallbackIcon(),
             ),

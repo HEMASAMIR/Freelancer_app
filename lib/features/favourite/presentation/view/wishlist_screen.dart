@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/constant/constant.dart';
@@ -317,10 +318,11 @@ class _WishlistCard extends StatelessWidget {
             // Cover Image
             if (coverImageUrl != null)
               Positioned.fill(
-                child: Image.network(
-                  coverImageUrl,
+                child: CachedNetworkImage(
+                  imageUrl: coverImageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
+                  placeholder: (context, url) => Container(color: const Color(0xFFF0EBE3)),
+                  errorWidget: (context, url, error) => Container(
                     color: const Color(0xFFF0EBE3),
                     child: Center(
                       child: Icon(

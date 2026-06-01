@@ -48,12 +48,16 @@ class PropertyCard extends StatelessWidget {
             borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
             child: Stack(
               children: [
-                Image.network(
-                  imageUrl,
+                CachedNetworkImage(
+                  imageUrl: imageUrl,
                   height: 260.h,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
+                  placeholder: (context, url) => Container(
+                    height: 260.h,
+                    color: Colors.grey[200],
+                  ),
+                  errorWidget: (context, url, error) => Container(
                     height: 260.h,
                     color: Colors.grey[300],
                     child: const Center(

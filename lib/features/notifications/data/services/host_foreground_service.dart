@@ -12,6 +12,7 @@ class HostForegroundService {
 
   // ── Initialization (call once in main) ───────────────────────────────────
   static void initForegroundTask() {
+    if (kIsWeb) return; // flutter_foreground_task is not supported on web
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'quickin_host_service_v4',
@@ -37,6 +38,8 @@ class HostForegroundService {
 
   // ── Start service for a host ──────────────────────────────────────────────
   Future<void> startForHost(String hostId) async {
+    if (kIsWeb) return; // flutter_foreground_task is not supported on web
+
     // Save hostId so the isolate can read it on restart
     await FlutterForegroundTask.saveData(key: 'hostId', value: hostId);
 
@@ -60,6 +63,7 @@ class HostForegroundService {
 
   // ── Stop service ──────────────────────────────────────────────────────────
   Future<void> stop() async {
+    if (kIsWeb) return; // flutter_foreground_task is not supported on web
     if (await FlutterForegroundTask.isRunningService) {
       await FlutterForegroundTask.stopService();
       debugPrint('[HostForegroundService] stopped');
@@ -68,6 +72,7 @@ class HostForegroundService {
 
   // ── Request battery optimisation exemption (optional UX prompt) ───────────
   Future<void> requestBatteryOptimizationExemption() async {
+    if (kIsWeb) return; // flutter_foreground_task is not supported on web
     if (!await FlutterForegroundTask.isIgnoringBatteryOptimizations) {
       await FlutterForegroundTask.requestIgnoreBatteryOptimization();
     }
