@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../search/data/search_model/listing_model.dart';
 
 abstract class AdminManagementState extends Equatable {
   const AdminManagementState();
@@ -48,4 +49,12 @@ class AdminDashboardStatsLoaded extends AdminManagementState {
         bookingsThisMonth,
         pendingApprovals,
       ];
+}
+
+class AdminPendingListingsLoaded extends AdminManagementState {
+  final List<ListingModel> listings;
+  const AdminPendingListingsLoaded(this.listings);
+
+  @override
+  List<Object?> get props => [listings];
 }

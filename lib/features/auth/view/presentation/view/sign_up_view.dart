@@ -51,6 +51,7 @@ class _SignUpViewState extends State<SignUpView> {
       value: sl<AuthCubit>(),
       child: BlocConsumer<AuthCubit, AuthCubitState>(
         listener: (context, state) {
+          if (!mounted) return;
           if (state is AuthAdminSuccess) {
             CustomToast.show(
               context,
@@ -59,8 +60,13 @@ class _SignUpViewState extends State<SignUpView> {
             );
             context.read<AuthCubit>().navigateAfterLogin(context);
           } else if (state is AuthSuccess) {
-            // Show Check Email Dialog instead of navigating immediately
-            CheckEmailDialog.show(context, _emailController.text.trim());
+            // ✅ لو سجل دخول بـ Apple/Google (الايميل فاضي في الكنترولر) يدخل فوراً
+            // لو سجل بالايميل يدوي، يظهر له ديالوج التأكيد
+            if (_emailController.text.trim().isEmpty) {
+              context.read<AuthCubit>().navigateAfterLogin(context);
+            } else {
+              CheckEmailDialog.show(context, _emailController.text.trim());
+            }
           } else if (state is AuthError) {
             CustomToast.show(context, state.message, ToastState.error);
           }
@@ -140,12 +146,22 @@ class _SignUpViewState extends State<SignUpView> {
                               ),
                               SizedBox(height: 20.h),
 
+                              // Google Button
                               SocialButton(
                                 icon: Icons.g_mobiledata,
                                 label: 'Continue with Google',
                                 onTap: cubit.isLoading
                                     ? null
                                     : () => cubit.signInWithGoogle(),
+                              ),
+                              SizedBox(height: 10.h),
+                              // Apple Button (تحت جوجل)
+                              SocialButton(
+                                icon: Icons.apple,
+                                label: 'Continue with Apple',
+                                onTap: cubit.isLoading
+                                    ? null
+                                    : () => cubit.signInWithApple(),
                               ),
                               SizedBox(height: 10.h),
 
@@ -260,13 +276,17 @@ class _SignUpViewState extends State<SignUpView> {
                                     onTap: cubit.isLoading
                                         ? null
                                         : () {
-                                            Navigator.pop(context);
+                                            final authCubit = context
+                                                .read<AuthCubit>();
+                                            final navigator = Navigator.of(
+                                              context,
+                                            );
+                                            navigator.pop();
                                             showDialog(
-                                              context: context,
+                                              context: navigator.context,
                                               builder: (ctx) =>
                                                   BlocProvider.value(
-                                                    value: context
-                                                        .read<AuthCubit>(),
+                                                    value: authCubit,
                                                     child: const LoginView(),
                                                   ),
                                             );

@@ -25,7 +25,8 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
   }
 
   @override
-  Future<Either<String, List<LifestyleCategoryModel>>> getLifestyleCategories() async {
+  Future<Either<String, List<LifestyleCategoryModel>>>
+  getLifestyleCategories() async {
     return _fetchList(
       endpoint: SupabaseKeys.lifestyleCategories,
       queryParameters: {'select': '*', 'order': 'display_order'},
@@ -35,7 +36,8 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
   }
 
   @override
-  Future<Either<String, List<ListingConditionModel>>> getListingConditions() async {
+  Future<Either<String, List<ListingConditionModel>>>
+  getListingConditions() async {
     return _fetchList(
       endpoint: SupabaseKeys.listingConditions,
       queryParameters: {'select': 'id,name,description,translations'},
@@ -48,45 +50,73 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
   Future<Either<String, List<CountryModel>>> getCountries() async {
     return _fetchList(
       endpoint: SupabaseKeys.countries,
-      queryParameters: {'select': 'id,name,iso2,emoji,latitude,longitude', 'order': 'name.asc'},
+      queryParameters: {
+        'select': 'id,name,iso2,emoji,latitude,longitude',
+        'order': 'name.asc',
+      },
       mapper: (json) => CountryModel.fromJson(json),
       errorMessage: 'فشل في جلب الدول',
     );
   }
 
   @override
-  Future<Either<String, List<StateModel>>> getStates({required String countryIso2}) async {
+  Future<Either<String, List<StateModel>>> getStates({
+    required String countryIso2,
+  }) async {
     return _fetchList(
       endpoint: SupabaseKeys.states,
-      queryParameters: {'country_iso2': 'eq.$countryIso2', 'select': '*', 'order': 'name.asc'},
+      queryParameters: {
+        'country_iso2': 'eq.$countryIso2',
+        'select': '*',
+        'order': 'name.asc',
+      },
       mapper: (json) => StateModel.fromJson(json),
       errorMessage: 'فشل في جلب المحافظات/الولايات',
     );
   }
 
   @override
-  Future<Either<String, List<CityModel>>> getCities({required String stateIso2}) async {
+  Future<Either<String, List<CityModel>>> getCities({
+    required String stateIso2,
+  }) async {
     return _fetchList(
       endpoint: SupabaseKeys.cities,
-      queryParameters: {'state_iso2': 'eq.$stateIso2', 'select': '*', 'order': 'name.asc'},
+      queryParameters: {
+        'state_iso2': 'eq.$stateIso2',
+        'select': '*',
+        'order': 'name.asc',
+      },
       mapper: (json) => CityModel.fromJson(json),
       errorMessage: 'فشل في جلب المدن',
     );
   }
 
   @override
-  Future<Either<String, String>> uploadListingPhoto({required String userId, required File imageFile}) async {
+  Future<Either<String, String>> uploadListingPhoto({
+    required String userId,
+    required File imageFile,
+  }) async {
     try {
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
-      final path = '$userId/$fileName';
-      
-      await supabase.storage.from('listings').upload(
-        path,
-        imageFile,
-        fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
-      );
+      // نستخدم الـ userId الممرر للدالة مباشرة لأنه موثوق به وجاي من الـ Cubit
+      if (userId.isEmpty) {
+        return const Left("يجب تسجيل الدخول لرفع الصور");
+      }
 
-      final String publicUrl = supabase.storage.from('listings').getPublicUrl(path);
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
+      final path = '$userId/$fileName';
+
+      await supabase.storage
+          .from('listings')
+          .upload(
+            path,
+            imageFile,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+          );
+
+      final String publicUrl = supabase.storage
+          .from('listings')
+          .getPublicUrl(path);
       return Right(publicUrl);
     } on StorageException catch (e) {
       debugPrint("❌ Storage Error uploading listing photo: ${e.message}");
@@ -99,9 +129,12 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
 
   /// Returns the current user's Bearer token (always fresh from Supabase session)
   Options _authOptions() {
-    final token = supabase.auth.currentSession?.accessToken;
-    if (token == null || token.isEmpty) {
-      debugPrint('⚠️ No active Supabase session — request will likely fail RLS');
+    final session = supabase.auth.currentSession;
+    final token = session?.accessToken;
+    if (session == null || token == null || token.isEmpty) {
+      debugPrint(
+        '⚠️ No active Supabase session — request will likely fail RLS',
+      );
     }
     return Options(
       headers: {
@@ -113,11 +146,21 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
   }
 
   @override
-  Future<Either<String, ListingModel>> createPrimaryListing(Map<String, dynamic> listingData) async {
+  Future<Either<String, ListingModel>> createPrimaryListing(
+    Map<String, dynamic> listingData,
+  ) async {
     try {
+      // نضمن أن العقار الجديد غير منشور تلقائياً ووضعه "قيد الانتظار"
+      // لكي يظهر في لوحة تحكم الأدمن للموافقة عليه
+      final Map<String, dynamic> secureData = Map<String, dynamic>.from(
+        listingData,
+      );
+      secureData['is_published'] = false;
+      secureData['review_status'] = 'Pending'; // التوافق مع Enum قاعدة البيانات
+
       final response = await dio.post(
         SupabaseKeys.listingsRest,
-        data: listingData,
+        data: secureData,
         queryParameters: {'select': '*'},
         options: _authOptions(),
       );
@@ -127,26 +170,48 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
       }
       return const Left('فشل في إنشاء العقار الأساسي.');
     } on DioException catch (e) {
-      debugPrint('❌ Dio Error creating listing: ${e.response?.data} | ${e.message}');
-      return Left(e.response?.data?['message'] ?? e.message ?? 'حدث خطأ في الشبكة');
+      debugPrint(
+        '❌ Dio Error creating listing: ${e.response?.data} | ${e.message}',
+      );
+      return Left(
+        e.response?.data?['message'] ?? e.message ?? 'حدث خطأ في الشبكة',
+      );
     } catch (e) {
       return Left(e.toString());
     }
   }
 
   @override
-  Future<Either<String, void>> bulkLinkImages(List<Map<String, dynamic>> imagesData) async {
-    return _postBulk(SupabaseKeys.listingImagesRest, imagesData, 'فشل في ربط الصور.');
+  Future<Either<String, void>> bulkLinkImages(
+    List<Map<String, dynamic>> imagesData,
+  ) async {
+    return _postBulk(
+      SupabaseKeys.listingImagesRest,
+      imagesData,
+      'فشل في ربط الصور.',
+    );
   }
 
   @override
-  Future<Either<String, void>> bulkLinkLifestyleTags(List<Map<String, dynamic>> tagsData) async {
-    return _postBulk(SupabaseKeys.listingLifestylesRest, tagsData, 'فشل في ربط فئات نمط الحياة.');
+  Future<Either<String, void>> bulkLinkLifestyleTags(
+    List<Map<String, dynamic>> tagsData,
+  ) async {
+    return _postBulk(
+      SupabaseKeys.listingLifestylesRest,
+      tagsData,
+      'فشل في ربط فئات نمط الحياة.',
+    );
   }
 
   @override
-  Future<Either<String, void>> bulkLinkConditions(List<Map<String, dynamic>> conditionsData) async {
-    return _postBulk(SupabaseKeys.listingConditionAssignmentsRest, conditionsData, 'فشل في ربط الشروط.');
+  Future<Either<String, void>> bulkLinkConditions(
+    List<Map<String, dynamic>> conditionsData,
+  ) async {
+    return _postBulk(
+      SupabaseKeys.listingConditionAssignmentsRest,
+      conditionsData,
+      'فشل في ربط الشروط.',
+    );
   }
 
   // Helper method for GET requests that return lists
@@ -164,7 +229,9 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final List data = response.data;
-        return Right(data.map((e) => mapper(e as Map<String, dynamic>)).toList());
+        return Right(
+          data.map((e) => mapper(e as Map<String, dynamic>)).toList(),
+        );
       }
       return Left(errorMessage);
     } on DioException catch (e) {
@@ -189,7 +256,11 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
   }
 
   // Helper method for bulk POST inserts
-  Future<Either<String, void>> _postBulk(String endpoint, List<Map<String, dynamic>> data, String errorMessage) async {
+  Future<Either<String, void>> _postBulk(
+    String endpoint,
+    List<Map<String, dynamic>> data,
+    String errorMessage,
+  ) async {
     try {
       final response = await dio.post(
         endpoint,
@@ -197,13 +268,19 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
         options: _authOptions(),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204) {
+      if (response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          response.statusCode == 204) {
         return const Right(null);
       }
       return Left(errorMessage);
     } on DioException catch (e) {
-      debugPrint("❌ Dio Error posting to $endpoint: ${e.response?.data} | ${e.message}");
-      return Left(e.response?.data?['message'] ?? e.message ?? "حدث خطأ في الشبكة");
+      debugPrint(
+        "❌ Dio Error posting to $endpoint: ${e.response?.data} | ${e.message}",
+      );
+      return Left(
+        e.response?.data?['message'] ?? e.message ?? "حدث خطأ في الشبكة",
+      );
     } catch (e) {
       debugPrint("❌ Unexpected Error posting to $endpoint: $e");
       return Left("خطأ غير متوقع: ${e.toString()}");
@@ -214,14 +291,19 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
   Future<Either<String, List<AmenityModel>>> getAmenities() async {
     return _fetchList(
       endpoint: SupabaseKeys.amenitiesRest,
-      queryParameters: {'select': 'id,name,icon,category_id', 'order': 'category_id,name'},
+      queryParameters: {
+        'select': 'id,name,icon,category_id',
+        'order': 'category_id,name',
+      },
       mapper: (json) => AmenityModel.fromJson(json),
       errorMessage: 'فشل في جلب المرافق',
     );
   }
 
   @override
-  Future<Either<String, List<String>>> getListingAmenities(String listingId) async {
+  Future<Either<String, List<String>>> getListingAmenities(
+    String listingId,
+  ) async {
     try {
       final res = await dio.get(
         SupabaseKeys.listingAmenitiesRest,
@@ -232,9 +314,11 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
       );
       if (res.statusCode == 200) {
         final List data = res.data;
-        return Right(data.map<String>((e) {
-          return e['amenity_id'].toString();
-        }).toList());
+        return Right(
+          data.map<String>((e) {
+            return e['amenity_id'].toString();
+          }).toList(),
+        );
       }
       return const Right([]);
     } on DioException catch (e) {
@@ -254,13 +338,20 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
       await dio.delete(
         SupabaseKeys.listingAmenitiesRest,
         queryParameters: {'listing_id': 'eq.$listingId'},
+        options: _authOptions(),
       );
       if (amenityIds.isEmpty) return const Right(null);
       final payload = amenityIds
           .map((id) => {'listing_id': listingId, 'amenity_id': id})
           .toList();
-      final res = await dio.post(SupabaseKeys.listingAmenitiesRest, data: payload);
-      if (res.statusCode == 200 || res.statusCode == 201 || res.statusCode == 204) {
+      final res = await dio.post(
+        SupabaseKeys.listingAmenitiesRest,
+        data: payload,
+        options: _authOptions(),
+      );
+      if (res.statusCode == 200 ||
+          res.statusCode == 201 ||
+          res.statusCode == 204) {
         return const Right(null);
       }
       return const Left('فشل في حفظ المرافق');
@@ -290,13 +381,35 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
           'description_ar': descAr,
           'status': 'pending',
         },
+        options: _authOptions(),
       );
-      if (res.statusCode == 200 || res.statusCode == 201 || res.statusCode == 204) {
+      if (res.statusCode == 200 ||
+          res.statusCode == 201 ||
+          res.statusCode == 204) {
         return const Right(null);
       }
       return const Left('فشل في إرسال الشرط للمراجعة');
     } on DioException catch (e) {
       return Left(e.message ?? 'Network error');
+    } catch (e) {
+      return Left(e.toString());
+    }
+  }
+
+  @override
+  Future<Either<String, void>> deleteListing(String listingId) async {
+    try {
+      final response = await dio.delete(
+        SupabaseKeys.listingsRest,
+        queryParameters: {'id': 'eq.$listingId'},
+        options: _authOptions(),
+      );
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return const Right(null);
+      }
+      return const Left('فشل في حذف العقار');
+    } on DioException catch (e) {
+      return Left(e.response?.data?['message'] ?? e.message ?? 'Network error');
     } catch (e) {
       return Left(e.toString());
     }

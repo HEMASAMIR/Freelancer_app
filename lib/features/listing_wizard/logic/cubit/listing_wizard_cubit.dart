@@ -130,8 +130,21 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
   }) async {
     _emitIfOpen(ListingWizardLoading());
 
+    // ✅ الحل النهائي لخطأ 22P02:
+    // نحول القيمة إلى 'Pending' (Capital P) لأن قاعدة البيانات ترفض 'pending'
+    final Map<String, dynamic> finalListingData = Map<String, dynamic>.from(
+      listingData,
+    );
+    finalListingData['review_status'] = 'Pending';
+
+    debugPrint(
+      "🚀 Checking review_status before send: ${finalListingData['review_status']}",
+    );
+
     // 6. Create Primary Listing
-    final primaryResult = await _repository.createPrimaryListing(listingData);
+    final primaryResult = await _repository.createPrimaryListing(
+      finalListingData,
+    );
 
     await primaryResult.fold(
       (error) async {
@@ -149,13 +162,10 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
               imageFile: File(path),
             );
 
-            uploadResult.fold(
-              (error) {
-                debugPrint("Failed to upload image $path: $error");
-                throw Exception("Failed to upload image: $error");
-              },
-              (url) => imageLinks.add({'listing_id': listingId, 'url': url}),
-            );
+            uploadResult.fold((error) {
+              debugPrint("Failed to upload image $path: $error");
+              throw Exception("Failed to upload image: $error");
+            }, (url) => imageLinks.add({'listing_id': listingId, 'url': url}));
           }
 
           // Execute bulk links in parallel for better performance
@@ -167,7 +177,12 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
 
           if (lifestyleIds.isNotEmpty) {
             final lifestylePayload = lifestyleIds
-                .map((id) => {'listing_id': listingId, 'lifestyle_category_id': id})
+                .map(
+                  (id) => {
+                    'listing_id': listingId,
+                    'lifestyle_category_id': id,
+                  },
+                )
                 .toList();
             futures.add(_repository.bulkLinkLifestyleTags(lifestylePayload));
           }

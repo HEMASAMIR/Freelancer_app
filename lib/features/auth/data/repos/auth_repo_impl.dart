@@ -41,6 +41,16 @@ class AuthRepoImpl implements AuthRepo {
     if (userMap != null) {
       await _prefs.setString('supabase_user', jsonEncode(userMap));
     }
+
+    final currentSession = _supabase.auth.currentSession;
+    if (refreshToken != null && currentSession?.refreshToken != refreshToken) {
+      try {
+        await _supabase.auth.setSession(refreshToken);
+        debugPrint('✅ [AuthRepo] Synced session with native Supabase client');
+      } catch (e) {
+        debugPrint('❌ [AuthRepo] Failed to sync session with native Supabase client: $e');
+      }
+    }
   }
 
   Future<void> _clearSession() async {
@@ -210,6 +220,20 @@ class AuthRepoImpl implements AuthRepo {
         'user': session.user.toJson(),
       });
       debugPrint('✅ [AuthRepo] OAuth session saved to SharedPreferences');
+    }
+  }
+
+  @override
+  Future<void> restoreSession() async {
+    final refreshToken = _prefs.getString('supabase_refresh_token');
+    final currentSession = _supabase.auth.currentSession;
+    if (refreshToken != null && refreshToken.isNotEmpty && currentSession?.refreshToken != refreshToken) {
+      try {
+        await _supabase.auth.setSession(refreshToken);
+        debugPrint('✅ [AuthRepo] Restored native Supabase session on startup');
+      } catch (e) {
+        debugPrint('❌ [AuthRepo] Failed to restore native Supabase session on startup: $e');
+      }
     }
   }
 

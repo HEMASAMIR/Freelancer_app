@@ -83,7 +83,9 @@ class _ListingManagementScreenState extends State<ListingManagementScreen>
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: AppColors.dividerGrey.withOpacity(0.5)),
+          border: Border.all(
+            color: AppColors.dividerGrey.withValues(alpha: 0.5),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -97,7 +99,11 @@ class _ListingManagementScreenState extends State<ListingManagementScreen>
               ),
             ),
             const SizedBox(width: 4),
-            Icon(Icons.copy_rounded, size: 12, color: AppColors.inkBlack.withOpacity(0.7)),
+            Icon(
+              Icons.copy_rounded,
+              size: 12,
+              color: AppColors.inkBlack.withValues(alpha: 0.7),
+            ),
           ],
         ),
       ),
@@ -107,7 +113,7 @@ class _ListingManagementScreenState extends State<ListingManagementScreen>
   void _showTopToast(BuildContext context) {
     final overlay = Overlay.of(context);
     late OverlayEntry overlayEntry;
-    
+
     overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         top: MediaQuery.of(context).padding.top + 20,
@@ -122,10 +128,7 @@ class _ListingManagementScreenState extends State<ListingManagementScreen>
             builder: (context, value, child) {
               return Transform.translate(
                 offset: Offset(0, -50 * (1 - value)),
-                child: Opacity(
-                  opacity: value.clamp(0.0, 1.0),
-                  child: child,
-                ),
+                child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
               );
             },
             child: Container(
@@ -135,7 +138,7 @@ class _ListingManagementScreenState extends State<ListingManagementScreen>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
+                    color: Colors.black.withValues(alpha: 0.15),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -143,7 +146,11 @@ class _ListingManagementScreenState extends State<ListingManagementScreen>
               ),
               child: Row(
                 children: const [
-                  Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
+                  Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                   SizedBox(width: 12),
                   Text(
                     'Code copied to clipboard',
@@ -229,7 +236,10 @@ class _ListingManagementScreenState extends State<ListingManagementScreen>
                         if (widget.listing.listingCode != null)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
-                            child: _buildCopyBadge(context, widget.listing.listingCode!),
+                            child: _buildCopyBadge(
+                              context,
+                              widget.listing.listingCode!,
+                            ),
                           ),
                       ],
                     ),
@@ -281,10 +291,7 @@ class _ListingManagementScreenState extends State<ListingManagementScreen>
                   icon: Icon(Icons.calendar_today_outlined, size: 18),
                   text: 'Availability',
                 ),
-                Tab(
-                  icon: Icon(Icons.sell_outlined, size: 18),
-                  text: 'Pricing',
-                ),
+                Tab(icon: Icon(Icons.sell_outlined, size: 18), text: 'Pricing'),
                 Tab(
                   icon: Icon(Icons.settings_outlined, size: 18),
                   text: 'Settings',
@@ -328,6 +335,7 @@ class _ListingManagementScreenState extends State<ListingManagementScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // تحسين منطق عرض الحالة بناءً على حالة المراجعة
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -337,22 +345,28 @@ class _ListingManagementScreenState extends State<ListingManagementScreen>
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          _isPublished
+                          widget.listing.reviewStatus == 'pending'
+                              ? 'Under Admin Review'
+                              : _isPublished
                               ? 'Published Listing'
-                              : 'Under Review / Private',
+                              : 'Listing Deactivated',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: _isPublished
+                            color: widget.listing.reviewStatus == 'pending'
+                                ? Colors.orange
+                                : _isPublished
                                 ? Colors.green
                                 : AppColors.primaryRed,
                           ),
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
-                        'No reviews yet',
-                        style: TextStyle(
+                      Text(
+                        widget.listing.reviewStatus == 'pending'
+                            ? 'Waiting for approval'
+                            : 'Verified property',
+                        style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.greyText,
                         ),
@@ -362,12 +376,23 @@ class _ListingManagementScreenState extends State<ListingManagementScreen>
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: _togglingStatus ? null : _togglePublishStatus,
+                  // نمنع الزرار لو العقار لسه مراجعة الأدمن مخلصتش
+                  onPressed:
+                      (_togglingStatus ||
+                          widget.listing.reviewStatus == 'pending')
+                      ? null
+                      : _togglePublishStatus,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _isPublished
+                    backgroundColor: widget.listing.reviewStatus == 'pending'
+                        ? Colors.grey.shade200
+                        : _isPublished
                         ? Colors.red.shade50
                         : AppColors.primaryBurgundy,
-                    foregroundColor: _isPublished ? Colors.red : Colors.white,
+                    foregroundColor: widget.listing.reviewStatus == 'pending'
+                        ? Colors.grey
+                        : _isPublished
+                        ? Colors.red
+                        : Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -387,7 +412,9 @@ class _ListingManagementScreenState extends State<ListingManagementScreen>
                           ),
                         )
                       : Text(
-                          _isPublished
+                          widget.listing.reviewStatus == 'pending'
+                              ? 'Pending Approval'
+                              : _isPublished
                               ? 'Deactivate listing'
                               : 'Activate listing',
                           style: const TextStyle(fontWeight: FontWeight.w600),
@@ -581,7 +608,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: AppColors.dividerGrey.withOpacity(0.2),
+            color: AppColors.dividerGrey.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: IconButton(
@@ -609,7 +636,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
         ),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.dividerGrey.withOpacity(0.2),
+            color: AppColors.dividerGrey.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: IconButton(
@@ -664,7 +691,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
         (_) => Container(
           decoration: BoxDecoration(
             border: Border.all(
-              color: AppColors.dividerGrey.withOpacity(0.2),
+              color: AppColors.dividerGrey.withValues(alpha: 0.2),
               width: 0.5,
             ),
           ),
@@ -685,10 +712,10 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
         String priceDisplay = NumberFormat('#,###').format(price);
 
         if (isPast) {
-          bg = AppColors.backgroundCream.withOpacity(0.5);
-          textColor = AppColors.greyText.withOpacity(0.5);
+          bg = AppColors.backgroundCream.withValues(alpha: 0.5);
+          textColor = AppColors.greyText.withValues(alpha: 0.5);
         } else if (isBlocked) {
-          bg = AppColors.primaryBurgundy.withOpacity(0.05);
+          bg = AppColors.primaryBurgundy.withValues(alpha: 0.05);
           textColor = AppColors.primaryBurgundy;
         } else {
           bg = Colors.white;
@@ -701,7 +728,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
             decoration: BoxDecoration(
               color: bg,
               border: Border.all(
-                color: AppColors.dividerGrey.withOpacity(0.2),
+                color: AppColors.dividerGrey.withValues(alpha: 0.2),
                 width: 0.5,
               ),
             ),
@@ -740,7 +767,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.dividerGrey.withOpacity(0.2)),
+        border: Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.2)),
       ),
       child: GridView.count(
         shrinkWrap: true,
@@ -759,7 +786,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
     children: [
       _dot(Colors.white, 'Available', hasBorder: true),
       const SizedBox(width: 14),
-      _dot(AppColors.primaryBurgundy.withOpacity(0.15), 'Blocked'),
+      _dot(AppColors.primaryBurgundy.withValues(alpha: 0.15), 'Blocked'),
       const SizedBox(width: 14),
       _dot(Colors.grey.shade100, 'Past'),
     ],
@@ -775,7 +802,7 @@ class _AvailabilityTabState extends State<_AvailabilityTab> {
           color: c,
           borderRadius: BorderRadius.circular(4),
           border: hasBorder
-              ? Border.all(color: AppColors.dividerGrey.withOpacity(0.5))
+              ? Border.all(color: AppColors.dividerGrey.withValues(alpha: 0.5))
               : null,
         ),
       ),
@@ -1004,10 +1031,12 @@ class _PricingTabState extends State<_PricingTab> {
                         horizontal: 12,
                         vertical: 8,
                       ),
-                      constraints: const BoxConstraints(maxWidth: 90), // ✅ يمنع المربع إنه يكبر أوي لو الرقم ضخم
+                      constraints: const BoxConstraints(
+                        maxWidth: 90,
+                      ), // ✅ يمنع المربع إنه يكبر أوي لو الرقم ضخم
                       decoration: BoxDecoration(
                         color: hasOverride
-                            ? AppColors.primaryBurgundy.withOpacity(0.08)
+                            ? AppColors.primaryBurgundy.withValues(alpha: 0.08)
                             : Colors.white,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
@@ -1025,7 +1054,8 @@ class _PricingTabState extends State<_PricingTab> {
                               color: AppColors.greyText,
                             ),
                           ),
-                          FittedBox( // ✅ يصغر حجم الخط تلقائياً لو السعر كبير
+                          FittedBox(
+                            // ✅ يصغر حجم الخط تلقائياً لو السعر كبير
                             fit: BoxFit.scaleDown,
                             child: Text(
                               'EGP ${price.toStringAsFixed(0)}',
@@ -1091,7 +1121,7 @@ class _AdjCard extends StatelessWidget {
           Switch(
             value: adj.enabled,
             onChanged: onToggle,
-            activeColor: AppColors.primaryBurgundy,
+            activeThumbColor: AppColors.primaryBurgundy,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -1107,7 +1137,8 @@ class _AdjCard extends StatelessWidget {
                   maxLines: 1, // ✅ يمنع النص إنه ينزل سطر جديد ويبوظ الكارت
                   overflow: TextOverflow.ellipsis,
                 ),
-                FittedBox( // ✅ يصغر المعادلة لو السعر النهائي طلع رقم كبير
+                FittedBox(
+                  // ✅ يصغر المعادلة لو السعر النهائي طلع رقم كبير
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(

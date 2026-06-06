@@ -1,12 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freelancer/core/app_router/routes.dart';
 import 'package:freelancer/features/auth/data/repos/auth_repo.dart';
 import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:freelancer/features/auth/data/models/user_model.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:freelancer/core/services/admin_email_service.dart';
 
@@ -32,22 +35,22 @@ class AuthCubit extends Cubit<AuthCubitState> {
       final AuthChangeEvent event = data.event;
       final Session? session = data.session;
 
-      if (event == AuthChangeEvent.signedIn && session != null) {
-        log('🔔 Supabase Auth Change: Signed In', name: 'AuthCubit');
+      log('🔔 Supabase Auth Change: $event', name: 'AuthCubit');
 
+      if (session != null) {
+        await _authRepo.saveSessionFromOAuth(session);
+      }
+
+      if (event == AuthChangeEvent.signedIn && session != null) {
         // لغّي الـ timeout لأن النجاح وصل
         _cancelGoogleTimer();
 
         final user = UserModel.fromJson(session.user.toJson());
-        await _authRepo.saveSessionFromOAuth(session);
         emit(_resolveSuccess(user));
       } else if (event == AuthChangeEvent.signedOut) {
-        log('🔔 Supabase Auth Change: Signed Out', name: 'AuthCubit');
         emit(const AuthSignedOut());
       } else if (event == AuthChangeEvent.passwordRecovery && session != null) {
-        log('🔔 Supabase Auth Change: Password Recovery', name: 'AuthCubit');
         final user = UserModel.fromJson(session.user.toJson());
-        await _authRepo.saveSessionFromOAuth(session);
         emit(AuthPasswordRecovery(user));
       }
     });
@@ -70,6 +73,9 @@ class AuthCubit extends Cubit<AuthCubitState> {
   // ─────────────────────────────────────────────
 
   Future<void> _checkCurrentUser() async {
+    // Restore native Supabase session first
+    await _authRepo.restoreSession();
+
     final user = _authRepo.getCurrentUser();
     if (user != null) {
       emit(_resolveSuccess(user));
@@ -116,6 +122,58 @@ class AuthCubit extends Cubit<AuthCubitState> {
       (failure) => emit(AuthError(failure.message)),
       (user) => emit(_resolveSuccess(user)),
     );
+  }
+
+  // ─────────────────────────────────────────────
+  //  Apple Sign In
+  // ─────────────────────────────────────────────
+
+  Future<void> signInWithApple() async {
+    try {
+      emit(const AuthGoogleLoading()); // نستخدم حالة تحميل الـ Social
+      log('🔄 Apple Sign-In started...', name: 'AuthCubit');
+
+      final supabase = Supabase.instance.client;
+      final rawNonce = supabase.auth.generateRawNonce();
+      final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+        // ✅ WebAuthenticationOptions are required for Android. On iOS, it uses the native Bundle ID.
+        webAuthenticationOptions: WebAuthenticationOptions(
+          clientId:
+              'com.ejabatech.quickin.service', // ⚠️ تأكد أن هذا هو الـ Service ID Identifier وليس الـ App Bundle ID
+          redirectUri: Uri.parse(
+            'https://xpvrgdpsvffmttlwwfuo.supabase.co/auth/v1/callback',
+          ),
+        ),
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        emit(const AuthError("فشل الحصول على الـ Token من Apple"));
+        return;
+      }
+
+      await supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
+      // الـ AuthChangeListener هيتولى الباقي وينقلك للهوم
+    } catch (e) {
+      log('❌ Apple Sign-In error: $e', name: 'AuthCubit');
+      if (e is SignInWithAppleAuthorizationException &&
+          e.code == AuthorizationErrorCode.canceled) {
+        emit(const AuthInitial());
+      } else {
+        emit(AuthError('فشل تسجيل دخول Apple: ${e.toString()}'));
+      }
+    }
   }
 
   // ─────────────────────────────────────────────

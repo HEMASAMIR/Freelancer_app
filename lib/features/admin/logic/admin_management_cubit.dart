@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/admin_repo/admin_management_repo.dart';
+import '../../search/data/search_model/listing_model.dart';
 import 'admin_management_state.dart';
 
 class AdminManagementCubit extends Cubit<AdminManagementState> {
@@ -60,6 +61,56 @@ class AdminManagementCubit extends Cubit<AdminManagementState> {
         .eq('is_published', false)
         .count(CountOption.exact);
     return res.count;
+  }
+
+  // ─── Pending Approvals ───────────────────────────────────────────────────
+  /// Fetches listings that are not yet published.
+  Future<void> loadPendingListings() async {
+    emit(AdminManagementLoading());
+    try {
+      final response = await _supabase
+          .from('listings')
+          .select()
+          .eq('is_published', false)
+          .order('created_at', ascending: false);
+
+      final List<dynamic> data = response as List<dynamic>;
+      final listings = data.map((item) => ListingModel.fromJson(item)).toList();
+
+      emit(AdminPendingListingsLoaded(listings));
+    } catch (e) {
+      log('❌ loadPendingListings error: $e', name: 'AdminManagementCubit');
+      emit(AdminManagementError(e.toString()));
+    }
+  }
+
+  /// Updates a listing to be published.
+  Future<void> approveListing(String listingId) async {
+    emit(AdminManagementLoading());
+    try {
+      await _supabase
+          .from('listings')
+          .update({'is_published': true})
+          .eq('id', listingId);
+
+      emit(const AdminManagementSuccess("تمت الموافقة على العقار ونشره بنجاح"));
+      await loadPendingListings(); // Refresh the list after approval
+    } catch (e) {
+      emit(AdminManagementError(e.toString()));
+    }
+  }
+
+  /// Deletes a listing that was rejected.
+  Future<void> rejectListing(String listingId) async {
+    emit(AdminManagementLoading());
+    try {
+      await _supabase.from('listings').delete().eq('id', listingId);
+
+      emit(const AdminManagementSuccess("تم رفض وحذف العقار بنجاح"));
+      await loadPendingListings(); // Refresh the list after rejection
+    } catch (e) {
+      emit(AdminManagementError(e.toString()));
+    }
   }
 
   // ─── Listing Status ────────────────────────────────────────────────────────

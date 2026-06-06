@@ -28,7 +28,9 @@ class SearchRepositoryImpl implements SearchRepository {
       // Build a direct query — include joins for location names
       var query = supabase
           .from('listings')
-          .select('*, listing_images(*), city:cities(name), country:countries(name)');
+          .select('*, listing_images(*), city:cities(name), country:countries(name)')
+          // ✅ الفلتر السحري: جلب العقارات المنشورة فقط
+          .eq('is_published', true);
 
       // Apply best_offer filter at DB level if requested
       if (params.bestOffer == true) {
@@ -62,10 +64,14 @@ class SearchRepositoryImpl implements SearchRepository {
       final filtered = _filterLocally(listings, params);
       return Right(filtered);
     } on TimeoutException {
-      debugPrint('⏱️ [SearchRepo] direct query timed out, falling back to RPC...');
+      debugPrint(
+        '⏱️ [SearchRepo] direct query timed out, falling back to RPC...',
+      );
       return _searchViaRpc(params);
     } catch (e) {
-      debugPrint('❌ [SearchRepo] direct query error: $e — falling back to RPC...');
+      debugPrint(
+        '❌ [SearchRepo] direct query error: $e — falling back to RPC...',
+      );
       return _searchViaRpc(params);
     }
   }
@@ -106,7 +112,11 @@ class SearchRepositoryImpl implements SearchRepository {
 
       final data = await supabase
           .from('listings')
-          .select('*, listing_images(*), city:cities(name), country:countries(name)')
+          .select(
+            '*, listing_images(*), city:cities(name), country:countries(name)',
+          )
+          // ✅ نضمن إن حتى لو معاه اللينك، ميتفتحش لو مش منشور
+          .eq('is_published', true)
           .eq('id', id)
           .maybeSingle()
           .timeout(_timeout);
@@ -130,6 +140,9 @@ class SearchRepositoryImpl implements SearchRepository {
     SearchParamsModel params,
   ) {
     return listings.where((l) {
+      // ✅ تأمين إضافي: استبعاد أي عقار غير منشور (بانتظار موافقة الأدمن)
+      if (l.isPublished != true) return false;
+
       final searchKey = (params.location ?? '').trim().toLowerCase();
       bool matches = true;
 

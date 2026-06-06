@@ -166,6 +166,15 @@ class _LoginViewState extends State<LoginView> {
                                   ),
                                   SizedBox(height: 10.h),
 
+                                  SocialButton(
+                                    icon: Icons.apple,
+                                    label: 'Continue with Apple',
+                                    onTap: cubit.isLoading
+                                        ? null
+                                        : () => cubit.signInWithApple(),
+                                  ),
+                                  SizedBox(height: 10.h),
+
                                   Row(
                                     children: [
                                       const Expanded(

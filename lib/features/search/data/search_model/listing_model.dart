@@ -32,6 +32,8 @@ class ListingModel {
   final double? lng;
   final String? locationGeo;
   final String? googleMapsLink;
+  final String? reviewStatus;
+  final String? reviewNotes;
   final double? displayPrice;
   final DateTime? createdAt;
   final HostModel? host;
@@ -71,6 +73,8 @@ class ListingModel {
     this.lng,
     this.locationGeo,
     this.googleMapsLink,
+    this.reviewStatus,
+    this.reviewNotes,
     this.displayPrice,
     this.host,
     this.propertyType,
@@ -132,6 +136,8 @@ class ListingModel {
     double? lng,
     String? locationGeo,
     String? googleMapsLink,
+    String? reviewStatus,
+    String? reviewNotes,
     double? displayPrice,
     DateTime? createdAt,
     HostModel? host,
@@ -170,6 +176,8 @@ class ListingModel {
       lng: lng ?? this.lng,
       locationGeo: locationGeo ?? this.locationGeo,
       googleMapsLink: googleMapsLink ?? this.googleMapsLink,
+      reviewStatus: reviewStatus ?? this.reviewStatus,
+      reviewNotes: reviewNotes ?? this.reviewNotes,
       displayPrice: displayPrice ?? this.displayPrice,
       createdAt: createdAt ?? this.createdAt,
       host: host ?? this.host,
@@ -207,6 +215,8 @@ class ListingModel {
       'listing_code': listingCode,
       'min_nights': minNights,
       'google_maps_link': googleMapsLink,
+      'review_status': reviewStatus,
+      'review_notes': reviewNotes,
       'location_geo': locationGeoValue,
       'translations': translations,
     };
@@ -342,6 +352,8 @@ class ListingModel {
           parsedLng ??
           (json['lng'] as num?)?.toDouble() ??
           _parseLng(json['google_maps_link']),
+      reviewStatus: json['review_status'],
+      reviewNotes: json['review_notes'],
       displayPrice: (json['display_price'] as num?)?.toDouble(),
       host: json['host_json'] != null
           ? HostModel.fromJson(json['host_json'])

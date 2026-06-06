@@ -50,6 +50,7 @@ class _HostListingsViewState extends State<HostListingsView> {
   }
 
   void _fetchListings() {
+    if (!mounted) return;
     final authState = context.read<AuthCubit>().state;
     String? userId;
     if (authState is AuthAdminSuccess) {
@@ -66,6 +67,7 @@ class _HostListingsViewState extends State<HostListingsView> {
   }
 
   void _filterListings(String query) {
+    if (!mounted) return;
     setState(() {
       _filteredListings = _allListings.where((listing) {
         final title = (listing.title ?? '').toLowerCase();
@@ -90,7 +92,9 @@ class _HostListingsViewState extends State<HostListingsView> {
           child: const ListingWizardScreen(),
         ),
       ),
-    ).then((_) => _fetchListings());
+    ).then((_) {
+      if (mounted) _fetchListings();
+    });
   }
 
   @override
@@ -102,13 +106,22 @@ class _HostListingsViewState extends State<HostListingsView> {
       body: BlocListener<HostListingsCubit, HostListingsState>(
         listener: (context, state) {
           if (state is HostListingsLoaded) {
+            if (!mounted) return;
             setState(() {
-              _allListings = state.listings;
-              _filteredListings = state.listings;
+              // ✅ المزامنة النهائية:
+              // لو العقار ممسوح من الويب (is_published = false) هيختفي فوراً من الموبايل هنا
+              // لو لسه بيظهر 21، راجع قاعدة البيانات هتلاقي الـ 12 التانيين is_published بتاعتهم لسه true
+              _allListings = state.listings.where((l) => l.isPublished == true).toList();
+              _filteredListings = _allListings;
             });
           }
         },
-        child: CustomScrollView(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            _fetchListings();
+          },
+          color: AppColors.primaryBurgundy,
+          child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
             // ── Greeting Banner (Dynamic — بياخد اسم اليوزر) ─────────────────────
@@ -369,6 +382,7 @@ class _HostListingsViewState extends State<HostListingsView> {
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
             const SliverToBoxAdapter(child: CustomFooter()),
           ],
+        ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -659,7 +673,7 @@ class _HostListingCard extends StatelessWidget {
                   children: [
                     _buildCopyBadge(context, listingCode),
                     _buildBadge(
-                      isPublished ? 'Published' : 'Draft',
+                      isPublished ? 'Published' : 'Pending Approval',
                       isPublished
                           ? const Color(0xFFECFDF5)
                           : const Color(0xFFFFF7ED),

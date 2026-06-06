@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:freelancer/core/constant/constant.dart';
 import 'package:freelancer/core/widgets/login_required_sheet.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:freelancer/core/utils/animation/animation_press_button.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:freelancer/features/favourite/logic/cubit/fav_cubit.dart';
 import 'package:freelancer/features/favourite/presentation/widget/wishlist_bottom_sheet.dart';
@@ -14,11 +15,13 @@ import 'package:shimmer/shimmer.dart';
 class PropertyListingCard extends StatelessWidget {
   final ListingModel listing;
   final VoidCallback onTap;
+  final VoidCallback? onDelete;
 
   const PropertyListingCard({
     super.key,
     required this.listing,
     required this.onTap,
+    this.onDelete,
   });
 
   @override
@@ -136,8 +139,26 @@ class PropertyListingCard extends StatelessWidget {
                     },
                   ),
                 ),
+                // زرار الحذف (بيظهر بس لو ممررين onDelete)
+                if (onDelete != null)
+                  Positioned(
+                    top: 12.h,
+                    left: 12.w,
+                    child: AnimatedPressButton(
+                      onTap: onDelete!,
+                      child: Container(
+                        padding: EdgeInsets.all(8.r),
+                        decoration: const BoxDecoration(
+                          color: Colors.black45,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.delete_sweep_rounded,
+                            color: Colors.white, size: 22.r),
+                      ),
+                    ),
+                  ),
                 // الـ Badge بتاع Best Offer أو Guest Favorite
-                if (listing.isBestOffer == true || listing.isGuestFavorite == true)
+                if (onDelete == null && (listing.isBestOffer == true || listing.isGuestFavorite == true))
                   Positioned(
                     top: 12.h,
                     left: 12.w,

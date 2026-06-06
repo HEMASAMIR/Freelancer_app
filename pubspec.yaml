@@ -29,6 +29,8 @@ dependencies:
   equatable: ^2.0.8
   google_sign_in: ^6.2.1
   url_launcher: ^6.3.2
+  sign_in_with_apple: ^6.1.1
+  crypto: ^3.0.3
   intl: ^0.20.2
   shimmer: ^3.0.0
   shared_preferences: ^2.2.2

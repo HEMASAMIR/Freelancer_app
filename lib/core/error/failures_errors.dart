@@ -1,4 +1,3 @@
-
 abstract class AuthFailure {
   final String message;
   const AuthFailure(this.message);
@@ -63,6 +62,15 @@ class GoogleTokenFailure extends AuthFailure {
 }
 
 // ─────────────────────────────────────────────
+//  Apple
+// ─────────────────────────────────────────────
+
+class AppleSignInFailure extends AuthFailure {
+  const AppleSignInFailure([String? msg])
+    : super(msg ?? 'فشل تسجيل الدخول بـ Apple');
+}
+
+// ─────────────────────────────────────────────
 //  Network & Server
 // ─────────────────────────────────────────────
 
@@ -82,5 +90,3 @@ class ServerFailure extends AuthFailure {
 class UnknownFailure extends AuthFailure {
   const UnknownFailure([super.msg = 'حدث خطأ غير متوقع']);
 }
-
-

@@ -49,4 +49,6 @@ abstract class AuthRepo {
   UserModel? getCurrentUser();
 
   Future<void> saveSessionFromOAuth(dynamic session);
+
+  Future<void> restoreSession();
 }
