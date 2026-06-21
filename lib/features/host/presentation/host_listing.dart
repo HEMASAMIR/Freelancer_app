@@ -134,13 +134,9 @@ class _HostListingsViewState extends State<HostListingsView> {
                     final authState = context.watch<AuthCubit>().state;
                     String userName = '';
                     if (authState is AuthSuccess) {
-                      userName = authState.user.userMetadata['full_name'] ?? 
-                                 authState.user.userMetadata['name'] ?? 
-                                 authState.user.email.split('@').first;
+                      userName = authState.user.displayName;
                     } else if (authState is AuthAdminSuccess) {
-                      userName = authState.user.userMetadata['full_name'] ?? 
-                                 authState.user.userMetadata['name'] ?? 
-                                 authState.user.email.split('@').first;
+                      userName = authState.user.displayName;
                     }
 
                     // ✅ تحية حسب الوقت

@@ -51,4 +51,16 @@ abstract class AuthRepo {
   Future<void> saveSessionFromOAuth(dynamic session);
 
   Future<void> restoreSession();
+
+  // ─── Magic Link ───────────────────────────────────────────────────────────
+
+  /// Sends a passwordless magic link to [email]. The user taps the link
+  /// (or enters the 8-digit OTP) to sign in without a password.
+  Future<Either<AuthFailure, Unit>> sendMagicLink({required String email});
+
+  /// Verifies the OTP code that Supabase sent alongside the magic link email.
+  Future<Either<AuthFailure, UserModel>> verifyMagicLinkOTP({
+    required String email,
+    required String otp,
+  });
 }

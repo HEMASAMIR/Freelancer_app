@@ -98,11 +98,9 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
       final authState = context.read<AuthCubit>().state;
       String userName = 'Guest';
       if (authState is AuthSuccess) {
-        userName = authState.user.userMetadata['full_name'] ?? 
-                   authState.user.email?.split('@').first ?? 'Guest';
+        userName = authState.user.displayName;
       } else if (authState is AuthAdminSuccess) {
-        userName = authState.user.userMetadata['full_name'] ?? 
-                   authState.user.email?.split('@').first ?? 'Admin';
+        userName = authState.user.displayName;
       }
 
       final listingName = widget.args.listing.title ?? 'your property';

@@ -39,6 +39,7 @@ import 'package:freelancer/features/notifications/presentation/notifications_scr
 import 'package:freelancer/features/notifications/logic/host_notification_cubit.dart';
 import 'package:freelancer/features/account/presentation/notification_preferences_screen.dart';
 import 'package:freelancer/features/host/presentation/dashboard_overview.dart';
+import 'package:freelancer/features/auth/view/presentation/view/magic_link_view.dart';
 
 // ✅ الشاشتين الجديدتين
 
@@ -333,6 +334,15 @@ class AppRouter {
       case AppRoutes.notificationPreferences:
         return MaterialPageRoute(
           builder: (_) => const NotificationPreferencesScreen(),
+        );
+
+      case AppRoutes.magicLink:
+        return PageRouteBuilder(
+          opaque: false,
+          pageBuilder: (_, __, ___) => BlocProvider.value(
+            value: sl<AuthCubit>(),
+            child: const MagicLinkView(),
+          ),
         );
 
       default:

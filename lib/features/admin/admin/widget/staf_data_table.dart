@@ -18,7 +18,7 @@ class StaffDataTable extends StatelessWidget {
         String adminEmail = 'admin@example.com';
         
         if (state is AuthAdminSuccess) {
-          adminName = state.user.userMetadata['full_name'] ?? state.user.email.split('@')[0];
+          adminName = state.user.displayName;
           adminEmail = state.user.email;
         }
 

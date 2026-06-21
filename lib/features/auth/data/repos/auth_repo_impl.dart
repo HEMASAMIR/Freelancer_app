@@ -449,4 +449,60 @@ class AuthRepoImpl implements AuthRepo {
       return left(NetworkFailure(e.toString()));
     }
   }
+
+  // ─────────────────────────────────────────────
+  //  Magic Link
+  // ─────────────────────────────────────────────
+
+  @override
+  Future<Either<AuthFailure, Unit>> sendMagicLink({
+    required String email,
+  }) async {
+    try {
+      // Supabase sends an 8-digit OTP along with the clickable magic link.
+      // The user can either click the email link OR enter the OTP manually.
+      // ⚠️  OTP length is 8 digits — keep UI in sync (magic_link_view.dart).
+      await _supabase.auth.signInWithOtp(
+        email: email,
+        emailRedirectTo: 'io.supabase.quickin://login-callback',
+        shouldCreateUser: true, // auto-register if the email is new
+      );
+      return right(unit);
+    } on AuthException catch (e) {
+      return left(UnknownFailure(e.message));
+    } catch (e) {
+      return left(NetworkFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<AuthFailure, UserModel>> verifyMagicLinkOTP({
+    required String email,
+    required String otp,
+  }) async {
+    try {
+      final response = await _supabase.auth.verifyOTP(
+        email: email,
+        token: otp,
+        type: OtpType.magiclink,
+      );
+
+      final session = response.session;
+      final user = response.user;
+
+      if (session == null || user == null) {
+        return left(
+          const UnknownFailure('كود التحقق غير صحيح أو منتهي الصلاحية'),
+        );
+      }
+
+      await saveSessionFromOAuth(session);
+      debugPrint('✅ [AuthRepo] Magic Link OTP verified | uid: ${user.id}');
+      return right(UserModel.fromJson(user.toJson()));
+    } on AuthException catch (e) {
+      return left(UnknownFailure(e.message));
+    } catch (e) {
+      return left(NetworkFailure(e.toString()));
+    }
+  }
 }

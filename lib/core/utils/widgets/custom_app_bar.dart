@@ -126,9 +126,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                               final user = state is AuthSuccess
                                   ? state.user
                                   : (state as AuthAdminSuccess).user;
-                              final String name =
-                                  user.userMetadata['full_name'] ??
-                                  user.email.split('@')[0];
+                              final String name = user.displayName;
                               return [
                                 PopupMenuItem(
                                   enabled: false,

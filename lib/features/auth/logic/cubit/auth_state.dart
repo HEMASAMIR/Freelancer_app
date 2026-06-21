@@ -86,3 +86,20 @@ class AuthMfaVerified extends AuthCubitState {
 class AuthTokenRefreshed extends AuthCubitState {
   const AuthTokenRefreshed();
 }
+
+// ─── Magic Link States ───────────────────────────────────────────────────────
+
+/// Emitted while sending the magic link email or verifying the OTP.
+class AuthMagicLinkLoading extends AuthCubitState {
+  const AuthMagicLinkLoading();
+}
+
+/// Emitted after the magic link email is successfully dispatched.
+/// [email] is kept so the OTP screen can display / pre-fill it.
+class AuthMagicLinkSent extends AuthCubitState {
+  final String email;
+  const AuthMagicLinkSent(this.email);
+
+  @override
+  List<Object?> get props => [email];
+}

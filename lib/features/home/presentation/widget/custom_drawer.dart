@@ -369,8 +369,7 @@ class _SideDrawerState extends State<SideDrawer> {
 
   Widget _buildFooter(dynamic user) {
     if (user == null) return const SizedBox.shrink();
-    final String name =
-        user.userMetadata?['full_name'] ?? user.email?.split('@')[0] ?? 'User';
+    final String name = user is UserModel ? user.displayName : 'User';
     final String email = user.email ?? '';
     final String initials = name.isNotEmpty ? name[0].toUpperCase() : 'U';
 

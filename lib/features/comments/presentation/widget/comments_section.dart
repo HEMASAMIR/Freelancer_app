@@ -46,12 +46,10 @@ class _CommentsSectionState extends State<CommentsSection> {
 
     if (state is AuthSuccess) {
       _currentUserId = state.user.id;
-      _currentUserName =
-          state.user.userMetadata['full_name'] ?? state.user.email;
+      _currentUserName = state.user.displayName;
     } else if (state is AuthAdminSuccess) {
       _currentUserId = state.user.id;
-      _currentUserName =
-          state.user.userMetadata['full_name'] ?? state.user.email;
+      _currentUserName = state.user.displayName;
     }
   }
 

@@ -138,7 +138,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                               SizedBox(height: 4.h),
                               Text(
                                 _otpSent
-                                    ? 'Enter the 6-digit code sent to your email'
+                                    ? 'Enter the 8-digit code sent to your email'
                                     : 'Enter your email to receive a recovery code',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
@@ -164,7 +164,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                                 _buildLabel('Recovery Code'),
                                 SizedBox(height: 5.h),
                                 InputBox(
-                                  hint: '123456',
+                                  hint: '12345678',
                                   controller: _otpController,
                                   keyboardType: TextInputType.number,
                                   validator: (v) =>

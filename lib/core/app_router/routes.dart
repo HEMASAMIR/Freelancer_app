@@ -23,4 +23,5 @@ class AppRoutes {
   static const String confirmBooking = '/confirm-booking';
   static const String notifications = '/notifications';
   static const String notificationPreferences = '/notification-preferences';
+  static const String magicLink = '/magic-link';
 }

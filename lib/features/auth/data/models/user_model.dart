@@ -47,6 +47,20 @@ class UserModel extends Equatable {
     };
   }
 
+  String get displayName {
+    final metadataName = userMetadata['full_name'] ?? userMetadata['name'];
+    if (metadataName != null && metadataName.toString().trim().isNotEmpty) {
+      return metadataName.toString().trim();
+    }
+    if (email.isNotEmpty) {
+      if (email.toLowerCase().contains('privaterelay.appleid.com')) {
+        return 'User';
+      }
+      return email.split('@')[0];
+    }
+    return 'User';
+  }
+
   @override
   List<Object?> get props => [id, email, userMetadata, role];
 }

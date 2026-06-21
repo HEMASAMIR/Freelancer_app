@@ -93,12 +93,10 @@ class _AccountScreenState extends State<AccountScreen>
             bool isAdmin = false;
             
             if (state is AuthSuccess) {
-              userName = state.user.userMetadata['full_name'] ??
-                  state.user.email.split('@')[0];
+              userName = state.user.displayName;
               userEmail = state.user.email;
             } else if (state is AuthAdminSuccess) {
-              userName = state.user.userMetadata['full_name'] ??
-                  state.user.email.split('@')[0];
+              userName = state.user.displayName;
               userEmail = state.user.email;
               isAdmin = true;
             }

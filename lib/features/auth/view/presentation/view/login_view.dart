@@ -13,6 +13,7 @@ import 'package:freelancer/core/utils/widgets/social_button.dart';
 import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/view/presentation/view/sign_up_view.dart';
 import 'package:freelancer/features/auth/view/presentation/view/forgot_password_view.dart';
+import 'package:freelancer/features/auth/view/presentation/view/magic_link_view.dart';
 import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 
 class LoginView extends StatefulWidget {
@@ -198,6 +199,59 @@ class _LoginViewState extends State<LoginView> {
                                     ],
                                   ),
                                   SizedBox(height: 15.h),
+
+                                  // ── Magic Link button ──────────────────────────────────────────────
+                                  GestureDetector(
+                                    onTap: cubit.isLoading
+                                        ? null
+                                        : () {
+                                            Navigator.pop(context);
+                                            showDialog(
+                                              context: context,
+                                              builder: (ctx) =>
+                                                  BlocProvider.value(
+                                                value: context
+                                                    .read<AuthCubit>(),
+                                                child:
+                                                    const MagicLinkView(),
+                                              ),
+                                            );
+                                          },
+                                    child: Container(
+                                      height: 46.h,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: const Color(0xFF8B2323),
+                                          width: 1.5,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(8.r),
+                                        color: const Color(0xFF8B2323)
+                                            .withValues(alpha: 0.05),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.auto_awesome_rounded,
+                                            size: 18.sp,
+                                            color: const Color(0xFF8B2323),
+                                          ),
+                                          SizedBox(width: 8.w),
+                                          Text(
+                                            'Continue with Magic Link',
+                                            style: TextStyle(
+                                              fontSize: 13.sp,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF8B2323),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 14.h),
 
                                 _buildLabel('Email'),
                                 SizedBox(height: 5.h),

@@ -63,10 +63,11 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
                   // Get username for a personalized animated toast
                   final authCubit = context.read<AuthCubit>();
                   String userName = 'Guest';
-                  if (authCubit.state is AuthSuccess) {
-                    userName = (authCubit.state as AuthSuccess).user.userMetadata['full_name'] ?? 'Guest';
-                  } else if (authCubit.state is AuthAdminSuccess) {
-                    userName = (authCubit.state as AuthAdminSuccess).user.userMetadata['full_name'] ?? 'Admin';
+                  final authState = authCubit.state;
+                  if (authState is AuthSuccess) {
+                    userName = authState.user.displayName;
+                  } else if (authState is AuthAdminSuccess) {
+                    userName = authState.user.displayName;
                   }
                   
                   ElegantToast.show(

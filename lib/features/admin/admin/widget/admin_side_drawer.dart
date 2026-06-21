@@ -56,8 +56,7 @@ class _AdminSideDrawerState extends State<AdminSideDrawer> {
 
         if (state is AuthAdminSuccess) {
           final u = state.user;
-          name = (u.userMetadata['full_name'] as String?) ??
-              u.email.split('@')[0];
+          name = u.displayName;
           email = u.email;
           initials = name.isNotEmpty ? name[0].toUpperCase() : 'A';
         }

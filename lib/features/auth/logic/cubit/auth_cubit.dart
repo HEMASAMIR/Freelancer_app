@@ -159,11 +159,31 @@ class AuthCubit extends Cubit<AuthCubitState> {
         return;
       }
 
+      final givenName = credential.givenName;
+      final familyName = credential.familyName;
+      String? fullName;
+      if (givenName != null || familyName != null) {
+        fullName = '${givenName ?? ''} ${familyName ?? ''}'.trim();
+      }
+
       await supabase.auth.signInWithIdToken(
         provider: OAuthProvider.apple,
         idToken: idToken,
         nonce: rawNonce,
       );
+
+      if (fullName != null && fullName.isNotEmpty) {
+        try {
+          await supabase.auth.updateUser(
+            UserAttributes(
+              data: {'full_name': fullName},
+            ),
+          );
+          log('✅ Saved Apple user name: $fullName', name: 'AuthCubit');
+        } catch (e) {
+          log('⚠️ Failed to save Apple user name to metadata: $e', name: 'AuthCubit');
+        }
+      }
       // الـ AuthChangeListener هيتولى الباقي وينقلك للهوم
     } catch (e) {
       log('❌ Apple Sign-In error: $e', name: 'AuthCubit');
@@ -303,6 +323,37 @@ class AuthCubit extends Cubit<AuthCubitState> {
       (_) => emit(const AuthMfaVerified()),
     );
   }
+
+  // ─────────────────────────────────────────────
+  //  Magic Link
+  // ─────────────────────────────────────────────
+
+  /// Dispatches a magic link email to [email].
+  /// On success emits [AuthMagicLinkSent] so the UI can show the OTP input.
+  Future<void> sendMagicLink({required String email}) async {
+    emit(const AuthMagicLinkLoading());
+    final result = await _authRepo.sendMagicLink(email: email);
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (_) => emit(AuthMagicLinkSent(email)),
+    );
+  }
+
+  /// Verifies the OTP the user received via the magic link email.
+  /// On success resolves to [AuthSuccess] or [AuthAdminSuccess].
+  Future<void> verifyMagicLinkOTP({
+    required String email,
+    required String otp,
+  }) async {
+    emit(const AuthMagicLinkLoading());
+    final result = await _authRepo.verifyMagicLinkOTP(email: email, otp: otp);
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (user) => emit(_resolveSuccess(user)),
+    );
+  }
+
+  bool get isMagicLinkLoading => state is AuthMagicLinkLoading;
 
   Future<void> refreshToken() async {
     emit(const AuthLoading());
