@@ -140,51 +140,33 @@ class _ListingWizardScreenState extends State<ListingWizardScreen> {
             appBar: const CustomAppBar(),
             drawer: const SideDrawer(),
             body: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        // This uses the exact available height of the Scaffold body, so the buttons won't get pushed down.
-                        height: constraints.maxHeight,
-                        child: Column(
-                          children: [
-                            _buildProgressHeader(),
-                            Expanded(
-                              child: PageView(
-                                controller: _pageController,
-                                physics: const NeverScrollableScrollPhysics(),
-                                onPageChanged: (index) {
-                                  setState(() {
-                                    _currentPage = index;
-                                  });
-                                },
-                                children: [
-                                  WizardStep1PropertyType(),
-                                  WizardStep2Lifestyles(),
-                                  WizardStep3Descriptions(),
-                                  WizardStep4Location(),
-                                  WizardStep5Details(),
-                                  WizardStep6Photos(),
-                                  WizardStep7Pricing(),
-                                  WizardStep8Publish(),
-                                ],
-                              ),
-                            ),
-                            _buildBottomNav(formState),
-                          ],
-                        ),
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                        child: CustomFooter(),
-                      ),
-                    ],
+              child: Column(
+                children: [
+                  _buildProgressHeader(),
+                  Expanded(
+                    child: PageView(
+                      controller: _pageController,
+                      physics: const NeverScrollableScrollPhysics(),
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentPage = index;
+                        });
+                      },
+                      children: [
+                        WizardStep1PropertyType(),
+                        WizardStep2Lifestyles(),
+                        WizardStep3Descriptions(),
+                        WizardStep4Location(),
+                        WizardStep5Details(),
+                        WizardStep6Photos(),
+                        WizardStep7Pricing(),
+                        WizardStep8Publish(),
+                      ],
+                    ),
                   ),
-                );
-              },
-            ),
+                  _buildBottomNav(formState),
+                ],
+              ),
             ),
           );
         },

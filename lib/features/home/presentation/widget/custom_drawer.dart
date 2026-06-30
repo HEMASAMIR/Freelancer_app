@@ -5,6 +5,7 @@ import 'package:freelancer/core/shared_helper/app_color.dart';
 import 'package:freelancer/features/auth/logic/cubit/auth_cubit.dart';
 import 'package:freelancer/features/auth/logic/cubit/auth_state.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:freelancer/features/auth/data/models/user_model.dart';
 import 'package:freelancer/features/auth/view/presentation/view/login_view.dart';
 import 'package:freelancer/features/auth/view/presentation/view/sign_up_view.dart';
 import 'package:freelancer/core/utils/widgets/elegant_toast.dart';

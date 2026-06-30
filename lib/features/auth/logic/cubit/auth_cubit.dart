@@ -225,11 +225,12 @@ class AuthCubit extends Cubit<AuthCubitState> {
         emit(AuthError(failure.message));
       },
       (user) {
-        if (user.id == 'pending_oauth') {
-          // الـ Listener في _listenToAuthChanges هيكمّل بعد اختيار الأكونت
-          // الـ Timer شغّال في الخلفية كـ safety net
-          log('⏳ Waiting for account picker...', name: 'AuthCubit');
-          return;
+        // 'pending_oauth' = Android web OAuth flow opened — stay in Loading.
+        // 'empty_oauth'   = Web redirect launched — stay in Loading.
+        // The _listenToAuthChanges handler will fire when the session arrives.
+        if (user.id == 'pending_oauth' || user.id == 'empty_oauth') {
+          log('⏳ Waiting for OAuth callback...', name: 'AuthCubit');
+          return; // keep AuthGoogleLoading active
         }
         _cancelGoogleTimer();
         log(

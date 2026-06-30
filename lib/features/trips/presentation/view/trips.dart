@@ -13,6 +13,7 @@ import 'package:freelancer/features/home/presentation/widget/custom_footer.dart'
 import 'package:intl/intl.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/services.dart';
 import 'package:freelancer/features/payment/logic/cubit/payment_cubit.dart';
 import 'package:freelancer/features/payment/logic/cubit/payment_state.dart';
 
@@ -568,6 +569,20 @@ class _TripCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
+                GestureDetector(
+                  onTap: () => _showPaymentDetailsDialog(context, booking),
+                  child: Text(
+                    'Payment Details',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.green.shade700,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Colors.green.shade700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
                 BlocConsumer<PaymentCubit, PaymentState>(
                   listener: (context, state) {
                     if (state is PaymentSuccess) {
@@ -622,6 +637,182 @@ class _TripCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+
+  void _showPaymentDetailsDialog(BuildContext context, BookingModel booking) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          backgroundColor: Colors.white,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'تفاصيل الدفع',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: () => Navigator.pop(dialogCtx),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                const SizedBox(height: 16),
+                const Text(
+                  'المبلغ المطلوب تحويله',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.sub,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'EGP ${booking.subtotal?.toStringAsFixed(0) ?? '-'}',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryRed,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF7F3F0),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'انستا باي / فودافون كاش',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              'نشط',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.green.shade700,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const SelectableText(
+                            '01038220045',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy_rounded, color: AppColors.primaryRed),
+                            onPressed: () {
+                              Clipboard.setData(const ClipboardData(text: '01038220045'));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'تم نسخ الرقم بنجاح!',
+                                    style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+                                  ),
+                                  duration: Duration(seconds: 2),
+                                  backgroundColor: Colors.green,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'بعد إتمام التحويل، يرجى إرفاق صورة إيصال الدفع لتأكيد حجزك.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.sub,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final picker = ImagePicker();
+                      final XFile? image = await picker.pickImage(
+                        source: ImageSource.gallery,
+                      );
+                      if (image != null && context.mounted) {
+                        context.read<PaymentCubit>().uploadReceipt(
+                          booking.id ?? '',
+                          File(image.path),
+                        );
+                        Navigator.pop(dialogCtx);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryRed,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.photo_library_rounded, color: Colors.white),
+                    label: const Text(
+                      'اختيار إيصال التحويل',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

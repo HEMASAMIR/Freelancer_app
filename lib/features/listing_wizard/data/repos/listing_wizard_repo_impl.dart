@@ -156,7 +156,9 @@ class ListingWizardRepositoryImpl implements ListingWizardRepository {
         listingData,
       );
       secureData['is_published'] = false;
-      secureData['review_status'] = 'Pending'; // التوافق مع Enum قاعدة البيانات
+      // ✅ لا نرسل review_status — الـ DB يحط 'draft' default تلقائياً
+      // 'pending' ليست قيمة صالحة في enum listing_review_status في Supabase
+      secureData.remove('review_status');
 
       final response = await dio.post(
         SupabaseKeys.listingsRest,

@@ -10,6 +10,7 @@ import 'package:freelancer/features/auth/data/models/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+
 class AuthRepoImpl implements AuthRepo {
   final Dio _dio;
   final SharedPreferences _prefs;
@@ -141,54 +142,78 @@ class AuthRepoImpl implements AuthRepo {
   @override
   Future<Either<AuthFailure, UserModel>> signInWithGoogle() async {
     try {
-      // ✅ Native Google Sign-In with Supabase
-      // بنستخدم الـ Native عشان البراوزر بيعمل مشكلة "Not Found" في الـ Deep Link
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        serverClientId: SupabaseKeys.googleWebClientId,
-        clientId: SupabaseKeys.googleIosClientId.isNotEmpty
-            ? SupabaseKeys.googleIosClientId
-            : null,
-      );
-
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) {
-        return left(const UnknownFailure('تم إلغاء تسجيل الدخول'));
-      }
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final accessToken = googleAuth.accessToken;
-      final idToken = googleAuth.idToken;
-
-      if (idToken == null) {
-        return left(
-          const UnknownFailure('فشل في الحصول على بيانات المصادقة من جوجل'),
+      if (kIsWeb) {
+        // Web platform: use Supabase OAuth redirect
+        await _supabase.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: 'io.supabase.quickin://login-callback',
         );
+        // Web flow is async — the auth listener will pick up the session.
+        return right(UserModel.empty());
       }
 
-      final AuthResponse response = await _supabase.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: idToken,
-        accessToken: accessToken,
+      // ── iOS / macOS: Native Google Sign-In (fastest, best UX) ───────────
+      if (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS) {
+        final GoogleSignIn googleSignIn = GoogleSignIn(
+          serverClientId: SupabaseKeys.googleWebClientId,
+          clientId: SupabaseKeys.googleIosClientId.isNotEmpty
+              ? SupabaseKeys.googleIosClientId
+              : null,
+        );
+
+        final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+        if (googleUser == null) {
+          return left(const UnknownFailure('تم إلغاء تسجيل الدخول'));
+        }
+
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+        final accessToken = googleAuth.accessToken;
+        final idToken = googleAuth.idToken;
+
+        if (idToken == null) {
+          return left(
+            const UnknownFailure('فشل في الحصول على بيانات المصادقة من جوجل'),
+          );
+        }
+
+        final AuthResponse response = await _supabase.auth.signInWithIdToken(
+          provider: OAuthProvider.google,
+          idToken: idToken,
+          accessToken: accessToken,
+        );
+
+        final user = response.user;
+        if (user == null) {
+          return left(const UnknownFailure('فشل تسجيل الدخول في النظام'));
+        }
+
+        final session = response.session;
+        if (session != null) {
+          await saveSessionFromOAuth(session);
+        }
+
+        return right(UserModel.fromJson(user.toJson()));
+      }
+
+      // ── Android: Supabase OAuth Web Flow (no google-services.json needed) ─
+      // Opens Chrome Custom Tab → user picks account → deep-link returns session.
+      await _supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'io.supabase.quickin://login-callback',
+        authScreenLaunchMode: LaunchMode.externalApplication,
       );
 
-      final user = response.user;
-      if (user == null) {
-        return left(const UnknownFailure('فشل تسجيل الدخول في النظام'));
-      }
-
-      final session = response.session;
-      if (session != null) {
-        await saveSessionFromOAuth(session);
-      }
-
-      final userModel = UserModel.fromJson(user.toJson());
-      return right(userModel);
+      // The session arrives via the deep-link handler in _listenToAuthChanges.
+      // Return a "pending" sentinel so AuthCubit knows to keep the Loading state.
+      return right(UserModel.pending());
     } catch (e) {
-      debugPrint('❌ [AuthRepo] Google Native Sign-In error: $e');
+      debugPrint('❌ [AuthRepo] Google Sign-In error: $e');
       return left(NetworkFailure(e.toString()));
     }
   }
+
 
   // ─────────────────────────────────────────────
   //  Current User

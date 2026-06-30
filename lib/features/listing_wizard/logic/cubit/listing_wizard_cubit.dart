@@ -130,16 +130,12 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
   }) async {
     _emitIfOpen(ListingWizardLoading());
 
-    // ✅ الحل النهائي لخطأ 22P02:
-    // نحول القيمة إلى 'Pending' (Capital P) لأن قاعدة البيانات ترفض 'pending'
+    // ✅ نتركها للـ DB default — لا نرسل review_status في الـ insert
+    // لأن الـ enum في Supabase يُعيّن التلقائي (default) بشكل صحيح
     final Map<String, dynamic> finalListingData = Map<String, dynamic>.from(
       listingData,
     );
-    finalListingData['review_status'] = 'Pending';
-
-    debugPrint(
-      "🚀 Checking review_status before send: ${finalListingData['review_status']}",
-    );
+    finalListingData.remove('review_status'); // Let DB default handle it
 
     // 6. Create Primary Listing
     final primaryResult = await _repository.createPrimaryListing(

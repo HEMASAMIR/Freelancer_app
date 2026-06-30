@@ -11,64 +11,88 @@ class WizardStep8Publish extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ListingFormCubit, ListingFormState>(
-      builder: (context, formState) {
-        final wizardState = context.read<ListingWizardCubit>().state;
-        
-        String cityName = formState.cityId;
-        String countryName = formState.countryId;
-        String conditionNames = 'No specific limits';
+    // We need BOTH cubits — nest their builders so we always have fresh data.
+    return BlocBuilder<ListingWizardCubit, ListingWizardState>(
+      builder: (context, wizardState) {
+        return BlocBuilder<ListingFormCubit, ListingFormState>(
+          builder: (context, formState) {
+            // Walk up the state hierarchy to find the last LookupsLoaded state.
+            // The cubit may be in a sub-state (e.g. LocationsLoaded) that doesn't
+            // carry the lookup lists — so we always read it from the cubit directly
+            // as a fallback, which holds the *current* state.
+            final lookupsState = wizardState is ListingWizardLookupsLoaded
+                ? wizardState
+                : (context.read<ListingWizardCubit>().state
+                        is ListingWizardLookupsLoaded
+                    ? context.read<ListingWizardCubit>().state
+                        as ListingWizardLookupsLoaded
+                    : null);
 
-        if (wizardState is ListingWizardLookupsLoaded) {
-           final city = wizardState.cities.where((c) => c.id.toString() == formState.cityId).firstOrNull;
-           if (city != null) cityName = city.name;
+            String cityName = formState.cityId;
+            String countryName = formState.countryId;
+            String conditionNames = 'No specific limits';
 
-           final country = wizardState.countries.where((c) => c.id.toString() == formState.countryId).firstOrNull;
-           if (country != null) countryName = country.name;
+            if (lookupsState != null) {
+              final city = lookupsState.cities
+                  .where((c) => c.id.toString() == formState.cityId)
+                  .firstOrNull;
+              if (city != null) cityName = city.name;
 
-           if (formState.selectedConditionIds.isNotEmpty) {
-             final activeConditions = wizardState.listingConditions.where((c) => formState.selectedConditionIds.contains(c.id.toString())).map((e) => e.name).toList();
-             conditionNames = activeConditions.join(', ');
-           }
-        }
+              final country = lookupsState.countries
+                  .where((c) => c.id.toString() == formState.countryId)
+                  .firstOrNull;
+              if (country != null) countryName = country.name;
 
-        return SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Review and Publish',
-                style: TextStyle(
-                  fontSize: 28.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.inkBlack,
-                  letterSpacing: -0.5,
-                  height: 1.2,
-                ),
+              if (formState.selectedConditionIds.isNotEmpty) {
+                final activeConditions = lookupsState.listingConditions
+                    .where((c) =>
+                        formState.selectedConditionIds
+                            .contains(c.id.toString()))
+                    .map((e) => e.name)
+                    .toList();
+                conditionNames = activeConditions.join(', ');
+              }
+            }
+
+            return SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Review and Publish',
+                    style: TextStyle(
+                      fontSize: 28.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.inkBlack,
+                      letterSpacing: -0.5,
+                      height: 1.2,
+                    ),
+                  ),
+                  SizedBox(height: 32.h),
+
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(24.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.r),
+                      border: Border.all(color: AppColors.dividerGrey),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSummaryRow('Title', formState.titleEn.isEmpty ? 'Untitled' : formState.titleEn),
+                        _buildSummaryRow('Location', '$cityName, $countryName'),
+                        _buildSummaryRow('Price', '${formState.pricePerNight} ${formState.currency}'),
+                        _buildSummaryRow('Conditions', conditionNames),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 32.h),
-
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(24.w),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16.r),
-                  border: Border.all(color: AppColors.dividerGrey),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSummaryRow('Title', formState.titleEn.isEmpty ? 'Untitled' : formState.titleEn),
-                    _buildSummaryRow('Location', '$cityName, $countryName'),
-                    _buildSummaryRow('Price', '${formState.pricePerNight} ${formState.currency}'),
-                    _buildSummaryRow('Conditions', conditionNames),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

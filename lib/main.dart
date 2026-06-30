@@ -18,12 +18,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:freelancer/core/logic/connectivity_cubit.dart';
 import 'package:freelancer/core/widgets/no_internet_screen.dart';
 import 'package:freelancer/core/shared_helper/app_color.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final supabase = Supabase.instance.client;
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -49,6 +51,7 @@ void main() async {
   await LocalNotificationService.instance.init();
 
   runApp(const FreelancerApp());
+  FlutterNativeSplash.remove();
 }
 
 class FreelancerApp extends StatelessWidget {

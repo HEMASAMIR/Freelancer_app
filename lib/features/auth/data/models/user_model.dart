@@ -24,6 +24,15 @@ class UserModel extends Equatable {
     );
   }
 
+  /// Sentinel for Web OAuth — session arrives via redirect, no user object yet.
+  factory UserModel.empty() =>
+      const UserModel(id: 'empty_oauth', email: '', userMetadata: {});
+
+  /// Sentinel for Android OAuth — session arrives via deep-link.
+  /// AuthCubit sees this and keeps the Loading state until _listenToAuthChanges fires.
+  factory UserModel.pending() =>
+      const UserModel(id: 'pending_oauth', email: '', userMetadata: {});
+
   UserModel copyWith({
     String? id,
     String? email,

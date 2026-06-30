@@ -60,17 +60,27 @@ class _SignUpViewState extends State<SignUpView> {
             );
             context.read<AuthCubit>().navigateAfterLogin(context);
           } else if (state is AuthSuccess) {
-            // ✅ لو سجل دخول بـ Apple/Google (الايميل فاضي في الكنترولر) يدخل فوراً
-            // لو سجل بالايميل يدوي، يظهر له ديالوج التأكيد
-            if (_emailController.text.trim().isEmpty) {
+            // Detect whether this came from a Social provider (Google/Apple)
+            // or from a manual email sign-up.
+            // Social logins: id is a sentinel OR email controller is empty
+            // (because the user never typed anything in the sign-up form).
+            final isSocialLogin =
+                state.user.id == 'pending_oauth' ||
+                state.user.id == 'empty_oauth' ||
+                _emailController.text.trim().isEmpty;
+
+            if (isSocialLogin) {
+              // Social login — navigate straight to home, no confirmation needed.
               context.read<AuthCubit>().navigateAfterLogin(context);
             } else {
+              // Manual email sign-up — show the "check your email" dialog.
               CheckEmailDialog.show(context, _emailController.text.trim());
             }
           } else if (state is AuthError) {
             CustomToast.show(context, state.message, ToastState.error);
           }
         },
+
         builder: (context, state) {
           final cubit = context.read<AuthCubit>();
 
