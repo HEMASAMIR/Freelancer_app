@@ -146,7 +146,7 @@ class AuthRepoImpl implements AuthRepo {
         // Web platform: use Supabase OAuth redirect
         await _supabase.auth.signInWithOAuth(
           OAuthProvider.google,
-          redirectTo: 'io.supabase.quickin://login-callback',
+          redirectTo: Uri.base.origin,
         );
         // Web flow is async — the auth listener will pick up the session.
         return right(UserModel.empty());
@@ -199,11 +199,18 @@ class AuthRepoImpl implements AuthRepo {
 
       // ── Android: Supabase OAuth Web Flow (no google-services.json needed) ─
       // Opens Chrome Custom Tab → user picks account → deep-link returns session.
-      await _supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: 'io.supabase.quickin://login-callback',
-        authScreenLaunchMode: LaunchMode.externalApplication,
-      );
+      try {
+        await _supabase.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: 'io.supabase.quickin://login-callback',
+          authScreenLaunchMode: LaunchMode.externalApplication,
+        );
+      } catch (launchError) {
+        // url_launcher on Android has a known bug where it might throw/return false
+        // even if the browser/custom tab was launched successfully.
+        // We log it and proceed so the user doesn't see a fake error message while signing in.
+        debugPrint('⚠️ [AuthRepo] Google Sign-In launch warning: $launchError');
+      }
 
       // The session arrives via the deep-link handler in _listenToAuthChanges.
       // Return a "pending" sentinel so AuthCubit knows to keep the Loading state.
@@ -296,7 +303,7 @@ class AuthRepoImpl implements AuthRepo {
     try {
       await _supabase.auth.resetPasswordForEmail(
         email,
-        redirectTo: 'io.supabase.quickin://login-callback',
+        redirectTo: kIsWeb ? Uri.base.origin : 'io.supabase.quickin://login-callback',
       );
       return right(unit);
     } on AuthException catch (e) {
@@ -489,7 +496,7 @@ class AuthRepoImpl implements AuthRepo {
       // ⚠️  OTP length is 8 digits — keep UI in sync (magic_link_view.dart).
       await _supabase.auth.signInWithOtp(
         email: email,
-        emailRedirectTo: 'io.supabase.quickin://login-callback',
+        emailRedirectTo: kIsWeb ? Uri.base.origin : 'io.supabase.quickin://login-callback',
         shouldCreateUser: true, // auto-register if the email is new
       );
       return right(unit);
